@@ -22,12 +22,15 @@ const inter = Inter({ subsets: ['latin'] });
 
 /** Métadonnées SEO et PWA */
 export const metadata: Metadata = {
+  // metadataBase : URL de base pour résoudre les images OG/Twitter.
+  // NEXT_PUBLIC_SITE_URL en prod (notes.djefrid.ca) ou localhost:3000 en dev.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'MyNoteSpace',
   description: 'Éditeur de notes riche — dossiers, tags, dessin, LaTeX, import/export DOCX/PDF',
   applicationName: 'MyNoteSpace',
   keywords: ['notes', 'éditeur', 'markdown', 'tiptap', 'pwa'],
   authors: [{ name: 'djefrid' }],
-  // OpenGraph
+  // OpenGraph — image générée par app/opengraph-image.tsx
   openGraph: {
     title: 'MyNoteSpace',
     description: 'Éditeur de notes riche personnel',

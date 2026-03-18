@@ -104,7 +104,7 @@
 "use client";
 
 import {
-  useState, useEffect, useRef, useCallback, useMemo, forwardRef,
+  useState, useEffect, useRef, useCallback, useMemo, forwardRef, memo,
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -129,7 +129,7 @@ import { importDocx, exportDocx } from '@/lib/docx-utils';
 import { extractTextFromPdf } from '@/lib/pdf-utils';
 import { Indent } from '@/lib/tiptap-extensions/indent';
 import Mathematics from '@tiptap/extension-mathematics';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, useEditorState } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -171,6 +171,7 @@ import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import CharacterCount from '@tiptap/extension-character-count';
 import { uploadNoteImage, uploadNoteFile } from '@/lib/upload-image';
+import imageCompression from 'browser-image-compression';
 import { useAdminNotes } from '@/hooks/useAdminNotes';
 import {
   createNote, updateNote, deleteNote, moveNote,
@@ -717,7 +718,41 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
   const symbolsRef    = useRef<HTMLDivElement>(null);
   const caseRef       = useRef<HTMLDivElement>(null);
 
-  if (!editor) return null;
+  // ── useEditorState — souscription sélective aux changements d'état TipTap ──
+  // Évite que TOUS les re-renders de l'éditeur parent re-rendent la toolbar.
+  // Le sélecteur ne recalcule que les valeurs qui ont réellement changé.
+  const editorState = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      isBold:          ctx.editor?.isActive('bold')               ?? false,
+      isItalic:        ctx.editor?.isActive('italic')             ?? false,
+      isUnderline:     ctx.editor?.isActive('underline')          ?? false,
+      isStrike:        ctx.editor?.isActive('strike')             ?? false,
+      isSuperscript:   ctx.editor?.isActive('superscript')        ?? false,
+      isSubscript:     ctx.editor?.isActive('subscript')          ?? false,
+      isLink:          ctx.editor?.isActive('link')               ?? false,
+      isAlignLeft:     ctx.editor?.isActive({ textAlign: 'left' })    ?? false,
+      isAlignCenter:   ctx.editor?.isActive({ textAlign: 'center' })  ?? false,
+      isAlignRight:    ctx.editor?.isActive({ textAlign: 'right' })   ?? false,
+      isAlignJustify:  ctx.editor?.isActive({ textAlign: 'justify' }) ?? false,
+      headingLevel:    ctx.editor?.isActive('heading', { level: 1 }) ? '1' :
+                       ctx.editor?.isActive('heading', { level: 2 }) ? '2' :
+                       ctx.editor?.isActive('heading', { level: 3 }) ? '3' : '0',
+      fontFamily:      (ctx.editor?.getAttributes('textStyle').fontFamily as string) ?? '',
+      currentFontSize: ((ctx.editor?.getAttributes('textStyle').fontSize as string)?.replace('pt', '')) ?? '',
+      canUndo:         ctx.editor?.can().undo()          ?? false,
+      canRedo:         ctx.editor?.can().redo()          ?? false,
+      isBulletList:    ctx.editor?.isActive('bulletList')  ?? false,
+      isOrderedList:   ctx.editor?.isActive('orderedList') ?? false,
+      isTaskList:      ctx.editor?.isActive('taskList')    ?? false,
+      isBlockquote:    ctx.editor?.isActive('blockquote')  ?? false,
+      isCodeBlock:     ctx.editor?.isActive('codeBlock')   ?? false,
+    }),
+  });
+
+  // Guard : editor null (avant initialisation TipTap) OU editorState null
+  // (useEditorState retourne null tant que l'editor n'est pas prêt)
+  if (!editor || !editorState) return null;
 
   // ── Bouton toolbar générique ───────────────────────────────────────────────
   const TB = (
@@ -783,9 +818,6 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
     setLinkOpen(false);
     setLinkVal('');
   };
-
-  // ── Taille de police courante ──────────────────────────────────────────────
-  const currentFontSize = editor.getAttributes('textStyle').fontSize?.replace('pt','') ?? '';
 
   // ── Appliquer l'interligne ─────────────────────────────────────────────────
   const applyLineSpacing = (value: string) => {
@@ -890,20 +922,20 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
         {/* ─── Onglet ACCUEIL ──────────────────────────────────────────────── */}
         {activeTab === 'accueil' && <>
           {/* Historique */}
-          {TB(false, 'Annuler (Ctrl+Z)', () => editor.chain().focus().undo().run(), <Undo2 size={13} />, !editor.can().undo())}
-          {TB(false, 'Refaire (Ctrl+Y)', () => editor.chain().focus().redo().run(), <Redo2 size={13} />, !editor.can().redo())}
+          {TB(false, 'Annuler (Ctrl+Z)', () => editor.chain().focus().undo().run(), <Undo2 size={13} />, !editorState.canUndo)}
+          {TB(false, 'Refaire (Ctrl+Y)', () => editor.chain().focus().redo().run(), <Redo2 size={13} />, !editorState.canRedo)}
           <SEP />
 
           {/* Famille de police */}
           <select
             title="Famille de police"
-            value={editor.getAttributes('textStyle').fontFamily ?? ''}
+            value={editorState.fontFamily}
             onChange={e => {
               if (!e.target.value) editor.chain().focus().unsetFontFamily().run();
               else editor.chain().focus().setFontFamily(e.target.value).run();
             }}
             className="text-[11px] bg-dark-800 border border-dark-700 text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px]"
-            style={{ fontFamily: editor.getAttributes('textStyle').fontFamily || 'inherit' }}
+            style={{ fontFamily: editorState.fontFamily || 'inherit' }}
           >
             {FONT_FAMILIES.map(f => (
               <option key={f.value} value={f.value} style={{ fontFamily: f.value || 'inherit' }}>{f.label}</option>
@@ -913,7 +945,7 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
           {/* Taille de police */}
           <select
             title="Taille de police"
-            value={currentFontSize}
+            value={editorState.currentFontSize}
             onChange={e => {
               if (!e.target.value) editor.chain().focus().unsetFontSize().run();
               else editor.chain().focus().setFontSize(`${e.target.value}pt`).run();
@@ -928,9 +960,7 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
           <select
             title="Style de paragraphe"
             value={
-              editor.isActive('heading', { level: 1 }) ? '1' :
-              editor.isActive('heading', { level: 2 }) ? '2' :
-              editor.isActive('heading', { level: 3 }) ? '3' : '0'
+              editorState.headingLevel
             }
             onChange={e => {
               const v = Number(e.target.value);
@@ -947,12 +977,12 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
           <SEP />
 
           {/* Formatage caractère */}
-          {TB(editor.isActive('bold'),        'Gras (Ctrl+B)',      () => editor.chain().focus().toggleBold().run(),        <Bold size={13} />)}
-          {TB(editor.isActive('italic'),      'Italique (Ctrl+I)',  () => editor.chain().focus().toggleItalic().run(),      <Italic size={13} />)}
-          {TB(editor.isActive('underline'),   'Souligné (Ctrl+U)', () => editor.chain().focus().toggleUnderline().run(),   <UnderlineIcon size={13} />)}
-          {TB(editor.isActive('strike'),      'Barré',             () => editor.chain().focus().toggleStrike().run(),      <Strikethrough size={13} />)}
-          {TB(editor.isActive('superscript'), 'Exposant',          () => editor.chain().focus().toggleSuperscript().run(), <SupIcon size={13} />)}
-          {TB(editor.isActive('subscript'),   'Indice',            () => editor.chain().focus().toggleSubscript().run(),   <SubIcon size={13} />)}
+          {TB(editorState.isBold,        'Gras (Ctrl+B)',      () => editor.chain().focus().toggleBold().run(),        <Bold size={13} />)}
+          {TB(editorState.isItalic,      'Italique (Ctrl+I)',  () => editor.chain().focus().toggleItalic().run(),      <Italic size={13} />)}
+          {TB(editorState.isUnderline,   'Souligné (Ctrl+U)', () => editor.chain().focus().toggleUnderline().run(),   <UnderlineIcon size={13} />)}
+          {TB(editorState.isStrike,      'Barré',             () => editor.chain().focus().toggleStrike().run(),      <Strikethrough size={13} />)}
+          {TB(editorState.isSuperscript, 'Exposant',          () => editor.chain().focus().toggleSuperscript().run(), <SupIcon size={13} />)}
+          {TB(editorState.isSubscript,   'Indice',            () => editor.chain().focus().toggleSubscript().run(),   <SubIcon size={13} />)}
           <SEP />
 
           {/* Effacer le formatage */}
@@ -1108,8 +1138,8 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
 
           {/* Lien */}
           <div className="relative">
-            {TB(editor.isActive('link'), 'Lien hypertexte', () => {
-              if (editor.isActive('link')) { editor.chain().focus().unsetLink().run(); setLinkOpen(false); }
+            {TB(editorState.isLink, 'Lien hypertexte', () => {
+              if (editorState.isLink) { editor.chain().focus().unsetLink().run(); setLinkOpen(false); }
               else { setLinkVal(editor.getAttributes('link').href || ''); setLinkOpen(o => !o); }
             }, <LinkIcon size={13} />)}
             {linkOpen && (
@@ -1170,10 +1200,10 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
         {/* ─── Onglet PARAGRAPHE ───────────────────────────────────────────── */}
         {activeTab === 'paragraphe' && <>
           {/* Alignement */}
-          {TB(editor.isActive({ textAlign: 'left' }),    'Aligner gauche (Ctrl+L)', () => editor.chain().focus().setTextAlign('left').run(),    <AlignLeft size={13} />)}
-          {TB(editor.isActive({ textAlign: 'center' }),  'Centrer (Ctrl+E)',        () => editor.chain().focus().setTextAlign('center').run(),  <AlignCenter size={13} />)}
-          {TB(editor.isActive({ textAlign: 'right' }),   'Aligner droite (Ctrl+R)', () => editor.chain().focus().setTextAlign('right').run(),   <AlignRight size={13} />)}
-          {TB(editor.isActive({ textAlign: 'justify' }), 'Justifier (Ctrl+J)',      () => editor.chain().focus().setTextAlign('justify').run(), <AlignJustify size={13} />)}
+          {TB(editorState.isAlignLeft,    'Aligner gauche (Ctrl+L)', () => editor.chain().focus().setTextAlign('left').run(),    <AlignLeft size={13} />)}
+          {TB(editorState.isAlignCenter,  'Centrer (Ctrl+E)',        () => editor.chain().focus().setTextAlign('center').run(),  <AlignCenter size={13} />)}
+          {TB(editorState.isAlignRight,   'Aligner droite (Ctrl+R)', () => editor.chain().focus().setTextAlign('right').run(),   <AlignRight size={13} />)}
+          {TB(editorState.isAlignJustify, 'Justifier (Ctrl+J)',      () => editor.chain().focus().setTextAlign('justify').run(), <AlignJustify size={13} />)}
           <SEP />
 
           {/* Retrait */}
@@ -1195,14 +1225,14 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
           <SEP />
 
           {/* Listes */}
-          {TB(editor.isActive('bulletList'),  'Liste à puces',   () => editor.chain().focus().toggleBulletList().run(),  <List size={13} />)}
-          {TB(editor.isActive('orderedList'), 'Liste numérotée', () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={13} />)}
-          {TB(editor.isActive('taskList'),    'Liste de tâches', () => editor.chain().focus().toggleTaskList().run(),    <ListChecks size={13} />)}
+          {TB(editorState.isBulletList,  'Liste à puces',   () => editor.chain().focus().toggleBulletList().run(),  <List size={13} />)}
+          {TB(editorState.isOrderedList, 'Liste numérotée', () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={13} />)}
+          {TB(editorState.isTaskList,    'Liste de tâches', () => editor.chain().focus().toggleTaskList().run(),    <ListChecks size={13} />)}
           <SEP />
 
           {/* Blocs */}
-          {TB(editor.isActive('blockquote'), 'Citation',              () => editor.chain().focus().toggleBlockquote().run(), <Quote size={13} />)}
-          {TB(editor.isActive('codeBlock'),  'Bloc de code',          onCodeBlockClick,  <Code2 size={13} />)}
+          {TB(editorState.isBlockquote, 'Citation',     () => editor.chain().focus().toggleBlockquote().run(), <Quote size={13} />)}
+          {TB(editorState.isCodeBlock,  'Bloc de code', onCodeBlockClick,  <Code2 size={13} />)}
           {TB(false,                         'Séparateur horizontal', () => editor.chain().focus().setHorizontalRule().run(), <Minus size={13} />)}
         </>}
 
@@ -1383,7 +1413,8 @@ function NotesSidebar({
   };
 
   return (
-    <div
+    <nav
+      aria-label="Navigation des notes"
       className="flex flex-col h-full overflow-y-auto select-none"
       onClick={() => setMenuId(null)}
     >
@@ -1712,7 +1743,7 @@ function NotesSidebar({
           )}
         </motion.button>
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -2010,7 +2041,10 @@ export default function NotesEditor() {
 
   // ── TipTap editor ─────────────────────────────────────────────────────────
   const editor = useEditor({
-    immediatelyRender: false, // SSR Next.js — évite les hydration errors (TipTap 3 best practice)
+    immediatelyRender: false,          // SSR Next.js — évite les hydration errors (TipTap 3 best practice)
+    shouldRerenderOnTransaction: false, // Performance : désactive le re-render React du composant parent
+                                        // à chaque transaction TipTap (frappe, sélection, formatage).
+                                        // La toolbar utilise useEditorState pour rester réactive.
     extensions: [
       StarterKit.configure({ codeBlock: false }),
       CodeBlockLowlight.configure({
@@ -2345,7 +2379,28 @@ export default function NotesEditor() {
     if (!editor || !selectedId) return;
     try {
       setUploadProgress(0);
-      const url = await uploadNoteImage(file, selectedId, pct => setUploadProgress(pct));
+
+      // Compression avant upload — réduit la bande passante et le coût Firebase Storage.
+      // Seulement pour les images > 500 Ko ; les petites images passent directement.
+      // maxSizeMB: 1 → max 1 Mo après compression (vs potentiellement 10-20 Mo pour un RAW)
+      // maxWidthOrHeight: 1920 → suffit pour un éditeur de notes (pas besoin de 4K)
+      // useWebWorker: true → compression hors du thread principal (UI non bloquée)
+      let fileToUpload = file;
+      if (file.type.startsWith('image/') && file.size > 500 * 1024) {
+        try {
+          fileToUpload = await imageCompression(file, {
+            maxSizeMB:        1,
+            maxWidthOrHeight: 1920,
+            useWebWorker:     true,
+            fileType:         file.type as Parameters<typeof imageCompression>[1]['fileType'],
+          });
+        } catch {
+          // Compression échouée → upload du fichier original
+          fileToUpload = file;
+        }
+      }
+
+      const url = await uploadNoteImage(fileToUpload, selectedId, pct => setUploadProgress(pct));
       editor.chain().focus().setImage({ src: url, alt: file.name }).run();
       // Force autosave immédiat après l'insertion
       const html = editor.getHTML();
@@ -3470,8 +3525,9 @@ export default function NotesEditor() {
 
 // ── NoteCard ─────────────────────────────────────────────────────────────────
 
+// memo : évite le re-render des cartes non sélectionnées quand la liste change.
 // forwardRef requis pour AnimatePresence mode="popLayout" (framer-motion passe une ref au composant)
-const NoteCard = forwardRef<HTMLDivElement, {
+const NoteCard = memo(forwardRef<HTMLDivElement, {
   note:       Note;
   selected:   boolean;
   onSelect:   (n: Note) => void;
@@ -3515,4 +3571,4 @@ const NoteCard = forwardRef<HTMLDivElement, {
       </button>
     </motion.div>
   );
-});
+}));

@@ -1,4 +1,4 @@
-# mynotespace
+# MyNoteSpace
 
 Éditeur de notes riche personnel — PWA installable sur mobile et desktop.
 
@@ -17,6 +17,8 @@
 - Équations LaTeX inline via KaTeX (`$$formule$$`)
 - Blocs de code avec coloration syntaxique (16 langages — Haskell exclu)
 - Indentation style Word (Tab/Shift+Tab)
+- Espacement de paragraphes style Word (margin-bottom: 0.75em)
+- Liens style Word (bleu + souligné uniquement)
 
 ### Organisation
 - **Dossiers** arborescents (sous-dossiers supportés)
@@ -39,12 +41,37 @@
 - **Markdown** : export (turndown)
 - **Excalidraw** : dessin intégré inline
 - **Images** inline via Firebase Storage (paste, drag-drop, upload)
+  - Compression automatique avant upload (browser-image-compression — max 1 Mo / 1920px)
 - **Fichiers joints** via Firebase Storage (lien dans le texte)
 
 ### PWA
 - Installable sur iOS, Android, Chrome desktop
-- Fonctionnement offline (cache Network First)
-- Icônes 192×512 px
+- Fonctionnement offline (cache Network First + CacheFirst pour icônes)
+- Background Sync API — retry automatique des sauvegardes hors-ligne
+- Service Worker v5
+
+### Sécurité
+- **DOMPurify** sur l'import DOCX (XSS stored via mammoth)
+- **Firestore Security Rules** — accès admin-only par email
+- **Firebase Storage Rules** — admin-only + MIME validé + 50 Mo max
+- **CSP nonce-based** dans middleware.ts
+- `transformPastedHTML` — supprime background-color/color inline (dark themes)
+
+### Performance
+- `shouldRerenderOnTransaction: false` dans TipTap — zéro re-render parent à chaque frappe
+- `useEditorState` dans EditorToolbar — souscription sélective aux changements d'état
+- `persistentLocalCache` Firestore — cache offline IndexedDB + multi-onglets
+- `limit(200)` sur la requête notes — pagination légère
+- `React.memo` sur NoteCard — évite les re-renders des cartes non sélectionnées
+- `optimizePackageImports` Next.js — tree-shaking lucide-react + framer-motion
+- Image compression avant upload Firebase (browser-image-compression)
+- OG image générée dynamiquement (app/opengraph-image.tsx)
+- Error Boundary autour de l'éditeur — fallback élégant en cas de crash TipTap
+
+### Accessibilité
+- `aria-label="Se connecter avec Google"` sur le bouton Google
+- `role="navigation"` + `aria-label="Navigation des notes"` sur la sidebar
+- Skip link WCAG 2.4.1
 
 ---
 
@@ -53,41 +80,43 @@
 ```
 mynotespace/
 ├── app/
-│   ├── layout.tsx          — layout racine (ThemeProvider, skip link)
-│   ├── page.tsx            — redirect → /notes
-│   ├── globals.css         — styles globaux + TipTap
-│   ├── manifest.ts         — PWA manifest
+│   ├── layout.tsx              — layout racine (ThemeProvider, skip link, metadataBase)
+│   ├── page.tsx                — redirect → /notes
+│   ├── globals.css             — styles globaux + TipTap (Word-like paragraphes)
+│   ├── manifest.ts             — PWA manifest
+│   ├── opengraph-image.tsx     — image OG 1200×630 (Next.js ImageResponse)
 │   ├── login/
-│   │   └── page.tsx        — connexion email/mdp + Google OAuth
+│   │   └── page.tsx            — connexion email/mdp + Google OAuth
 │   └── notes/
-│       └── page.tsx        — page principale (garde auth + NotesEditor)
+│       └── page.tsx            — page principale (garde auth + Error Boundary + NotesEditor)
 ├── components/
-│   ├── NotesEditor.tsx     — éditeur complet (3447 lignes — copié du portfolio)
-│   └── Providers.tsx       — ThemeProvider + enregistrement SW
+│   ├── NotesEditor.tsx         — éditeur complet (TipTap + useEditorState + shouldRerenderOnTransaction)
+│   ├── NotesEditorErrorBoundary.tsx — Error Boundary React (class component)
+│   └── Providers.tsx           — ThemeProvider + enregistrement SW
 ├── hooks/
-│   └── useAdminNotes.ts    — 3 listeners Firestore temps réel
+│   └── useAdminNotes.ts        — 3 listeners Firestore (limit 200 + Promise.all purge)
 ├── lib/
 │   ├── firebase/
-│   │   ├── config.ts       — initialisation Firebase
-│   │   └── hooks.ts        — useAuth() (signIn, signInWithGoogle, signOut)
+│   │   ├── config.ts           — initialisation Firebase (persistentLocalCache + 6 vars validées)
+│   │   └── hooks.ts            — useAuth() (signIn, signInWithGoogle, signOut)
 │   ├── tiptap-extensions/
-│   │   ├── indent.ts       — indentation custom Tab/Shift+Tab
-│   │   └── font-size.ts    — taille de police en points
-│   ├── notes-service.ts    — CRUD Firestore (notes, dossiers, tags)
-│   ├── upload-image.ts     — upload Firebase Storage (images + fichiers)
-│   ├── docx-utils.ts       — import/export DOCX
-│   ├── pdf-utils.ts        — extraction texte PDF
-│   └── utils.ts            — cn() (clsx + tailwind-merge)
+│   │   ├── indent.ts           — indentation custom Tab/Shift+Tab
+│   │   └── font-size.ts        — taille de police en points
+│   ├── notes-service.ts        — CRUD Firestore (notes, dossiers, tags)
+│   ├── upload-image.ts         — upload Firebase Storage (images + fichiers)
+│   ├── docx-utils.ts           — import/export DOCX (DOMPurify sur import)
+│   ├── pdf-utils.ts            — extraction texte PDF
+│   └── utils.ts                — cn() (clsx + tailwind-merge)
 ├── types/
-│   └── index.ts            — ré-exports types (Note, Folder, Tag)
+│   └── index.ts                — ré-exports types (Note, Folder, Tag)
 ├── public/
-│   ├── sw.js               — Service Worker PWA v1
-│   ├── icon-192.png        — icône PWA 192×192
-│   ├── icon-512.png        — icône PWA 512×512
+│   ├── sw.js                   — Service Worker PWA v5 (CacheFirst icônes + Background Sync)
 │   └── favicon.svg
-├── middleware.ts            — CSP nonce-based + bypass /__/auth/*
-├── next.config.js           — proxy Firebase Auth + headers sécurité
-└── .env.local               — variables Firebase (gitignored)
+├── firestore.rules             — règles Firestore (admin-only par email)
+├── storage.rules               — règles Storage (admin-only + MIME + 50 Mo)
+├── middleware.ts               — CSP nonce-based + bypass /__/auth/*
+├── next.config.js              — proxy Firebase Auth + headers sécurité + optimizePackageImports
+└── .env.local                  — variables Firebase (gitignored)
 ```
 
 ---
@@ -106,6 +135,13 @@ mynotespace/
 ### Storage
 `notes/{noteId}/` → images inline
 `notes/{noteId}/files/` → fichiers joints
+
+### Déploiement des règles de sécurité
+```bash
+# Remplir d'abord les emails admin dans firestore.rules et storage.rules
+firebase deploy --only firestore:rules
+firebase deploy --only storage
+```
 
 ---
 
@@ -157,7 +193,7 @@ Firebase Console → Authentication → Settings → Authorized domains :
 ```bash
 cd mynotespace
 npm run dev
-# → http://localhost:3001 (ou 3000 si portfolio n'est pas lancé)
+# → http://localhost:3000
 # → Se connecter sur /login avec email/mdp ou Google
 ```
 
@@ -179,6 +215,16 @@ Excalidraw est SSR-incompatible → chargé en `dynamic(() => import(...), { ssr
 ### Copier-coller Chrome
 Chrome ajoute `image/png` même lors d'une copie de texte formaté.
 Guard dans `handlePaste` : vérifier `hasText` avant d'intercepter l'image.
+`transformPastedHTML` : strip background-color/color pour les thèmes sombres (Claude.ai, Discord, etc.)
+
+### shouldRerenderOnTransaction
+`shouldRerenderOnTransaction: false` dans `useEditor` désactive les re-renders React du composant
+parent à chaque frappe/transaction TipTap. La toolbar utilise `useEditorState` pour rester réactive
+en souscrivant sélectivement uniquement aux changements d'état qui l'intéressent.
+
+### persistentLocalCache Firestore
+Active le cache offline IndexedDB + synchronisation multi-onglets.
+Données disponibles offline ; synchronisées dès le retour en ligne.
 
 ### Warning `sharp` (non-bloquant)
 `@turbodocx/html-to-docx` a `sharp` comme dépendance optionnelle.

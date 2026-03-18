@@ -24,6 +24,7 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/hooks';
+import { NotesEditorErrorBoundary } from '@/components/NotesEditorErrorBoundary';
 
 /**
  * NotesEditor chargé dynamiquement côté client uniquement.
@@ -75,7 +76,10 @@ export default function NotesPage() {
   // ── Éditeur Notes ─────────────────────────────────────────────────────────
   return (
     <main id="main-content">
-      <NotesEditor />
+      {/* Error Boundary : capture les crashs TipTap/Excalidraw → fallback élégant */}
+      <NotesEditorErrorBoundary>
+        <NotesEditor />
+      </NotesEditorErrorBoundary>
     </main>
   );
 }

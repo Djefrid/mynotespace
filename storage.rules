@@ -1,0 +1,55 @@
+// ============================================================================
+// FIREBASE STORAGE SECURITY RULES — mynotespace
+// ============================================================================
+//
+// Règles de sécurité Firebase Storage pour mynotespace.
+//
+// Architecture :
+//   - notes/{noteId}/{filename} : images et fichiers attachés aux notes
+//     → lecture : admin uniquement (fichiers privés)
+//     → écriture : admin uniquement, taille max 50 Mo, MIME validé
+//
+// ⚠️  IMPORTANT : remplacer les emails ci-dessous par tes vrais emails admin
+//     (les mêmes que NEXT_PUBLIC_ADMIN_EMAIL et NEXT_PUBLIC_ADMIN_EMAIL_2)
+//
+// Pour déployer ces règles :
+//   firebase deploy --only storage
+// ============================================================================
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Fonction helper : vérifie si l'utilisateur est admin ─────────────────
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'TON_EMAIL_ADMIN_1@gmail.com',   // ← remplacer par NEXT_PUBLIC_ADMIN_EMAIL
+          'TON_EMAIL_ADMIN_2@gmail.com'    // ← remplacer par NEXT_PUBLIC_ADMIN_EMAIL_2
+        ];
+    }
+
+    // ── Fichiers de notes (images + attachements) ─────────────────────────────
+    match /notes/{noteId}/{allPaths=**} {
+
+      // Lecture : admin uniquement
+      allow read: if isAdmin();
+
+      // Écriture : admin + taille max 50 Mo + MIME autorisé
+      allow write: if isAdmin()
+        && request.resource.size <= 50 * 1024 * 1024
+        && request.resource.contentType.matches(
+          'image/(jpeg|png|gif|webp|svg\\+xml)|application/(pdf|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document)|text/plain'
+        );
+
+      // Suppression : admin uniquement
+      allow delete: if isAdmin();
+    }
+
+    // ── Refus total par défaut ────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

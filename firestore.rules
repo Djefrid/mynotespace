@@ -1,0 +1,60 @@
+// ============================================================================
+// FIRESTORE SECURITY RULES — mynotespace
+// ============================================================================
+//
+// Règles de sécurité Firestore pour mynotespace.
+//
+// Architecture :
+//   - adminNotes / adminFolders / adminTags : collections privées de l'admin
+//     → accès en lecture/écriture uniquement si authentifié ET email autorisé
+//   - Tout le reste : refusé par défaut
+//
+// ⚠️  IMPORTANT : remplacer les emails ci-dessous par tes vrais emails admin
+//     (les mêmes que NEXT_PUBLIC_ADMIN_EMAIL et NEXT_PUBLIC_ADMIN_EMAIL_2)
+//
+// Pour déployer ces règles :
+//   firebase deploy --only firestore:rules
+// ============================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Fonction helper : vérifie si l'utilisateur est admin ─────────────────
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'TON_EMAIL_ADMIN_1@gmail.com',   // ← remplacer par NEXT_PUBLIC_ADMIN_EMAIL
+          'TON_EMAIL_ADMIN_2@gmail.com'    // ← remplacer par NEXT_PUBLIC_ADMIN_EMAIL_2
+        ];
+    }
+
+    // ── Collections privées admin ─────────────────────────────────────────────
+    // Notes
+    match /adminNotes/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Dossiers
+    match /adminFolders/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Tags
+    match /adminTags/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Sous-collections (ex: notes imbriquées)
+    match /adminNotes/{docId}/{subCollection=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Refus total par défaut ────────────────────────────────────────────────
+    // Toute collection non listée ci-dessus est inaccessible
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

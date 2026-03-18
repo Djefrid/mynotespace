@@ -28,6 +28,8 @@
 
 'use client';
 
+import DOMPurify from 'dompurify';
+
 /**
  * Importe un fichier .docx et retourne du HTML compatible TipTap.
  *
@@ -54,7 +56,19 @@ export async function importDocx(file: File): Promise<string> {
   if (result.messages.length) {
     console.warn('[mammoth] warnings:', result.messages.map(m => m.message));
   }
-  return result.value || '<p></p>';
+
+  // Sanitisation DOMPurify — supprime scripts/events malveillants qu'un DOCX
+  // malformé pourrait injecter via mammoth (XSS stored via import de fichier)
+  const clean = DOMPurify.sanitize(result.value || '<p></p>', {
+    ALLOWED_TAGS: [
+      'p','br','strong','em','u','s','h1','h2','h3','h4','h5','h6',
+      'ul','ol','li','blockquote','pre','code','a','img','table',
+      'thead','tbody','tr','th','td','hr','sup','sub','span','div',
+    ],
+    ALLOWED_ATTR: ['href','src','alt','title','class','target','rel','style'],
+    ALLOW_DATA_ATTR: false,
+  });
+  return clean || '<p></p>';
 }
 
 /**

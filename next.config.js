@@ -20,6 +20,15 @@ const nextConfig = {
   output: 'standalone',
 
   /**
+   * optimizePackageImports : Next.js analyse les imports des packages listés et
+   * n'inclut que les exports réellement utilisés dans le bundle (tree-shaking agressif).
+   * Réduit le bundle JS client, notamment pour lucide-react (600+ icônes non utilisées).
+   */
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
+
+  /**
    * Proxy transparent pour Firebase Auth redirect flow.
    * Same-origin cookies → getRedirectResult() fonctionne sur mobile.
    */

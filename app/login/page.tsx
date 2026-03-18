@@ -188,6 +188,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogle}
             disabled={isLogging}
+            aria-label="Se connecter avec Google"
             className="w-full py-2 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
           >
             {/* Icône Google SVG */}

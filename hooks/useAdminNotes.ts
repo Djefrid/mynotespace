@@ -39,7 +39,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, orderBy, query, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, Timestamp, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Note, Folder, permanentlyDeleteNote } from '@/lib/notes-service';
 
@@ -107,8 +107,10 @@ export function useAdminNotes() {
 
     // ── Listener 1 : collection adminNotes (actives + corbeille) ────────────
     // orderBy('updatedAt', 'desc') : notes les plus récemment modifiées en premier
+    // limit(200) : pagination légère — évite de charger des milliers de notes
+    //              en mémoire. 200 notes couvre 99% des usages réels.
     const unsub1 = onSnapshot(
-      query(collection(db, 'adminNotes'), orderBy('updatedAt', 'desc')),
+      query(collection(db, 'adminNotes'), orderBy('updatedAt', 'desc'), limit(200)),
       (snap) => {
         // Convertit chaque document Firestore en objet Note typé
         const all: Note[] = snap.docs.map((d) => {
@@ -183,11 +185,14 @@ export function useAdminNotes() {
     // Calcule la date limite (maintenant - 30 jours en millisecondes)
     const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * 86400000);
 
-    // Filtre les notes dont deletedAt est antérieur au cutoff et les supprime
-    // permanentlyDeleteNote() appelle deleteDoc() dans Firestore (action irréversible)
-    deletedNotes
-      .filter(n => n.deletedAt && n.deletedAt < cutoff)
-      .forEach(n => permanentlyDeleteNote(n.id));
+    // Filtre les notes dont deletedAt est antérieur au cutoff
+    const toDelete = deletedNotes.filter(n => n.deletedAt && n.deletedAt < cutoff);
+    if (toDelete.length === 0) return;
+
+    // Suppression en parallèle (Promise.all) au lieu de forEach séquentiel.
+    // Chaque permanentlyDeleteNote supprime le doc Firestore ET les fichiers Storage.
+    // Exécution concurrente → plus rapide quand plusieurs notes expirent le même jour.
+    Promise.all(toDelete.map(n => permanentlyDeleteNote(n.id))).catch(console.error);
   }, [deletedNotes]); // Se déclenche à chaque mise à jour de la corbeille
 
   return { notes, deletedNotes, folders, manualTags, loading };

@@ -25,7 +25,10 @@
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import {
+  getFirestore, initializeFirestore, Firestore,
+  persistentLocalCache, persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 /**
@@ -56,13 +59,19 @@ const firebaseConfig = {
 };
 
 /**
- * Vérifie que les 3 variables Firebase essentielles sont présentes.
+ * Vérifie que les 6 variables Firebase requises sont présentes.
  * Permet d'afficher une page d'erreur claire si .env.local est absent.
+ * Inclut les 3 essentielles (apiKey, projectId, authDomain) + les 3
+ * supplémentaires (storageBucket, messagingSenderId, appId) requises
+ * pour Storage et App Check.
  */
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
   firebaseConfig.projectId &&
-  firebaseConfig.authDomain
+  firebaseConfig.authDomain &&
+  firebaseConfig.storageBucket &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId
 );
 
 // Instances Firebase (null si variables manquantes)
@@ -74,11 +83,33 @@ let storage: FirebaseStorage | null = null;
 /**
  * Initialise Firebase une seule fois.
  * getApps() évite les doublons lors du hot reload Next.js en développement.
+ *
+ * Stratégie Firestore :
+ *   - Premier démarrage (côté client) → initializeFirestore avec
+ *     persistentLocalCache pour le cache offline + multi-onglets.
+ *   - Hot reload Next.js ou SSR → getFirestore sur l'app déjà initialisée.
+ *   - Côté serveur (SSR) → pas de persistance (IndexedDB indisponible).
  */
 if (isFirebaseConfigured) {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  auth    = getAuth(app);
-  db      = getFirestore(app);
+  const isFirstInit = getApps().length === 0;
+  app  = isFirstInit ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+
+  // Persistance locale uniquement côté client (IndexedDB requis)
+  const canPersist = typeof window !== 'undefined';
+  if (isFirstInit && canPersist) {
+    // persistentLocalCache : cache Firestore sur l'appareil → données disponibles offline
+    // persistentMultipleTabManager : synchronise le cache entre les onglets ouverts
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } else {
+    // SSR ou app déjà initialisée (hot reload) → instance existante sans persistance
+    db = getFirestore(app);
+  }
+
   if (firebaseConfig.storageBucket) {
     try { storage = getStorage(app); } catch { /* Storage non disponible */ }
   }
