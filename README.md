@@ -1,10 +1,26 @@
 # MyNoteSpace
 
-Éditeur de notes riche personnel — PWA installable sur mobile et desktop.
+> Éditeur de notes riche personnel — PWA installable sur mobile et desktop.
 
-**Stack :** Next.js 14 · TypeScript · Tailwind CSS · Firebase · TipTap 3
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![TipTap](https://img.shields.io/badge/TipTap-3-purple)
+![Firebase](https://img.shields.io/badge/Firebase-12-orange?logo=firebase)
+![PWA](https://img.shields.io/badge/PWA-installable-green)
 
 **URL de production :** https://notes.djefrid.ca
+
+---
+
+## Table des matières
+
+- [Fonctionnalités](#fonctionnalités)
+- [Structure du projet](#structure-du-projet)
+- [Firebase](#firebase)
+- [Configuration](#configuration-envlocal)
+- [Déploiement](#déploiement-vercel)
+- [Développement local](#développement-local)
+- [Points techniques](#points-techniques)
 
 ---
 
@@ -123,7 +139,7 @@ mynotespace/
 
 ## Firebase
 
-**Projet partagé avec le portfolio :** `portfolio-8d07b`
+**Projet partagé avec le portfolio :** `your-firebase-project-id`
 
 ### Collections Firestore
 | Collection | Contenu |
@@ -150,7 +166,7 @@ firebase deploy --only storage
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=portfolio-8d07b
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
@@ -158,7 +174,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_ADMIN_EMAIL=ton_email_admin@gmail.com
 NEXT_PUBLIC_ADMIN_EMAIL_2=ton_email_admin_2@gmail.com
 
-NEXT_PUBLIC_SITE_URL=https://notes.djefrid.ca
+NEXT_PUBLIC_SITE_URL=https://ton-domaine.com
 ```
 
 ---
