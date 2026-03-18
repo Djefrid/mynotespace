@@ -68,8 +68,7 @@
 
 ### Sécurité
 - **DOMPurify** sur l'import DOCX (XSS stored via mammoth)
-- **Firestore Security Rules** — accès admin-only par email
-- **Firebase Storage Rules** — admin-only + MIME validé + 50 Mo max
+- **Firestore & Storage Security Rules** — gérées dans la Firebase Console
 - **CSP nonce-based** dans middleware.ts
 - `transformPastedHTML` — supprime background-color/color inline (dark themes)
 
@@ -142,8 +141,6 @@ mynotespace/
 │   ├── extractHashtags.test.ts — tests extractHashtags() (parsing #tags)
 │   ├── pdfUtils.test.ts        — tests extractTextFromPdf() (extraction texte PDF)
 │   └── loginPage.test.tsx      — tests page de connexion (rendu + accessibilité)
-├── firestore.rules             — règles Firestore (admin-only par email)
-├── storage.rules               — règles Storage (admin-only + MIME + 50 Mo)
 ├── middleware.ts               — CSP nonce-based + bypass /__/auth/*
 ├── next.config.js              — proxy Firebase Auth + headers sécurité + optimizePackageImports
 ├── vitest.config.ts            — configuration Vitest (jsdom + alias @/)
@@ -157,6 +154,8 @@ mynotespace/
 
 **Projet partagé avec le portfolio :** `your-firebase-project-id`
 
+> Les règles de sécurité Firestore et Storage sont gérées directement dans la **Firebase Console**.
+
 ### Collections Firestore
 | Collection | Contenu |
 |---|---|
@@ -167,13 +166,6 @@ mynotespace/
 ### Storage
 `notes/{noteId}/` → images inline
 `notes/{noteId}/files/` → fichiers joints
-
-### Déploiement des règles de sécurité
-```bash
-# Remplir d'abord les emails admin dans firestore.rules et storage.rules
-firebase deploy --only firestore:rules
-firebase deploy --only storage
-```
 
 ---
 
