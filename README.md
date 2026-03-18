@@ -155,8 +155,8 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
 
-NEXT_PUBLIC_ADMIN_EMAIL=djeffkuate@gmail.com
-NEXT_PUBLIC_ADMIN_EMAIL_2=djefridbyli@gmail.com
+NEXT_PUBLIC_ADMIN_EMAIL=ton_email_admin@gmail.com
+NEXT_PUBLIC_ADMIN_EMAIL_2=ton_email_admin_2@gmail.com
 
 NEXT_PUBLIC_SITE_URL=https://notes.djefrid.ca
 ```
