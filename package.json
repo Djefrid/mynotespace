@@ -54,6 +54,10 @@
     "tailwindcss-animate": "^1.0.7",
     "turndown": "^7.2.2"
   },
+  "overrides": {
+    "dompurify": "^3.3.3",
+    "nanoid": "^3.3.8"
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

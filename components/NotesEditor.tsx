@@ -180,6 +180,11 @@ import {
   createTag, deleteTag,
   Note, Folder as FolderType, SmartFolderFilter,
 } from '@/lib/notes-service';
+// Fonctions pures extraites vers lib/notes-utils.ts pour être testables indépendamment
+import {
+  stripHtml, fmtDate, daysUntilPurge, applySmartFilters, buildFolderTree,
+  FolderNode,
+} from '@/lib/notes-utils';
 
 // ── Lowlight instance (module-level pour éviter recréation) ───────────────────
 // Liste sélective de langages — Haskell exclu (crash Next.js prod : regex invalide)
@@ -267,33 +272,6 @@ function viewEq(a: ViewFilter, b: ViewFilter) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function fmtDate(d: Date): string {
-  const diff = Date.now() - d.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Auj.';
-  if (days === 1) return 'Hier';
-  if (days < 7)   return `${days}j`;
-  return d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
-}
-
-function daysUntilPurge(deletedAt: Date): number {
-  const diff = 30 - Math.floor((Date.now() - deletedAt.getTime()) / 86400000);
-  return Math.max(0, diff);
-}
-
-/** Retire les balises HTML — compatible plain text ET contenu HTML de TipTap. */
-function stripHtml(html: string): string {
-  return html
-    .replace(/<\/?(p|div|br|h[1-6]|li|ul|ol)[^>]*>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function viewLabel(view: ViewFilter, folders: FolderType[]): string {
   if (view === 'all')    return 'Toutes les notes';
   if (view === 'pinned') return 'Épinglées';
@@ -304,49 +282,6 @@ function viewLabel(view: ViewFilter, folders: FolderType[]): string {
   if (typeof view === 'object' && view.type === 'tag')
     return `#${view.tag}`;
   return '';
-}
-
-function applySmartFilters(notes: Note[], filters: SmartFolderFilter): Note[] {
-  let result = [...notes];
-  if (filters.tags && filters.tags.length > 0) {
-    result = filters.tagLogic === 'and'
-      ? result.filter(n => filters.tags!.every(t => n.tags.includes(t)))
-      : result.filter(n => filters.tags!.some(t => n.tags.includes(t)));
-  }
-  if (filters.pinned !== undefined) {
-    result = result.filter(n => n.pinned === filters.pinned);
-  }
-  if (filters.createdWithinDays) {
-    const cutoff = new Date(Date.now() - filters.createdWithinDays * 86400000);
-    result = result.filter(n => n.createdAt >= cutoff);
-  }
-  if (filters.modifiedWithinDays) {
-    const cutoff = new Date(Date.now() - filters.modifiedWithinDays * 86400000);
-    result = result.filter(n => n.updatedAt >= cutoff);
-  }
-  return result;
-}
-
-// ── Arbre de dossiers ─────────────────────────────────────────────────────────
-
-interface FolderNode extends FolderType { children: FolderNode[]; }
-
-function buildFolderTree(folders: FolderType[]): FolderNode[] {
-  const regular = folders.filter(f => !f.isSmart);
-  const map = new Map<string, FolderNode>();
-  regular.forEach(f => map.set(f.id, { ...f, children: [] }));
-  const roots: FolderNode[] = [];
-  regular.forEach(f => {
-    const node = map.get(f.id)!;
-    if (f.parentId && map.has(f.parentId)) map.get(f.parentId)!.children.push(node);
-    else roots.push(node);
-  });
-  const sort = (nodes: FolderNode[]) => {
-    nodes.sort((a, b) => a.order - b.order);
-    nodes.forEach(n => sort(n.children));
-  };
-  sort(roots);
-  return roots;
 }
 
 // ── SmartFolderModal ──────────────────────────────────────────────────────────
@@ -2033,6 +1968,20 @@ export default function NotesEditor() {
     );
   }, [notes, deletedNotes, view, search, sortBy, isTrash, folders]);
 
+  // ── Background Sync — enregistrement lors d'un échec de sauvegarde ─────────
+  // Quand Firestore est indisponible, on enregistre un tag 'sync-notes'
+  // dans le SW. Le navigateur déclenchera l'événement 'sync' automatiquement
+  // dès que la connectivité est restaurée (même si l'app est en arrière-plan).
+  const registerBackgroundSync = useCallback(() => {
+    if (!('serviceWorker' in navigator) || !('SyncManager' in window)) return;
+    navigator.serviceWorker.ready
+      .then((reg) => {
+        // Envoie un message au SW pour qu'il appelle reg.sync.register()
+        reg.active?.postMessage({ type: 'REGISTER_SYNC' });
+      })
+      .catch(() => {/* SW non disponible — Firestore retente via son cache IndexedDB */});
+  }, []);
+
   // ── Autosave ──────────────────────────────────────────────────────────────
   const scheduleAutoSave = useCallback((t: string, c: string) => {
     if (!selectedId || isReadOnly) return;
@@ -2047,9 +1996,33 @@ export default function NotesEditor() {
         setLastSaved(new Date());
         setSaveStatus('saved');
       } catch {
+        // Sauvegarde échouée — enregistre un Background Sync pour retry automatique
         setSaveStatus('error');
+        registerBackgroundSync();
       }
     }, AUTOSAVE_DELAY_MS);
+  }, [selectedId, isReadOnly, registerBackgroundSync]);
+
+  // ── Listener Background Sync — message SW → retente l'autosave ────────────
+  // Le SW envoie { type: 'BACKGROUND_SYNC_READY' } quand la connectivité est
+  // restaurée. On relance alors une sauvegarde immédiate.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type !== 'BACKGROUND_SYNC_READY') return;
+      // Recharge les valeurs actuelles depuis les refs (snapshot stable)
+      const t = prevTitle.current;
+      const c = prevContent.current;
+      if (!selectedId || isReadOnly || (!t.trim() && !stripHtml(c).trim())) return;
+      setSaveStatus('saving');
+      updateNote(selectedId, { title: t, content: c })
+        .then(() => { setLastSaved(new Date()); setSaveStatus('saved'); })
+        .catch(() => setSaveStatus('error'));
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
   }, [selectedId, isReadOnly]);
 
   // Reset de l'index de sélection quand les suggestions changent
@@ -2632,7 +2605,7 @@ export default function NotesEditor() {
         setSaveStatus('saving');
         updateNote(selectedId, { title, content })
           .then(() => { setLastSaved(new Date()); setSaveStatus('saved'); })
-          .catch(() => setSaveStatus('error'));
+          .catch(() => { setSaveStatus('error'); registerBackgroundSync(); });
       }
       if (e.key === 'n') {
         e.preventDefault();

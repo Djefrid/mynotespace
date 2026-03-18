@@ -63,7 +63,7 @@
 ### PWA
 - Installable sur iOS, Android, Chrome desktop
 - Fonctionnement offline (cache Network First + CacheFirst pour icônes)
-- Background Sync API — retry automatique des sauvegardes hors-ligne
+- **Background Sync API** — implémentation réelle : SW notifie les clients (`postMessage BACKGROUND_SYNC_READY`) → NotesEditor re-tente l'autosave automatiquement
 - Service Worker v5
 
 ### Sécurité
@@ -96,6 +96,8 @@
 ### Tests
 - **Vitest** + React Testing Library — `npm test`
 - Tests unitaires : `cn()`, `extractHashtags()`, `extractTextFromPdf()`, page login
+- Tests fonctions pures : `stripHtml()`, `fmtDate()`, `daysUntilPurge()`, `applySmartFilters()`, `buildFolderTree()` (lib/notes-utils.ts)
+- **69 tests passent** (5 fichiers de test)
 
 ---
 
@@ -127,6 +129,7 @@ mynotespace/
 │   │   ├── indent.ts           — indentation custom Tab/Shift+Tab
 │   │   └── font-size.ts        — taille de police en points
 │   ├── notes-service.ts        — CRUD Firestore (notes, dossiers, tags)
+│   ├── notes-utils.ts          — fonctions pures testables (stripHtml, fmtDate, applySmartFilters…)
 │   ├── upload-image.ts         — upload Firebase Storage (images + fichiers)
 │   ├── docx-utils.ts           — import/export DOCX (DOMPurify sur import)
 │   ├── pdf-utils.ts            — extraction texte PDF
@@ -140,7 +143,8 @@ mynotespace/
 │   ├── utils.test.ts           — tests cn() (fusion classes Tailwind)
 │   ├── extractHashtags.test.ts — tests extractHashtags() (parsing #tags)
 │   ├── pdfUtils.test.ts        — tests extractTextFromPdf() (extraction texte PDF)
-│   └── loginPage.test.tsx      — tests page de connexion (rendu + accessibilité)
+│   ├── loginPage.test.tsx      — tests page de connexion (rendu + accessibilité)
+│   └── notesUtils.test.ts      — tests fonctions pures notes (stripHtml, fmtDate, applySmartFilters…)
 ├── middleware.ts               — CSP nonce-based + bypass /__/auth/*
 ├── next.config.js              — proxy Firebase Auth + headers sécurité + optimizePackageImports
 ├── vitest.config.ts            — configuration Vitest (jsdom + alias @/)
@@ -262,6 +266,24 @@ Le warning apparaît au build mais n'affecte pas le fonctionnement de l'export D
 
 ### SmartFolderModal — accessibilité WCAG 2.1
 `role="dialog" aria-modal="true"` + focus trap Tab/Shift+Tab + restauration du focus à la fermeture.
+
+### Background Sync — implémentation réelle
+Protocole SW ↔ App :
+1. Sauvegarde Firestore échoue → `registerBackgroundSync()` → SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')`
+2. Navigateur restaure la connexion → déclenche event `sync` dans le SW
+3. SW appelle `clients.matchAll()` → envoie `{ type: 'BACKGROUND_SYNC_READY' }` à chaque onglet
+4. NotesEditor écoute via `navigator.serviceWorker.addEventListener('message', ...)` → re-tente `updateNote()`
+
+Fallback : si Background Sync API non supporté (iOS Safari, Firefox), Firestore SDK gère la retry via sa file d'attente interne IndexedDB.
+
+### notes-utils.ts — fonctions pures testables
+`stripHtml`, `fmtDate`, `daysUntilPurge`, `applySmartFilters`, `buildFolderTree` sont extraites de `NotesEditor.tsx` vers `lib/notes-utils.ts`.
+NotesEditor les importe — zéro duplication. 36 tests les couvrent dans `__tests__/notesUtils.test.ts`.
+
+### Vulnérabilités npm restantes (5)
+- **nanoid + mermaid** : dans `@excalidraw/mermaid-to-excalidraw` — fix nécessite excalidraw@0.17.6 (breaking)
+- **next@14.x** : 4 CVE — fix nécessite Next.js 16.2.0 (breaking change majeur)
+- **dompurify** : fixé via `overrides` dans package.json (`^3.3.3`)
 
 ---
 

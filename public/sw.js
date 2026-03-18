@@ -142,21 +142,44 @@ self.addEventListener('fetch', (event) => {
 /**
  * Événement sync — Background Sync API.
  * Déclenché automatiquement quand la connectivité est restaurée après une
- * perte de réseau. Permet de rejouer les sauvegartes de notes en attente.
+ * perte de réseau. Notifie tous les clients ouverts pour qu'ils relancent
+ * l'autosave des notes en attente.
  *
- * Utilisation :
- *   Dans le code app : navigator.serviceWorker.ready.then(reg =>
- *     reg.sync.register('sync-notes'));
- *   Le SW reçoit cet événement dès que l'appareil est de nouveau en ligne.
+ * Protocole de communication SW ↔ App :
+ *   App → SW  : { type: 'REGISTER_SYNC' }  (enregistre un sync futur)
+ *   SW  → App : { type: 'BACKGROUND_SYNC_READY' } (déclenche le re-save)
  *
- * Note : Background Sync est supporté sur Chrome/Android. Sur iOS Safari,
- * les sauvegardes Firebase (Firestore SDK) retentent automatiquement.
+ * Note : Background Sync est supporté sur Chrome/Android (Chrome 40+).
+ * Sur iOS Safari et Firefox, le Firestore SDK gère lui-même les retries
+ * via sa file d'attente interne — la fonctionnalité est donc complémentaire.
  */
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-notes') {
-    // Firestore SDK gère lui-même la retry automatique des écritures en attente
-    // (file d'attente interne Firestore). Ce handler est un point d'extension
-    // pour des logiques de sync custom futures (ex: IndexedDB → Firestore).
-    event.waitUntil(Promise.resolve());
+    // Notifier tous les onglets/fenêtres ouverts de l'app pour relancer autosave
+    event.waitUntil(
+      self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+        .then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'BACKGROUND_SYNC_READY' });
+          });
+        })
+    );
+  }
+});
+
+/**
+ * Événement message — communication bidirectionnelle avec l'app.
+ * Reçoit { type: 'REGISTER_SYNC' } depuis NotesEditor quand une sauvegarde
+ * échoue → le SW enregistre un tag 'sync-notes' qui sera déclenché par le
+ * navigateur dès que la connexion sera restaurée.
+ */
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'REGISTER_SYNC') {
+    // Enregistrer un Background Sync — le navigateur déclenchera 'sync' dès
+    // que la connectivité sera restaurée, même si l'app est en arrière-plan
+    self.registration.sync.register('sync-notes').catch(() => {
+      // Fallback si Background Sync API n'est pas supporté (iOS Safari, Firefox)
+      // Firestore SDK gère la retry via sa file d'attente interne IndexedDB
+    });
   }
 });
