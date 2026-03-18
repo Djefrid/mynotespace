@@ -13,6 +13,7 @@
 
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import Providers from '@/components/Providers';
 import './globals.css';
 
@@ -50,6 +51,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Force le rendu dynamique (par requête) — REQUIS pour la CSP nonce-based.
+  // Sans ça, Next.js sert un HTML statique en cache dont les scripts n'ont pas
+  // le nonce de la requête courante → CSP bloque tous les scripts en prod.
+  // Le nonce lui-même est injecté automatiquement par Next.js via le header x-nonce
+  // que le middleware a posé sur la requête. (headers() est synchrone en Next.js 14)
+  headers();
+
   return (
     <html lang="fr" suppressHydrationWarning>
       {/*
