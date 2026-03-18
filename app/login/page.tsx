@@ -13,8 +13,7 @@
  *   Seuls les emails listés dans NEXT_PUBLIC_ADMIN_EMAIL[_2] peuvent accéder.
  *
  * getRedirectResult :
- *   Appelé au montage pour capturer le résultat du signInWithRedirect Google
- *   sur mobile (le hook useAuth() le gère aussi pour éviter les doublons).
+ *   Géré uniquement dans useAuth() — évite la duplication sur cette page.
  * ============================================================================
  */
 
@@ -22,8 +21,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getRedirectResult } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/firebase/hooks';
 
 /**
@@ -43,17 +40,6 @@ export default function LoginPage() {
   const [error, setError]       = useState('');
   /** État de chargement pendant la tentative de connexion */
   const [isLogging, setIsLogging] = useState(false);
-
-  // ── Capture du résultat de redirect Google (mobile) ──────────────────────
-  // getRedirectResult est aussi appelé dans useAuth(), mais on le répète ici
-  // pour gérer les erreurs spécifiques à la page de login.
-  useEffect(() => {
-    if (auth) {
-      getRedirectResult(auth).catch(() => {
-        // Silencieux — onAuthStateChanged gère l'état final
-      });
-    }
-  }, []);
 
   // ── Redirection si déjà connecté ─────────────────────────────────────────
   useEffect(() => {

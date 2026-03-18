@@ -18,6 +18,8 @@
  *   - Ici, le worker est chargé depuis un CDN (cdnjs.cloudflare.com) pour
  *     éviter d'embarquer un gros binaire dans le bundle Next.js
  *   - La version du CDN doit correspondre exactement à pdfjs.version
+ *   - Le worker est configuré une seule fois (flag `workerSrcSet`) pour éviter
+ *     de réécrire GlobalWorkerOptions à chaque appel
  *
  * Limitations :
  *   - Extraction texte seulement (pas d'images, pas de formulaires)
@@ -30,6 +32,9 @@
 
 'use client';
 
+/** Flag global : évite de réassigner GlobalWorkerOptions.workerSrc à chaque appel */
+let workerSrcSet = false;
+
 /**
  * Extrait le texte brut d'un fichier PDF page par page.
  *
@@ -38,12 +43,18 @@
  *
  * Le worker est configuré via CDN pour éviter les problèmes de bundling
  * (le fichier .worker.min.mjs est ~1MB et SSR-incompatible).
+ * La configuration est effectuée une seule fois grâce au flag `workerSrcSet`.
  */
 export async function extractTextFromPdf(file: File): Promise<string> {
   const pdfjs = await import('pdfjs-dist');
-  // Web Worker depuis CDN — la version doit correspondre à pdfjs.version
-  pdfjs.GlobalWorkerOptions.workerSrc =
-    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+
+  // Configure le Web Worker une seule fois — évite de réécrire la propriété
+  // GlobalWorkerOptions à chaque appel (inutile et potentiellement instable)
+  if (!workerSrcSet) {
+    pdfjs.GlobalWorkerOptions.workerSrc =
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+    workerSrcSet = true;
+  }
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
@@ -53,11 +64,16 @@ export async function extractTextFromPdf(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page    = await pdf.getPage(i);
     const content = await page.getTextContent();
-    const lines   = content.items
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((item: any) => item.str as string)
+
+    // TextItem contient `str` (texte) et `transform` (position).
+    // TextMarkedContent ne contient pas `str` → filtré via `'str' in item`.
+    // On caste ensuite en `{ str: string }` pour accéder à la propriété sans `any`.
+    const lines = content.items
+      .filter(item => 'str' in item)
+      .map(item => (item as { str: string }).str)
       .join(' ')
       .trim();
+
     if (lines) pages.push(lines);
   }
 

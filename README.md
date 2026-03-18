@@ -88,6 +88,15 @@
 - `aria-label="Se connecter avec Google"` sur le bouton Google
 - `role="navigation"` + `aria-label="Navigation des notes"` sur la sidebar
 - Skip link WCAG 2.4.1
+- `role="dialog" aria-modal="true"` + focus trap Tab/Shift+Tab sur SmartFolderModal (WCAG 2.1.2)
+- Focus restauré automatiquement à la fermeture de la modal (WCAG 2.4.3)
+- `aria-hidden="true"` sur les icônes décoratives de la toolbar
+- `aria-busy="true"` + skeleton loading pendant le chargement Firestore
+- `maxLength` sur les champs titre (200), tag (50) et nom de dossier (80)
+
+### Tests
+- **Vitest** + React Testing Library — `npm test`
+- Tests unitaires : `cn()`, `extractHashtags()`, `extractTextFromPdf()`, page login
 
 ---
 
@@ -128,10 +137,17 @@ mynotespace/
 ├── public/
 │   ├── sw.js                   — Service Worker PWA v5 (CacheFirst icônes + Background Sync)
 │   └── favicon.svg
+├── __tests__/
+│   ├── utils.test.ts           — tests cn() (fusion classes Tailwind)
+│   ├── extractHashtags.test.ts — tests extractHashtags() (parsing #tags)
+│   ├── pdfUtils.test.ts        — tests extractTextFromPdf() (extraction texte PDF)
+│   └── loginPage.test.tsx      — tests page de connexion (rendu + accessibilité)
 ├── firestore.rules             — règles Firestore (admin-only par email)
 ├── storage.rules               — règles Storage (admin-only + MIME + 50 Mo)
 ├── middleware.ts               — CSP nonce-based + bypass /__/auth/*
 ├── next.config.js              — proxy Firebase Auth + headers sécurité + optimizePackageImports
+├── vitest.config.ts            — configuration Vitest (jsdom + alias @/)
+├── vitest.setup.ts             — setup @testing-library/jest-dom
 └── .env.local                  — variables Firebase (gitignored)
 ```
 
@@ -245,6 +261,15 @@ Données disponibles offline ; synchronisées dès le retour en ligne.
 ### Warning `sharp` (non-bloquant)
 `@turbodocx/html-to-docx` a `sharp` comme dépendance optionnelle.
 Le warning apparaît au build mais n'affecte pas le fonctionnement de l'export DOCX.
+
+### getRedirectResult — sans duplication
+`getRedirectResult()` est appelé **uniquement dans `useAuth()`** (hook). La page `/login` ne le répète pas pour éviter une double exécution inutile.
+
+### PDF.js — worker configuré une seule fois
+`GlobalWorkerOptions.workerSrc` est assigné via un flag `workerSrcSet` pour éviter de réécrire la propriété à chaque appel `extractTextFromPdf()`.
+
+### SmartFolderModal — accessibilité WCAG 2.1
+`role="dialog" aria-modal="true"` + focus trap Tab/Shift+Tab + restauration du focus à la fermeture.
 
 ---
 

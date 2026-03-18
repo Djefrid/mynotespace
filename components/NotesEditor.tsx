@@ -372,6 +372,52 @@ function SmartFolderModal({
   const [useModifiedDays, setUseModifiedDays] = useState(!!(initial?.filters?.modifiedWithinDays));
   const [modifiedDays,    setModifiedDays]    = useState(initial?.filters?.modifiedWithinDays ?? 7);
 
+  /** Référence vers le conteneur de la dialog — utilisé pour le focus trap */
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Capture l'élément actif PENDANT la phase de rendu (avant le commit DOM + autoFocus).
+   * useEffect serait trop tardif — autoFocus aurait déjà déplacé le focus sur l'input.
+   * Ce ref est initialisé une seule fois grâce au guard `=== null`.
+   */
+  const prevFocusRef = useRef<HTMLElement | null>(null);
+  if (prevFocusRef.current === null && typeof document !== 'undefined') {
+    prevFocusRef.current = document.activeElement as HTMLElement;
+  }
+
+  /** Restaure le focus sur l'élément déclencheur à la fermeture de la modal (WCAG 2.4.3) */
+  useEffect(() => {
+    const trigger = prevFocusRef.current;
+    return () => {
+      trigger?.focus();
+    };
+  }, []);
+
+  /**
+   * Gère la navigation clavier à l'intérieur de la modal.
+   * - Escape : ferme la modal
+   * - Tab / Shift+Tab : confine le focus dans la modal (WCAG 2.1.2)
+   */
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') { onCancel(); return; }
+    if (e.key !== 'Tab') return;
+    // Récupère tous les éléments focusables dans la dialog
+    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable || focusable.length === 0) return;
+    const arr   = Array.from(focusable);
+    const first = arr[0];
+    const last  = arr[arr.length - 1];
+    if (e.shiftKey) {
+      // Shift+Tab sur le premier élément → aller au dernier
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      // Tab sur le dernier élément → aller au premier
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  };
+
   const handleSubmit = () => {
     const filters: SmartFolderFilter = {};
     if (useTags && selectedTags.length > 0) {
@@ -391,14 +437,22 @@ function SmartFolderModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={onCancel}
+      onKeyDown={e => e.key === 'Escape' && onCancel()}
     >
+      {/* Conteneur dialog — role/aria-modal pour les lecteurs d'écran (WCAG 4.1.2) */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="smart-folder-modal-title"
         className="bg-dark-900 border border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
+        onKeyDown={handleDialogKeyDown}
       >
         <div className="px-5 py-4 border-b border-dark-700 flex items-center gap-2">
-          <Zap size={15} className="text-yellow-400" />
-          <h2 className="text-sm font-semibold text-white">
+          {/* Icône décorative — masquée aux lecteurs d'écran */}
+          <Zap size={15} className="text-yellow-400" aria-hidden="true" />
+          <h2 id="smart-folder-modal-title" className="text-sm font-semibold text-white">
             {initial ? 'Modifier le dossier intelligent' : 'Nouveau dossier intelligent'}
           </h2>
         </div>
@@ -412,6 +466,7 @@ function SmartFolderModal({
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              maxLength={80}
               className="w-full px-3 py-2 bg-dark-800 border border-dark-700 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
               autoFocus
             />
@@ -767,7 +822,10 @@ function EditorToolbar({ editor, onImageClick, onFileClick, uploadProgress, focu
       className={`p-1.5 rounded transition-colors ${
         active ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-300 hover:bg-dark-700'
       } disabled:opacity-30 disabled:cursor-not-allowed`}
-    >{icon}</button>
+    >
+      {/* Icône décorative — le bouton a déjà aria-label, l'icône est masquée aux lecteurs d'écran */}
+      <span aria-hidden="true">{icon}</span>
+    </button>
   );
 
   // ── Séparateur vertical ────────────────────────────────────────────────────
@@ -1665,6 +1723,7 @@ function NotesSidebar({
                   onKeyDown={handleTagInputKeyDown}
                   onBlur={() => setTimeout(commitNewTag, 150)}
                   onFocus={() => handleTagInputChange(newTagInput)}
+                  maxLength={50}
                   className="w-full px-2 py-1 text-xs bg-dark-700 border border-yellow-500/50 rounded text-white focus:outline-none placeholder-gray-600"
                 />
                 {tagInputSuggs.length > 0 && (
@@ -2933,7 +2992,15 @@ export default function NotesEditor() {
 
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-center text-gray-500 text-xs mt-10">Chargement...</p>
+              /* Skeleton loading — simule 4 cartes de notes pendant le chargement Firestore */
+              <div className="px-2 py-2 space-y-1.5" aria-busy="true" aria-label="Chargement des notes…">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="px-3 py-2.5 rounded-lg bg-dark-800 animate-pulse">
+                    <div className="h-3 w-3/4 bg-dark-600 rounded mb-2" />
+                    <div className="h-2 w-1/2 bg-dark-700 rounded" />
+                  </div>
+                ))}
+              </div>
             ) : filteredNotes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-gray-600">
                 <StickyNote size={28} className="mb-2 opacity-30" />
@@ -3082,6 +3149,7 @@ export default function NotesEditor() {
                     onKeyDown={handleTitleSuggKey}
                     onBlur={() => setTimeout(() => setTitleSuggs([]), 150)}
                     placeholder="Titre" readOnly={isReadOnly} aria-label="Titre de la note"
+                    maxLength={200}
                     className={`w-full px-6 pt-4 pb-1 bg-transparent text-xl font-bold text-white placeholder-gray-600 focus:outline-none ${isReadOnly ? 'cursor-default' : ''}`}
                   />
                   {titleSuggs.length > 0 && (
