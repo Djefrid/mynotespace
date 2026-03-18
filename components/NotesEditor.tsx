@@ -2689,13 +2689,27 @@ export default function NotesEditor() {
           w-full md:w-52 shrink-0 flex-col bg-dark-950 border-r border-dark-700
         `}>
           <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-dark-700">
-            <span className="text-sm font-semibold text-white">Notes</span>
+            {/* Header mobile — logo + nom app */}
+            <div className="flex items-center gap-1.5">
+              <svg width="16" height="19" viewBox="0 0 22 26" fill="none" aria-hidden="true">
+                <path d="M 0 0 L 14 0 L 22 8 L 22 26 L 0 26 Z" fill="#e8e8e8" />
+                <path d="M 14 0 L 22 8 L 14 8 Z" fill="#eab308" />
+              </svg>
+              <span className="text-sm font-semibold text-white">MyNoteSpace</span>
+            </div>
             <button type="button" title="Voir la liste" onClick={() => setMobilePanel('list')} className="text-gray-400 hover:text-white">
               <ChevronRight size={16} />
             </button>
           </div>
           <div className="px-2 pt-3 pb-1 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400">Notes</span>
+            {/* Header desktop — logo + nom app (style Notion workspace header) */}
+            <div className="flex items-center gap-1.5">
+              <svg width="14" height="17" viewBox="0 0 22 26" fill="none" aria-hidden="true">
+                <path d="M 0 0 L 14 0 L 22 8 L 22 26 L 0 26 Z" fill="#e8e8e8" />
+                <path d="M 14 0 L 22 8 L 14 8 Z" fill="#eab308" />
+              </svg>
+              <span className="text-xs font-semibold text-gray-300">MyNoteSpace</span>
+            </div>
             <div className="relative">
               <button
                 type="button"

@@ -22,14 +22,14 @@ const inter = Inter({ subsets: ['latin'] });
 
 /** Métadonnées SEO et PWA */
 export const metadata: Metadata = {
-  title: 'mynotespace',
+  title: 'MyNoteSpace',
   description: 'Éditeur de notes riche — dossiers, tags, dessin, LaTeX, import/export DOCX/PDF',
-  applicationName: 'mynotespace',
+  applicationName: 'MyNoteSpace',
   keywords: ['notes', 'éditeur', 'markdown', 'tiptap', 'pwa'],
   authors: [{ name: 'djefrid' }],
   // OpenGraph
   openGraph: {
-    title: 'mynotespace',
+    title: 'MyNoteSpace',
     description: 'Éditeur de notes riche personnel',
     type: 'website',
   },

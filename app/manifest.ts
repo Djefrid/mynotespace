@@ -26,7 +26,7 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     // Nom complet affiché lors de l'installation
-    name: 'mynotespace',
+    name: 'MyNoteSpace',
     // Nom court affiché sous l'icône sur l'écran d'accueil
     short_name: 'notespace',
     // Description de l'application

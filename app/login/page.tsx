@@ -111,7 +111,7 @@ export default function LoginPage() {
         {/* En-tête */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white tracking-tight">
-            mynotespace
+            MyNoteSpace
           </h1>
           <p className="text-slate-400 text-sm mt-2">Connexion requise</p>
         </div>
