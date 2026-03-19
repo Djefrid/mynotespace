@@ -95,6 +95,7 @@ export default function FolderTreeItem({
         {editingId === node.id ? (
           /* Mode édition — input inline autoFocus */
           <input
+            name="folder-name"
             aria-label="Nom du dossier"
             autoFocus
             value={editingName}

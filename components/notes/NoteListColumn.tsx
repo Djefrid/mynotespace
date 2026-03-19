@@ -234,6 +234,7 @@ export default function NoteListColumn({
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             ref={searchRef as React.RefObject<HTMLInputElement>}
+            name="note-search"
             type="text"
             placeholder="Rechercher… (Ctrl+F)"
             value={search}

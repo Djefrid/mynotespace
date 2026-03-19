@@ -524,7 +524,7 @@ export default function EditorToolbar({
                 <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-dark-700">
                   <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer hover:text-gray-200 transition-colors">
                     <div className="w-5 h-5 rounded-sm border border-dark-500 bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 relative overflow-hidden shrink-0">
-                      <input type="color" aria-label="Couleur personnalisée du texte"
+                      <input type="color" name="text-color-custom" aria-label="Couleur personnalisée du texte"
                         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                         onChange={e => { editor.chain().focus().setColor(e.target.value).run(); setLastTextColor(e.target.value); }} />
                     </div>
@@ -591,7 +591,7 @@ export default function EditorToolbar({
             {linkOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 bg-dark-800 border border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[210px]"
                 onMouseDown={e => e.stopPropagation()}>
-                <input autoFocus value={linkVal} onChange={e => setLinkVal(e.target.value)}
+                <input name="editor-link-url" autoFocus value={linkVal} onChange={e => setLinkVal(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSetLink(); if (e.key === 'Escape') setLinkOpen(false); }}
                   placeholder="https://..."
                   className="flex-1 text-xs bg-dark-700 border border-dark-600 rounded px-2 py-1 text-gray-300 focus:outline-none focus:border-yellow-500/50"
@@ -692,7 +692,7 @@ export default function EditorToolbar({
                 onMouseDown={e => e.stopPropagation()}>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Rechercher & Remplacer</p>
                 <div className="flex gap-1.5 mb-1.5">
-                  <input value={findVal} onChange={e => setFindVal(e.target.value)}
+                  <input name="find-text" value={findVal} onChange={e => setFindVal(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && doFind()}
                     placeholder="Rechercher…"
                     className="flex-1 text-xs bg-dark-700 border border-dark-600 rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:border-yellow-500/50"
@@ -703,7 +703,7 @@ export default function EditorToolbar({
                   </button>
                 </div>
                 <div className="flex gap-1.5">
-                  <input value={replaceVal} onChange={e => setReplaceVal(e.target.value)}
+                  <input name="replace-text" value={replaceVal} onChange={e => setReplaceVal(e.target.value)}
                     placeholder="Remplacer par…"
                     className="flex-1 text-xs bg-dark-700 border border-dark-600 rounded px-2 py-1.5 text-gray-300 focus:outline-none focus:border-yellow-500/50"
                   />

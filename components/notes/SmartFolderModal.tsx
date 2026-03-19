@@ -147,6 +147,7 @@ export default function SmartFolderModal({
           <div>
             <label className="text-xs text-gray-400 mb-1.5 block">Nom</label>
             <input
+              name="smart-folder-name"
               type="text"
               title="Nom du dossier"
               placeholder="Nom du dossier"

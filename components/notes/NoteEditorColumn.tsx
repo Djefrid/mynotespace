@@ -479,6 +479,8 @@ export default function NoteEditorColumn({
                 <div className="relative">
                   <input
                     ref={titleRef as React.RefObject<HTMLInputElement>}
+                    id="note-title"
+                    name="note-title"
                     type="text"
                     value={title}
                     onChange={e => handleTitleChange(e.target.value)}

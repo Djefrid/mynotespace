@@ -41,6 +41,7 @@ export default function BubbleLinkPopup({
     >
       {/* Champ URL */}
       <input
+        name="bubble-link-url"
         autoFocus
         value={value}
         onChange={e => onChange(e.target.value)}

@@ -251,6 +251,7 @@ export default function NotesSidebar({
       <div className="px-2 pt-2 pb-1 relative">
         <Search size={11} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
         <input
+          name="sidebar-search"
           type="text"
           aria-label="Rechercher un dossier ou tag"
           placeholder="Dossiers, tags…"
@@ -381,6 +382,7 @@ export default function NotesSidebar({
                     {editingId === f.id ? (
                       /* Mode édition inline pour dossiers intelligents */
                       <input
+                        name="smart-folder-name"
                         aria-label="Nom du dossier"
                         autoFocus
                         value={editingName}
@@ -465,6 +467,7 @@ export default function NotesSidebar({
             {showNewTag && (
               <div className="mb-1 relative">
                 <input
+                  name="new-tag"
                   aria-label="Nouveau tag"
                   type="text"
                   autoFocus
