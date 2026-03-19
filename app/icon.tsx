@@ -31,7 +31,7 @@ export default async function Icon() {
   return new ImageResponse(
     (
       /* Conteneur principal — fond sombre arrondi */
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d', borderRadius: '5px' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e40af', borderRadius: '5px' }}>
         {/* Wrapper relatif pour superposer SVG + texte */}
         <div style={{ position: 'relative', width: '22px', height: '26px', display: 'flex' }}>
           {/* Page SVG avec coin replié jaune */}

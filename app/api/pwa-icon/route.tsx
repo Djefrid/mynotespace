@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   return new ImageResponse(
     (
-      <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d', borderRadius: radius }}>
+      <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e40af', borderRadius: radius }}>
         <div style={{ position: 'relative', width: `${iconW}px`, height: `${iconH}px`, display: 'flex' }}>
           {/* Page SVG avec coin replié jaune */}
           <svg width={iconW} height={iconH} viewBox="0 0 22 26" fill="none">

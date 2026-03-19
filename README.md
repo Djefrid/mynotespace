@@ -106,50 +106,77 @@
 ```
 mynotespace/
 ├── app/
-│   ├── layout.tsx              — layout racine (ThemeProvider, skip link, metadataBase)
-│   ├── page.tsx                — redirect → /notes
-│   ├── globals.css             — styles globaux + TipTap (Word-like paragraphes)
-│   ├── manifest.ts             — PWA manifest
-│   ├── opengraph-image.tsx     — image OG 1200×630 (Next.js ImageResponse)
+│   ├── layout.tsx                  — layout racine (ThemeProvider, skip link, metadataBase)
+│   ├── page.tsx                    — redirect → /notes
+│   ├── globals.css                 — styles globaux + TipTap (Word-like paragraphes)
+│   ├── manifest.ts                 — PWA manifest (icônes via /api/pwa-icon dynamique)
+│   ├── icon.tsx                    — favicon 32×32 (fond bleu #1e40af + page + MNS)
+│   ├── apple-icon.tsx              — icône iOS 180×180 (fond bleu #1e40af + page + MNS)
+│   ├── opengraph-image.tsx         — image OG 1200×630 (Next.js ImageResponse)
 │   ├── login/
-│   │   └── page.tsx            — connexion email/mdp + Google OAuth
-│   └── notes/
-│       └── page.tsx            — page principale (garde auth + Error Boundary + NotesEditor)
+│   │   └── page.tsx                — connexion email/mdp + Google OAuth
+│   ├── notes/
+│   │   └── page.tsx                — page principale (garde auth + Error Boundary + NotesEditor)
+│   └── api/
+│       └── pwa-icon/
+│           └── route.tsx           — icônes PWA dynamiques 192/512px (fond bleu #1e40af)
 ├── components/
-│   ├── NotesEditor.tsx         — éditeur complet (TipTap + useEditorState + shouldRerenderOnTransaction)
+│   ├── NotesEditor.tsx             — orchestrateur principal (~698 lignes — hooks + layout 3 colonnes)
 │   ├── NotesEditorErrorBoundary.tsx — Error Boundary React (class component)
-│   └── Providers.tsx           — ThemeProvider + enregistrement SW
+│   ├── Providers.tsx               — ThemeProvider + enregistrement SW
+│   └── notes/                      — sous-composants extraits de NotesEditor
+│       ├── NoteCard.tsx            — carte note (framer-motion + forwardRef + React.memo)
+│       ├── NoteListColumn.tsx      — colonne milieu : recherche + liste animée notes
+│       ├── NoteEditorColumn.tsx    — colonne droite : titre + toolbar + éditeur TipTap
+│       ├── NotesSidebar.tsx        — panneau gauche : vues, dossiers, tags, corbeille
+│       ├── EditorToolbar.tsx       — ribbon 4 onglets style Word (Accueil/Insertion/Paragraphe/Outils)
+│       ├── FolderTreeItem.tsx      — item récursif arbre dossiers (édition inline + menu)
+│       ├── SmartFolderModal.tsx    — modal création/édition dossiers intelligents
+│       ├── CodeModal.tsx           — modal édition bloc de code (création + édition)
+│       ├── ExcalidrawModal.tsx     — modal plein-écran dessin Excalidraw
+│       ├── BubbleLinkPopup.tsx     — popup URL dans le BubbleMenu TipTap
+│       └── FlyToTrash.tsx          — animation fantôme carte → bouton corbeille
 ├── hooks/
-│   └── useAdminNotes.ts        — 3 listeners Firestore (limit 200 + Promise.all purge)
+│   ├── useAdminNotes.ts            — 3 listeners Firestore (limit 200 + Promise.all purge)
+│   └── notes/                      — hooks extraits de NotesEditor
+│       ├── useNoteFilters.ts       — filtres, tri, recherche, notes filtrées
+│       ├── useNoteSelection.ts     — sélection note + CRUD dossiers/tags + fly-to-trash
+│       ├── useAutosave.ts          — autosave 1s + Ctrl+S + Background Sync
+│       ├── useContentAutocomplete.ts — autocomplétion contenu (#tags + slash commands)
+│       ├── useTitleAutocomplete.ts — autocomplétion titre (#tags)
+│       ├── useImageFile.ts         — upload images et fichiers joints Firebase Storage
+│       ├── useImportExport.ts      — import/export DOCX, PDF, Markdown
+│       └── useNoteEditor.tsx       — useEditor TipTap complet (26 extensions + modaux code/excalidraw)
 ├── lib/
 │   ├── firebase/
-│   │   ├── config.ts           — initialisation Firebase (persistentLocalCache + 6 vars validées)
-│   │   └── hooks.ts            — useAuth() (signIn, signInWithGoogle, signOut)
+│   │   ├── config.ts               — initialisation Firebase (persistentLocalCache + 6 vars validées)
+│   │   └── hooks.ts                — useAuth() (signIn, signInWithGoogle, signOut)
 │   ├── tiptap-extensions/
-│   │   ├── indent.ts           — indentation custom Tab/Shift+Tab
-│   │   └── font-size.ts        — taille de police en points
-│   ├── notes-service.ts        — CRUD Firestore (notes, dossiers, tags)
-│   ├── notes-utils.ts          — fonctions pures testables (stripHtml, fmtDate, applySmartFilters…)
-│   ├── upload-image.ts         — upload Firebase Storage (images + fichiers)
-│   ├── docx-utils.ts           — import/export DOCX (DOMPurify sur import)
-│   ├── pdf-utils.ts            — extraction texte PDF
-│   └── utils.ts                — cn() (clsx + tailwind-merge)
+│   │   ├── indent.ts               — indentation custom Tab/Shift+Tab
+│   │   └── font-size.ts            — taille de police en points
+│   ├── notes-service.ts            — CRUD Firestore (notes, dossiers, tags) + types Note/Folder
+│   ├── notes-types.ts              — types, constantes, helpers partagés (ViewFilter, SortBy, SLASH_CMDS, LANGUAGES…)
+│   ├── notes-utils.ts              — fonctions pures testables (stripHtml, fmtDate, applySmartFilters…)
+│   ├── upload-image.ts             — upload Firebase Storage (images + fichiers)
+│   ├── docx-utils.ts               — import/export DOCX (DOMPurify sur import)
+│   ├── pdf-utils.ts                — extraction texte PDF
+│   └── utils.ts                    — cn() (clsx + tailwind-merge)
 ├── types/
-│   └── index.ts                — ré-exports types (Note, Folder, Tag)
+│   └── index.ts                    — ré-exports types (Note, Folder, Tag)
 ├── public/
-│   ├── sw.js                   — Service Worker PWA v5 (CacheFirst icônes + Background Sync)
-│   └── favicon.svg
+│   ├── sw.js                       — Service Worker PWA v5 (CacheFirst icônes + Background Sync)
+│   └── favicon.svg                 — fallback favicon SVG
 ├── __tests__/
-│   ├── utils.test.ts           — tests cn() (fusion classes Tailwind)
-│   ├── extractHashtags.test.ts — tests extractHashtags() (parsing #tags)
-│   ├── pdfUtils.test.ts        — tests extractTextFromPdf() (extraction texte PDF)
-│   ├── loginPage.test.tsx      — tests page de connexion (rendu + accessibilité)
-│   └── notesUtils.test.ts      — tests fonctions pures notes (stripHtml, fmtDate, applySmartFilters…)
-├── middleware.ts               — CSP nonce-based + bypass /__/auth/*
-├── next.config.js              — proxy Firebase Auth + headers sécurité + optimizePackageImports
-├── vitest.config.ts            — configuration Vitest (jsdom + alias @/)
-├── vitest.setup.ts             — setup @testing-library/jest-dom
-└── .env.local                  — variables Firebase (gitignored)
+│   ├── utils.test.ts               — tests cn() (fusion classes Tailwind)
+│   ├── extractHashtags.test.ts     — tests extractHashtags() (parsing #tags)
+│   ├── pdfUtils.test.ts            — tests extractTextFromPdf() (extraction texte PDF)
+│   ├── loginPage.test.tsx          — tests page de connexion (rendu + accessibilité)
+│   └── notesUtils.test.ts          — tests fonctions pures notes (stripHtml, fmtDate, applySmartFilters…)
+├── middleware.ts                   — CSP nonce-based + bypass /__/auth/*
+├── next.config.js                  — proxy Firebase Auth + headers sécurité + optimizePackageImports
+├── vitest.config.ts                — configuration Vitest (jsdom + alias @/)
+├── vitest.setup.ts                 — setup @testing-library/jest-dom
+└── .env.local                      — variables Firebase (gitignored)
 ```
 
 ---
@@ -228,6 +255,20 @@ npm run dev
 ---
 
 ## Points techniques
+
+### Architecture — refactoring NotesEditor (2026-03-18)
+`NotesEditor.tsx` était à 3 383 lignes monolithiques. Refactorisé en :
+- **8 hooks custom** dans `hooks/notes/` — logique métier complètement extraite
+- **11 sous-composants** dans `components/notes/` — JSX extrait
+- **`lib/notes-types.ts`** — types, constantes, helpers partagés
+- **Résultat** : NotesEditor.tsx réduit à ~698 lignes (orchestrateur pur)
+
+Pattern clé — **`editorRef` MutableRefObject** : résout la dépendance circulaire entre `useNoteEditor` (crée l'éditeur) et `useImageFile`/`useImportExport` (ont besoin de l'éditeur). La ref est créée dans NotesEditor, peuplée par `useNoteEditor` via `useEffect`, consommée par les autres hooks.
+
+### Icônes PWA — fond bleu dynamique
+`app/icon.tsx` (32px), `app/apple-icon.tsx` (180px), `app/api/pwa-icon/route.tsx` (192/512px) :
+fond `#1e40af` (bleu) — design : page blanche + coin replié jaune + texte "MNS" Playfair Display.
+Les anciens `public/icon-192.png` et `public/icon-512.png` supprimés (inutilisés — manifest utilise `/api/pwa-icon`).
 
 ### Auth Google mobile
 - Desktop : `signInWithPopup` (popup classique)

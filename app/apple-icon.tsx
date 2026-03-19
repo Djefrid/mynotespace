@@ -27,7 +27,7 @@ export default async function AppleIcon() {
 
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0d0d', borderRadius: '36px' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e40af', borderRadius: '36px' }}>
         <div style={{ position: 'relative', width: '110px', height: '130px', display: 'flex' }}>
           <svg width="110" height="130" viewBox="0 0 22 26" fill="none">
             <path d="M 0 0 L 14 0 L 22 8 L 22 26 L 0 26 Z" fill="#e8e8e8" />
