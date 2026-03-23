@@ -19,3 +19,11 @@ export function makeGet(url: string, headers?: Record<string, string>): Request 
     headers: { ...headers },
   });
 }
+
+/** Construit un Request DELETE */
+export function makeDelete(url: string, headers?: Record<string, string>): Request {
+  return new Request(url, {
+    method: 'DELETE',
+    headers: { ...headers },
+  });
+}
