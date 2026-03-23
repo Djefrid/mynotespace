@@ -61,7 +61,7 @@ export default function CodeModal({
       onClick={() => setCodeModal(null)}
     >
       <div
-        className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl w-[700px] max-w-[95vw] flex flex-col max-h-[80vh]"
+        className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl w-[700px] max-w-[95vw] flex flex-col max-h-[80vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Header ── */}
@@ -76,7 +76,7 @@ export default function CodeModal({
               title="Langage du bloc de code"
               value={codeModal.lang}
               onChange={e => setCodeModal(m => m ? { ...m, lang: e.target.value } : m)}
-              className="text-xs bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-dark-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-500/50 cursor-pointer"
+              className="text-xs bg-gray-100 dark:bg-[#111520] text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-dark-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-500/50 cursor-pointer"
             >
               {languages.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
             </select>
@@ -113,7 +113,7 @@ export default function CodeModal({
           placeholder="Écrivez votre code ici…"
           autoFocus
           spellCheck={false}
-          className="code-modal-textarea flex-1 bg-gray-950 dark:bg-dark-950 text-gray-100 dark:text-gray-200 text-sm px-4 py-3 resize-none focus:outline-none min-h-[320px] overflow-y-auto"
+          className="code-modal-textarea flex-1 bg-gray-950 dark:bg-[#080c14] text-gray-100 dark:text-gray-200 text-sm px-4 py-3 resize-none focus:outline-none min-h-[320px] overflow-y-auto"
         />
 
         {/* ── Footer ── */}
@@ -137,7 +137,7 @@ export default function CodeModal({
             <button
               type="button"
               onClick={() => setCodeModal(null)}
-              className="text-xs px-3 py-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
+              className="text-xs px-3 py-1.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
             >
               Annuler
             </button>

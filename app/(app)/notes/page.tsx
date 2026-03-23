@@ -34,7 +34,7 @@ const NotesEditor = dynamic(() => import('@/components/NotesEditor'), {
   ssr: false,
   loading: () => (
     // Écran de chargement pendant l'initialisation de l'éditeur
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#080c14]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
         <p className="text-slate-500 dark:text-slate-400 text-sm">Chargement de l&apos;éditeur…</p>
@@ -58,7 +58,7 @@ export default function NotesPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#080c14]">
         <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );

@@ -61,8 +61,8 @@ function Sidebar({ active }: { active: string }) {
             onClick={() => scrollTo(id)}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-colors ${
               active === id
-                ? 'bg-gray-100 dark:bg-dark-800 text-gray-900 dark:text-white'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-800/50'
+                ? 'bg-gray-100 dark:bg-[#111520] text-gray-900 dark:text-white'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520]/50'
             }`}
           >
             <Icon size={11} className="shrink-0" />
@@ -91,7 +91,7 @@ function formatDate(iso: string | null): string {
 }
 
 function Skeleton() {
-  return <span className="inline-block w-16 h-3 bg-gray-200 dark:bg-dark-700 rounded animate-pulse align-middle" />;
+  return <span className="inline-block w-16 h-3 bg-gray-200 dark:bg-[#1a2030] rounded animate-pulse align-middle" />;
 }
 
 function StatRow({ label, value, loading }: { label: string; value: string | number; loading: boolean }) {
@@ -141,7 +141,7 @@ function ConfirmModal({
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="confirm-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 w-full max-w-sm shadow-xl">
+      <div className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 w-full max-w-sm shadow-xl">
         <div className="flex items-start justify-between mb-3">
           <h2 id="confirm-title" className="font-semibold text-gray-900 dark:text-white text-sm">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Fermer"
@@ -159,7 +159,7 @@ function ConfirmModal({
             className={`px-4 py-1.5 text-sm rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
               danger
                 ? 'bg-red-500/20 text-red-500 dark:text-red-400 border-red-500/30 hover:bg-red-500/30'
-                : 'bg-gray-100 dark:bg-dark-800 text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 hover:bg-gray-200 dark:hover:bg-dark-700'
+                : 'bg-gray-100 dark:bg-[#111520] text-gray-900 dark:text-white border-gray-300 dark:border-dark-600 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
             }`}>
             {loading ? '…' : confirmLabel}
           </button>
@@ -186,7 +186,7 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="delete-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white dark:bg-dark-900 border border-red-500/30 rounded-xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-white dark:bg-[#0d1117] border border-red-500/30 rounded-xl p-6 w-full max-w-md shadow-xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2 text-red-500 dark:text-red-400">
             <AlertTriangle size={18} />
@@ -202,13 +202,13 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-500 mb-2">
           {PROFILE_DANGER.deleteModalInstruction}
-          <span className="font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-dark-700 px-1.5 py-0.5 rounded">{PROFILE_DANGER.deleteModalKeyword}</span>
+          <span className="font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1a2030] px-1.5 py-0.5 rounded">{PROFILE_DANGER.deleteModalKeyword}</span>
           {PROFILE_DANGER.deleteModalSuffix}
         </p>
         <input id="delete-confirm-input" name="deleteConfirm" type="text"
           value={input} onChange={(e) => setInput(e.target.value)}
           autoFocus autoComplete="off" placeholder="SUPPRIMER"
-          className="w-full bg-gray-50 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white mb-3 focus:outline-none focus:ring-1 focus:ring-red-500/50"
+          className="w-full bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white mb-3 focus:outline-none focus:ring-1 focus:ring-red-500/50"
         />
         {error && <p className="text-xs text-red-500 dark:text-red-400 mb-3">{error}</p>}
         <div className="flex gap-2">
@@ -347,13 +347,13 @@ export default function ProfilePage() {
         <DeleteAccountModal onClose={() => setShowDelete(false)} onConfirm={handleDeleteAccount} />
       )}
 
-      <main id="main-content" className="min-h-screen bg-gray-50 dark:bg-dark-950 text-gray-900 dark:text-white">
+      <main id="main-content" className="min-h-screen bg-white dark:bg-[#080c14] text-gray-900 dark:text-white">
         <div className="max-w-3xl mx-auto px-4 py-10">
 
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
             <button type="button" onClick={() => router.push('/notes')}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
+              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
               title={PROFILE_NAV.backTitle}>
               <ArrowLeft size={16} />
             </button>
@@ -366,7 +366,7 @@ export default function ProfilePage() {
             <div className="flex-1 min-w-0 space-y-4">
 
               {/* ── Compte ──────────────────────────────────────────────── */}
-              <section id="compte" className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="compte" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                     <UserIcon size={12} /> {PROFILE_ACCOUNT.sectionTitle}
@@ -400,7 +400,7 @@ export default function ProfilePage() {
                     <label htmlFor="profile-name" className="block text-xs text-gray-500 dark:text-gray-400">{PROFILE_ACCOUNT.nameLabel}</label>
                     <input id="profile-name" name="name" type="text" value={name}
                       onChange={(e) => setName(e.target.value)} maxLength={100} autoFocus
-                      className="w-full bg-gray-50 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+                      className="w-full bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
                       placeholder={PROFILE_ACCOUNT.namePlaceholder} />
                     <Feedback state={nameFeedback} />
                     <div className="flex items-center gap-2">
@@ -424,7 +424,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Sécurité ────────────────────────────────────────────── */}
-              <section id="securite" className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="securite" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Shield size={12} /> {PROFILE_SECURITY.sectionTitle}
                 </h2>
@@ -461,7 +461,7 @@ export default function ProfilePage() {
                         <input id="pwd-current" name="currentPassword" type="password"
                           value={pwdCurrent} onChange={(e) => setPwdCurrent(e.target.value)}
                           autoComplete="current-password" autoFocus
-                          className="w-full bg-gray-50 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+                          className="w-full bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
                           placeholder="••••••••" />
                       </div>
                       <div>
@@ -471,7 +471,7 @@ export default function ProfilePage() {
                         <input id="pwd-new" name="newPassword" type="password"
                           value={pwdNext} onChange={(e) => setPwdNext(e.target.value)}
                           autoComplete="new-password"
-                          className="w-full bg-gray-50 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+                          className="w-full bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
                           placeholder="••••••••" />
                       </div>
                       <div>
@@ -479,7 +479,7 @@ export default function ProfilePage() {
                         <input id="pwd-confirm" name="confirmPassword" type="password"
                           value={pwdConfirm} onChange={(e) => setPwdConfirm(e.target.value)}
                           autoComplete="new-password"
-                          className={`w-full bg-gray-50 dark:bg-dark-800 border rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 ${
+                          className={`w-full bg-gray-50 dark:bg-[#111520] border rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 ${
                             pwdConfirmError ? 'border-red-500/50 focus:ring-red-500/30' : 'border-gray-300 dark:border-dark-600 focus:ring-yellow-500/50'
                           }`}
                           placeholder="••••••••" />
@@ -507,7 +507,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Apparence ───────────────────────────────────────────── */}
-              <section id="apparence" className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="apparence" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Palette size={12} /> {PROFILE_APPEARANCE.sectionTitle}
                 </h2>
@@ -522,7 +522,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Espace personnel ────────────────────────────────────── */}
-              <section id="espace" className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="espace" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                   <FolderOpen size={12} /> {PROFILE_WORKSPACE.sectionTitle}
                 </h2>
@@ -538,7 +538,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Données & confidentialité ───────────────────────────── */}
-              <section id="donnees" className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="donnees" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <FileText size={12} /> {PROFILE_DATA.sectionTitle}
                 </h2>
@@ -546,14 +546,14 @@ export default function ProfilePage() {
                   {PROFILE_DATA.description}
                 </p>
                 <button type="button" onClick={handleExport} disabled={exportLoading}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   <Download size={14} />
                   {exportLoading ? PROFILE_DATA.exportLoading : PROFILE_DATA.exportIdle}
                 </button>
               </section>
 
               {/* ── Zone de danger ──────────────────────────────────────── */}
-              <section id="danger" className="bg-white dark:bg-dark-900 border border-red-500/20 rounded-xl p-5 scroll-mt-6">
+              <section id="danger" className="bg-white dark:bg-[#0d1117] border border-red-500/20 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-red-500/70 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <AlertTriangle size={12} /> {PROFILE_DANGER.sectionTitle}
                 </h2>

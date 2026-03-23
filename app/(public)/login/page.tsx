@@ -44,14 +44,14 @@ export default function LoginPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#080c14]">
         <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <main id="main-content" className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4 transition-colors duration-300">
+    <main id="main-content" className="min-h-screen flex items-center justify-center bg-white dark:bg-[#080c14] px-4 transition-colors duration-300">
 
       {/* Lien retour accueil */}
       <Link
@@ -76,7 +76,7 @@ export default function LoginPage() {
           <p className="text-gray-500 dark:text-slate-400 text-sm mt-2">{LOGIN.pageSubtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm dark:shadow-xl border border-gray-200 dark:border-slate-700 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-[#111520] rounded-2xl p-6 shadow-sm dark:shadow-xl border border-gray-200 dark:border-slate-700 space-y-4">
 
           <div>
             <label htmlFor="email" className="block text-sm text-gray-700 dark:text-slate-300 mb-1">{LOGIN.emailLabel}</label>
@@ -85,7 +85,7 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               required autoComplete="email"
               placeholder={LOGIN.emailPlaceholder}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               required autoComplete="current-password"
               placeholder={LOGIN.passwordPlaceholder}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
 
@@ -112,9 +112,9 @@ export default function LoginPage() {
           </button>
 
           <div className="relative flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-[#252d3d]" />
             <span className="text-gray-400 dark:text-slate-500 text-xs">{GLOBAL.separator}</span>
-            <div className="flex-1 h-px bg-gray-200 dark:bg-slate-600" />
+            <div className="flex-1 h-px bg-gray-200 dark:bg-[#252d3d]" />
           </div>
 
           <button

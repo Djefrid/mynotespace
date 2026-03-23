@@ -253,8 +253,8 @@ export default function NoteEditorColumn({
     /* ══ EDITOR ═══════════════════════════════════════════════════════════ */
     <div
       className={focusMode
-        ? 'fixed inset-0 z-50 bg-white dark:bg-dark-950 flex flex-col'
-        : `${mobilePanel === 'editor' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-gray-50 dark:bg-dark-900 min-w-0`}
+        ? 'fixed inset-0 z-50 bg-white dark:bg-[#080c14] flex flex-col'
+        : `${mobilePanel === 'editor' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-gray-50 dark:bg-[#0d1117] min-w-0`}
       onClick={e => e.stopPropagation()}
     >
       {/* ── État vide : aucune note sélectionnée ──────────────────────────── */}
@@ -321,7 +321,7 @@ export default function NoteEditorColumn({
                     className={`p-1.5 rounded transition-colors ${
                       confirmDel
                         ? 'bg-red-500/20 text-red-400'
-                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700'
+                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                     }`}
                   >
                     <Trash2 size={14} />
@@ -349,14 +349,14 @@ export default function NoteEditorColumn({
                     type="button"
                     onClick={e => { e.stopPropagation(); setShowMoveMenu(prev => !prev); }}
                     title="Déplacer vers"
-                    className="p-1.5 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors"
+                    className="p-1.5 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors"
                   >
                     <FolderOpen size={14} />
                   </button>
 
                   {showMoveMenu && (
                     <div
-                      className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
+                      className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
                       onClick={e => e.stopPropagation()}
                     >
                       <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
@@ -369,7 +369,7 @@ export default function NoteEditorColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           !selectedNote.folderId
                             ? 'text-yellow-400 bg-yellow-500/10'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                         }`}
                       >
                         Toutes mes notes
@@ -383,7 +383,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                             selectedNote.folderId === f.id
                               ? 'text-yellow-400 bg-yellow-500/10'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                           }`}
                         >
                           {f.name}
@@ -397,7 +397,7 @@ export default function NoteEditorColumn({
                             setShowMoveMenu(false);
                             await handleCreateRegularFolder();
                           }}
-                          className="w-full px-3 py-1.5 text-sm text-left text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 flex items-center gap-2"
+                          className="w-full px-3 py-1.5 text-sm text-left text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] flex items-center gap-2"
                         >
                           <Plus size={12} /> Nouveau dossier
                         </button>
@@ -414,7 +414,7 @@ export default function NoteEditorColumn({
                   className={`p-1.5 rounded transition-colors ${
                     selectedNote.pinned
                       ? 'text-yellow-400 bg-yellow-500/15'
-                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                   }`}
                 >
                   <Pin size={14} />
@@ -429,7 +429,7 @@ export default function NoteEditorColumn({
                     className={`p-1.5 rounded transition-colors ${
                       confirmDel
                         ? 'bg-red-500/20 text-red-400'
-                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700'
+                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                     }`}
                   >
                     <Trash2 size={14} />
@@ -498,7 +498,7 @@ export default function NoteEditorColumn({
                   {/* Popup autocomplétion tags dans le titre */}
                   {titleSuggs.length > 0 && (
                     <div
-                      className="absolute left-6 top-full z-50 mt-1 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden min-w-[220px]"
+                      className="absolute left-6 top-full z-50 mt-1 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden min-w-[220px]"
                       onClick={e => e.stopPropagation()}
                     >
                       <p className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Tags</p>
@@ -510,7 +510,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-1.5 text-sm text-left transition-colors truncate flex items-center gap-2 ${
                             i === titleSuggIdx
                               ? 'bg-yellow-500/20 text-yellow-300'
-                              : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-dark-700'
+                              : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                           }`}
                         >
                           <Hash size={11} />#{t}
@@ -583,7 +583,7 @@ export default function NoteEditorColumn({
                 {/* ── Barre contextuelle bloc de code ─────────────────────── */}
                 {/* S'affiche quand le curseur est dans un bloc de code et que la note est éditable */}
                 {isInCodeBlock && !isReadOnly && editor && (
-                  <div className="px-3 py-1.5 border-b border-gray-100 dark:border-dark-800 flex items-center gap-2 bg-gray-50 dark:bg-dark-900 shrink-0">
+                  <div className="px-3 py-1.5 border-b border-gray-100 dark:border-dark-800 flex items-center gap-2 bg-gray-50 dark:bg-[#0d1117] shrink-0">
                     <Code2 size={11} className="text-yellow-400 shrink-0" />
 
                     {/* Sélecteur de langage */}
@@ -597,14 +597,14 @@ export default function NoteEditorColumn({
                           language: lang === 'auto' ? null : lang,
                         }).run();
                       }}
-                      className="text-xs bg-gray-100 dark:bg-dark-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-dark-700 rounded px-1.5 py-0.5 focus:outline-none focus:border-yellow-500/50 cursor-pointer"
+                      className="text-xs bg-gray-100 dark:bg-[#111520] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-dark-700 rounded px-1.5 py-0.5 focus:outline-none focus:border-yellow-500/50 cursor-pointer"
                     >
                       {LANGUAGES.map(l => (
                         <option key={l.value} value={l.value}>{l.label}</option>
                       ))}
                     </select>
 
-                    <div className="w-px h-3 bg-gray-200 dark:bg-dark-700" />
+                    <div className="w-px h-3 bg-gray-200 dark:bg-[#1a2030]" />
 
                     {/* Bouton copier le contenu du bloc de code */}
                     <button
@@ -648,58 +648,58 @@ export default function NoteEditorColumn({
                     editor={editor}
                     options={{ placement: 'top' }}
                     shouldShow={({ editor: e }) => e.isActive('tableCell') || e.isActive('tableHeader')}
-                    className="flex items-center gap-0.5 flex-wrap bg-gray-100 dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg px-1.5 py-1 shadow-2xl z-50 max-w-sm"
+                    className="flex items-center gap-0.5 flex-wrap bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg px-1.5 py-1 shadow-2xl z-50 max-w-sm"
                   >
                     {/* Gestion des lignes */}
                     <button type="button" title="Ajouter une ligne au-dessus"
                       onClick={() => editor.chain().focus().addRowBefore().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ↑ Ligne
                     </button>
                     <button type="button" title="Ajouter une ligne en-dessous"
                       onClick={() => editor.chain().focus().addRowAfter().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ↓ Ligne
                     </button>
                     <button type="button" title="Supprimer la ligne"
                       onClick={() => editor.chain().focus().deleteRow().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ✕ Ligne
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-dark-700 mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
 
                     {/* Gestion des colonnes */}
                     <button type="button" title="Ajouter une colonne à gauche"
                       onClick={() => editor.chain().focus().addColumnBefore().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ← Col.
                     </button>
                     <button type="button" title="Ajouter une colonne à droite"
                       onClick={() => editor.chain().focus().addColumnAfter().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       → Col.
                     </button>
                     <button type="button" title="Supprimer la colonne"
                       onClick={() => editor.chain().focus().deleteColumn().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ✕ Col.
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-dark-700 mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
 
                     {/* Fusion / Scission de cellules */}
                     <button type="button" title="Fusionner les cellules sélectionnées"
                       onClick={() => editor.chain().focus().mergeCells().run()}
                       disabled={!editor.can().mergeCells()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
                       Fusionner
                     </button>
                     <button type="button" title="Scinder la cellule"
                       onClick={() => editor.chain().focus().splitCell().run()}
                       disabled={!editor.can().splitCell()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
                       Scinder
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-dark-700 mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
 
                     {/* Bascule en-tête de ligne */}
                     <button type="button" title="Basculer la ligne en en-tête"
@@ -707,16 +707,16 @@ export default function NoteEditorColumn({
                       className={`text-xs px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
                         editor.isActive('tableHeader')
                           ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                       }`}>
                       En-tête
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-dark-700 mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
 
                     {/* Suppression du tableau entier */}
                     <button type="button" title="Supprimer le tableau"
                       onClick={() => editor.chain().focus().deleteTable().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
                       ✕ Tableau
                     </button>
                   </BubbleMenu>
@@ -728,7 +728,7 @@ export default function NoteEditorColumn({
                   <BubbleMenu
                     editor={editor}
                     options={{ placement: 'bottom' }}
-                    className="flex items-center gap-0.5 bg-gray-100 dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg p-1 shadow-2xl z-50"
+                    className="flex items-center gap-0.5 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg p-1 shadow-2xl z-50"
                   >
                     {/* Gras */}
                     <button type="button" title="Gras (Ctrl+B)"
@@ -736,7 +736,7 @@ export default function NoteEditorColumn({
                       className={`p-1.5 rounded transition-colors ${
                         editor.isActive('bold')
                           ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                       }`}>
                       <Bold size={12} />
                     </button>
@@ -747,12 +747,12 @@ export default function NoteEditorColumn({
                       className={`p-1.5 rounded transition-colors ${
                         editor.isActive('italic')
                           ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                       }`}>
                       <Italic size={12} />
                     </button>
 
-                    <div className="w-px h-4 bg-gray-200 dark:bg-dark-700 mx-0.5" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5" />
 
                     {/* Lien hypertexte — bascule popup d'insertion */}
                     <div className="relative">
@@ -769,7 +769,7 @@ export default function NoteEditorColumn({
                         className={`p-1.5 rounded transition-colors ${
                           editor.isActive('link')
                             ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                         }`}>
                         <LinkIcon size={12} />
                       </button>
@@ -813,7 +813,7 @@ export default function NoteEditorColumn({
                   if (cmds.length === 0) return null;
                   return (
                     <div
-                      className="absolute left-6 top-16 z-50 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden w-64"
+                      className="absolute left-6 top-16 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden w-64"
                       onClick={e => e.stopPropagation()}
                     >
                       <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
@@ -827,7 +827,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-2 text-sm text-left flex items-center gap-3 transition-colors ${
                             i === slashIdx
                               ? 'bg-yellow-500/15 text-yellow-300'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                           }`}
                         >
                           <span className="font-medium text-sm w-24 shrink-0">{c.label}</span>
@@ -845,7 +845,7 @@ export default function NoteEditorColumn({
                 {/* Déclenchée par "#" ou "#partial" dans le texte */}
                 {suggestions.length > 0 && (
                   <div
-                    className="absolute left-6 bottom-4 z-50 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden min-w-[160px]"
+                    className="absolute left-6 bottom-4 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden min-w-[160px]"
                     onClick={e => e.stopPropagation()}
                   >
                     <p className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Tags</p>
@@ -857,7 +857,7 @@ export default function NoteEditorColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left flex items-center gap-2 transition-colors ${
                           i === suggestionIdx
                             ? 'bg-yellow-500/20 text-yellow-300'
-                            : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-dark-700'
+                            : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                         }`}
                       >
                         <Hash size={11} />#{item}

@@ -137,7 +137,7 @@ export default function NoteListColumn({
     /* ══ NOTE LIST ══════════════════════════════════════════════════════════ */
     <div className={`
       ${mobilePanel === 'list' ? 'flex' : 'hidden'} md:flex
-      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-dark-900 border-r border-gray-200 dark:border-dark-700
+      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-[#0d1117] border-r border-gray-200 dark:border-dark-700
     `}>
       {/* ── Header : titre de la vue, tri, nouvelle note ─────────────────── */}
       <div className="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-dark-700">
@@ -168,7 +168,7 @@ export default function NoteListColumn({
                   type="button"
                   title="Trier"
                   onClick={e => { e.stopPropagation(); setShowSortMenu(prev => !prev); }}
-                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors"
+                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors"
                 >
                   <ArrowUpDown size={12} />
                 </button>
@@ -176,7 +176,7 @@ export default function NoteListColumn({
                 {/* Menu déroulant de tri */}
                 {showSortMenu && (
                   <div
-                    className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
+                    className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
                     onClick={e => e.stopPropagation()}
                   >
                     <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Trier par</p>
@@ -192,7 +192,7 @@ export default function NoteListColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           sortBy === val
                             ? 'text-yellow-400 bg-yellow-500/10'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                         }`}
                       >
                         {label}
@@ -257,7 +257,7 @@ export default function NoteListColumn({
                 searchRef.current?.blur();
               }
             }}
-            className="w-full pl-7 pr-7 py-1.5 bg-gray-100 dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+            className="w-full pl-7 pr-7 py-1.5 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
           />
           {/* Bouton effacer recherche */}
           {search && (
@@ -286,9 +286,9 @@ export default function NoteListColumn({
           /* Skeleton loading — 4 cartes factices pendant le chargement Firestore */
           <div className="px-2 py-2 space-y-1.5" aria-busy="true" aria-label="Chargement des notes…">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-dark-800 animate-pulse">
-                <div className="h-3 w-3/4 bg-gray-300 dark:bg-dark-600 rounded mb-2" />
-                <div className="h-2 w-1/2 bg-gray-200 dark:bg-dark-700 rounded" />
+              <div key={i} className="px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-[#111520] animate-pulse">
+                <div className="h-3 w-3/4 bg-gray-300 dark:bg-[#252d3d] rounded mb-2" />
+                <div className="h-2 w-1/2 bg-gray-200 dark:bg-[#1a2030] rounded" />
               </div>
             ))}
           </div>
@@ -307,7 +307,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="pinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-dark-900 sticky top-0 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#0d1117] sticky top-0 z-10"
               >
                 Épinglées
               </div>
@@ -325,7 +325,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="unpinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-dark-900 sticky top-6 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#0d1117] sticky top-6 z-10"
               >
                 Notes
               </div>

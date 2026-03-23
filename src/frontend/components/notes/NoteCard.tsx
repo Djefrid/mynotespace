@@ -66,7 +66,7 @@ const NoteCard = memo(forwardRef<HTMLDivElement, NoteCardProps>(
           type="button"
           onClick={() => onSelect(note)}
           className={`w-full text-left px-3 py-2.5 border-b border-gray-100 dark:border-dark-800 transition-colors duration-[120ms] ${
-            selected ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : 'hover:bg-gray-100/80 dark:hover:bg-dark-700/50'
+            selected ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : 'hover:bg-gray-100/80 dark:hover:bg-[#1a2030]/50'
           }`}
         >
           {/* ── Ligne 1 : épingle + titre ──────────────────────────────────── */}

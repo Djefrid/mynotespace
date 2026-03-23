@@ -530,7 +530,7 @@ export default function NotesEditor() {
           aria-modal="true"
           aria-labelledby="idle-modal-title"
         >
-          <div className="bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+          <div className="bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
             <h2 id="idle-modal-title" className="text-base font-semibold text-gray-900 dark:text-white mb-2">
               Toujours là ?
             </h2>
@@ -541,7 +541,7 @@ export default function NotesEditor() {
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] transition-colors"
               >
                 Se déconnecter
               </button>
@@ -567,7 +567,7 @@ export default function NotesEditor() {
         {/* ══ SIDEBAR ══════════════════════════════════════════════════════════ */}
         <div className={`
           ${mobilePanel === 'sidebar' ? 'flex' : 'hidden'} md:flex
-          w-full md:w-52 shrink-0 flex-col bg-gray-50 dark:bg-dark-950 border-r border-gray-200 dark:border-dark-700
+          w-full md:w-52 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700
         `}>
           <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-dark-700">
             {/* Header mobile — logo + nom app */}
@@ -596,20 +596,20 @@ export default function NotesEditor() {
               </button>
               {showNewFolderMenu && (
                 <div
-                  className="absolute right-0 top-full z-50 mt-1 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-48"
+                  className="absolute right-0 top-full z-50 mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-48"
                   onClick={e => e.stopPropagation()}
                 >
                   <button
                     type="button"
                     onClick={() => { handleCreateRegularFolder(); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] flex items-center gap-2"
                   >
                     <FolderPlus size={13} /> Nouveau dossier
                   </button>
                   <button
                     type="button"
                     onClick={() => { setEditingSmartId(null); setShowSmartModal(true); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] flex items-center gap-2"
                   >
                     <Zap size={13} className="text-yellow-400" /> Dossier intelligent
                   </button>

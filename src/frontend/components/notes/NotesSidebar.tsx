@@ -159,7 +159,7 @@ export default function NotesSidebar({
     `w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
       viewEq(view, v)
         ? 'bg-yellow-500/15 text-yellow-300 font-medium'
-        : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-700'
+        : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
     }`;
 
   /** Valide le renommage d'un dossier et met à jour Firestore */
@@ -266,7 +266,7 @@ export default function NotesSidebar({
           value={folderSearch}
           onChange={e => setFolderSearch(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') setFolderSearch(''); }}
-          className="w-full pl-6 pr-6 py-1 bg-gray-100 dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-lg text-[11px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+          className="w-full pl-6 pr-6 py-1 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg text-[11px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
         />
         {folderSearch && (
           <button
@@ -400,7 +400,7 @@ export default function NotesSidebar({
                           if (e.key === 'Enter')  commitRename(f.id);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
-                        className="w-full px-2 py-1.5 text-sm bg-gray-200 dark:bg-dark-700 border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none"
+                        className="w-full px-2 py-1.5 text-sm bg-gray-200 dark:bg-[#1a2030] border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none"
                       />
                     ) : (
                       /* div role="button" — évite <button> imbriqué dans <button> (HTML invalide) */
@@ -420,7 +420,7 @@ export default function NotesSidebar({
                             type="button"
                             title="Options du dossier"
                             onClick={e => { e.stopPropagation(); setMenuId(menuId === f.id ? null : f.id); }}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-300 dark:hover:bg-dark-600 transition-opacity"
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-300 dark:hover:bg-[#252d3d] transition-opacity"
                           >
                             <MoreHorizontal size={11} />
                           </button>
@@ -430,20 +430,20 @@ export default function NotesSidebar({
                     {/* Menu contextuel du dossier intelligent */}
                     {menuId === f.id && (
                       <div
-                        className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
+                        className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
                         onClick={e => e.stopPropagation()}
                       >
                         <button
                           type="button"
                           onClick={() => { onEditSmartFolder(f.id); setMenuId(null); }}
-                          className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700 flex items-center gap-2"
+                          className="w-full px-3 py-2 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030] flex items-center gap-2"
                         >
                           <Zap size={12} className="text-yellow-400" /> Modifier les filtres
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteFolder(f.id)}
-                          className="w-full px-3 py-2 text-sm text-left text-red-400 hover:bg-gray-200 dark:hover:bg-dark-700"
+                          className="w-full px-3 py-2 text-sm text-left text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]"
                         >
                           Supprimer
                         </button>
@@ -486,15 +486,15 @@ export default function NotesSidebar({
                   onBlur={() => setTimeout(commitNewTag, 150)}
                   onFocus={() => handleTagInputChange(newTagInput)}
                   maxLength={50}
-                  className="w-full px-2 py-1 text-xs bg-gray-200 dark:bg-dark-700 border border-yellow-500/50 rounded text-gray-900 dark:text-white focus:outline-none placeholder-gray-500 dark:placeholder-gray-600"
+                  className="w-full px-2 py-1 text-xs bg-gray-200 dark:bg-[#1a2030] border border-yellow-500/50 rounded text-gray-900 dark:text-white focus:outline-none placeholder-gray-500 dark:placeholder-gray-600"
                 />
                 {tagInputSuggs.length > 0 && (
-                  <div className="absolute left-0 top-full z-50 w-full mt-0.5 bg-gray-100 dark:bg-dark-800 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden">
+                  <div className="absolute left-0 top-full z-50 w-full mt-0.5 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden">
                     {tagInputSuggs.map((t, i) => (
                       <button key={t} type="button"
                         onMouseDown={e => { e.preventDefault(); applyTagInputSugg(t); }}
                         className={`w-full px-2 py-1 text-xs text-left flex items-center gap-1.5 transition-colors ${
-                          i === tagInputSuggIdx ? 'bg-yellow-500/20 text-yellow-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-700'
+                          i === tagInputSuggIdx ? 'bg-yellow-500/20 text-yellow-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
                         }`}
                       ><Hash size={10} />#{t}</button>
                     ))}

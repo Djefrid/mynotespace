@@ -131,7 +131,7 @@ export default function SmartFolderModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="smart-folder-modal-title"
-        className="bg-white dark:bg-dark-900 border border-gray-200 dark:border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
+        className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
         onKeyDown={handleDialogKeyDown}
       >
@@ -155,7 +155,7 @@ export default function SmartFolderModal({
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               maxLength={80}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-dark-800 border border-gray-300 dark:border-dark-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
               autoFocus
             />
           </div>
@@ -177,7 +177,7 @@ export default function SmartFolderModal({
                         className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                           selectedTags.includes(t)
                             ? 'bg-yellow-500/25 text-yellow-600 dark:text-yellow-300 border-yellow-500/50'
-                            : 'bg-gray-100 dark:bg-dark-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-dark-600 hover:border-yellow-500/30 hover:text-gray-700 dark:hover:text-gray-300'
+                            : 'bg-gray-100 dark:bg-[#111520] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-dark-600 hover:border-yellow-500/30 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                       >#{t}</button>
                     ))}
@@ -207,7 +207,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={createdDays}
                 onChange={e => setCreatedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-dark-700 border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#1a2030] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours
@@ -220,7 +220,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={modifiedDays}
                 onChange={e => setModifiedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-dark-700 border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#1a2030] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours
