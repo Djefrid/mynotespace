@@ -14,8 +14,7 @@
  *                quand la connectivité est restaurée
  *
  * Exclusions du cache (ne pas intercepter) :
- *   - Firebase, Firestore, Google APIs → temps réel requis
- *   - /__/auth/* → proxy Firebase Auth (doit passer direct au serveur Next.js)
+ *   - Google APIs → temps réel requis
  *   - chrome-extension://, moz-extension:// → schémas non cachéables
  * ============================================================================
  */
@@ -80,18 +79,15 @@ self.addEventListener('activate', (event) => {
  * - CacheFirst pour les assets statiques et icônes (changent rarement)
  * - NetworkFirst pour tout le reste (données fraîches prioritaires)
  *
- * Exclusions critiques : Firebase, Google APIs, Auth handler, extensions.
+ * Exclusions critiques : Google APIs, extensions navigateur.
  */
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Ne pas intercepter ces requêtes (critique pour Firebase Auth et Firestore)
+  // Ne pas intercepter ces requêtes (extensions non cachéables, Google APIs temps réel)
   if (
     url.protocol === 'chrome-extension:' ||
     url.protocol === 'moz-extension:' ||
-    url.pathname.startsWith('/__/auth/') ||   // Firebase Auth redirect handler
-    url.hostname.includes('firebase') ||
-    url.hostname.includes('firestore') ||
     url.hostname.includes('googleapis') ||
     url.hostname.includes('google.com') ||
     url.hostname.includes('gstatic.com') ||
@@ -150,8 +146,7 @@ self.addEventListener('fetch', (event) => {
  *   SW  → App : { type: 'BACKGROUND_SYNC_READY' } (déclenche le re-save)
  *
  * Note : Background Sync est supporté sur Chrome/Android (Chrome 40+).
- * Sur iOS Safari et Firefox, le Firestore SDK gère lui-même les retries
- * via sa file d'attente interne — la fonctionnalité est donc complémentaire.
+ * Sur iOS Safari et Firefox, l'autosave gère lui-même les retries côté client.
  */
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-notes') {
@@ -179,7 +174,6 @@ self.addEventListener('message', (event) => {
     // que la connectivité sera restaurée, même si l'app est en arrière-plan
     self.registration.sync.register('sync-notes').catch(() => {
       // Fallback si Background Sync API n'est pas supporté (iOS Safari, Firefox)
-      // Firestore SDK gère la retry via sa file d'attente interne IndexedDB
     });
   }
 });

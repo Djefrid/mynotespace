@@ -18,9 +18,49 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+
+      "@/app/login/page": ["./app/(public)/login/page"],
+      "@/app/notes/page": ["./app/(app)/notes/page"],
+      "@/app/page": ["./app/(public)/page"],
+
+      "@/components/Providers": ["./src/frontend/providers/Providers"],
+      "@/components/NotesEditor": ["./src/frontend/components/editor/NotesEditor"],
+      "@/components/NotesEditorErrorBoundary": ["./src/frontend/components/editor/NotesEditorErrorBoundary"],
+      "@/components/notes/EditorToolbar": ["./src/frontend/components/editor/EditorToolbar"],
+      "@/components/notes/BubbleLinkPopup": ["./src/frontend/components/editor/BubbleLinkPopup"],
+      "@/components/notes/CodeModal": ["./src/frontend/components/editor/CodeModal"],
+      "@/components/notes/ExcalidrawModal": ["./src/frontend/components/editor/ExcalidrawModal"],
+      "@/components/notes/FolderTreeItem": ["./src/frontend/components/folders/FolderTreeItem"],
+      "@/components/notes/SmartFolderModal": ["./src/frontend/components/folders/SmartFolderModal"],
+      "@/components/notes/FlyToTrash": ["./src/frontend/components/common/FlyToTrash"],
+      "@/components/*": ["./src/frontend/components/*"],
+
+      "@/hooks/useAuth": ["./src/frontend/hooks/data/useAuth"],
+      "@/hooks/useAdminNotes": ["./src/frontend/hooks/data/useAdminNotes"],
+      "@/hooks/notes/useNoteEditor": ["./src/frontend/hooks/editor/useNoteEditor"],
+      "@/hooks/notes/useAutosave": ["./src/frontend/hooks/editor/useAutosave"],
+      "@/hooks/notes/useImageFile": ["./src/frontend/hooks/editor/useImageFile"],
+      "@/hooks/notes/useImportExport": ["./src/frontend/hooks/editor/useImportExport"],
+      "@/hooks/notes/useContentAutocomplete": ["./src/frontend/hooks/editor/useContentAutocomplete"],
+      "@/hooks/notes/useTitleAutocomplete": ["./src/frontend/hooks/editor/useTitleAutocomplete"],
+      "@/hooks/notes/useNoteFilters": ["./src/frontend/hooks/data/useNoteFilters"],
+      "@/hooks/notes/useNoteSelection": ["./src/frontend/hooks/ui/useNoteSelection"],
+      "@/hooks/*": ["./src/frontend/hooks/*"],
+
+      "@/lib/notes-service": ["./src/backend/services/notes.service"],
+      "@/lib/notes-types": ["./src/domain/notes/note.types"],
+      "@/lib/notes-utils": ["./src/domain/notes/note.utils"],
+      "@/lib/utils": ["./src/shared/utils/cn"],
+      "@/lib/upload-image": ["./src/backend/integrations/storage/upload"],
+      "@/lib/docx-utils": ["./src/frontend/lib/utils/docx-utils"],
+      "@/lib/pdf-utils": ["./src/frontend/lib/utils/pdf-utils"],
+      "@/lib/tiptap-extensions/*": ["./src/frontend/lib/utils/tiptap-extensions/*"],
+
+      "@/types": ["./src/shared/types/index"],
+      "@/types/*": ["./src/shared/types/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "prisma.config.ts", "scripts", "vitest.config.ts", "vitest.setup.ts", "tests"]
 }

@@ -8,6 +8,9 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/playwright/.auth
 
 # next.js
 /.next/
@@ -34,3 +37,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env
+
+# Firebase service account (clé privée — NE JAMAIS COMMITTER)
+service-account.json
+*service-account*.json

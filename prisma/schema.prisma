@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  ownedWorkspaces Workspace[]
+  memberships     WorkspaceMember[]
+}
+
+// ─── Auth.js required tables ──────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Workspaces ───────────────────────────────────────────────────────────────
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  ownerUserId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User              @relation(fields: [ownerUserId], references: [id])
+  members     WorkspaceMember[]
+  folders     Folder[]
+  notes       Note[]
+  tags        Tag[]
+  attachments Attachment[]
+}
+
+model WorkspaceMember {
+  id          String     @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+// ─── Folders ──────────────────────────────────────────────────────────────────
+
+model Folder {
+  id          String   @id @default(cuid())
+  workspaceId String
+  parentId    String?
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    Folder?   @relation("FolderChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Folder[]  @relation("FolderChildren")
+  notes     Note[]
+
+  @@index([workspaceId])
+}
+
+// ─── Notes ────────────────────────────────────────────────────────────────────
+
+enum NoteStatus {
+  ACTIVE
+  TRASHED
+}
+
+model Note {
+  id          String     @id @default(cuid())
+  workspaceId String
+  folderId    String?
+  title       String     @default("")
+  status      NoteStatus @default(ACTIVE)
+  isPinned    Boolean    @default(false)
+  version          Int        @default(1)
+  updatedByUserId  String?
+  trashedAt        DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  content     NoteContent?
+  tags        NoteTag[]
+  attachments Attachment[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, folderId])
+  @@index([workspaceId, isPinned])
+  @@index([workspaceId, updatedAt])
+}
+
+model NoteContent {
+  noteId    String   @id
+  html      String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  notes     NoteTag[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model NoteTag {
+  noteId String
+  tagId  String
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, tagId])
+  @@index([tagId])
+}
+
+// ─── Attachments (R2) ─────────────────────────────────────────────────────────
+
+model Attachment {
+  id          String   @id @default(cuid())
+  workspaceId String
+  noteId      String
+  key         String   @unique          // Clé R2 : workspaces/{wId}/notes/{nId}/{uuid}.ext
+  filename    String                    // Nom original du fichier
+  mimeType    String
+  size        Int                       // Taille en octets
+  publicUrl   String                   // URL publique via domaine custom R2
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  note      Note      @relation(fields: [noteId],      references: [id], onDelete: Cascade)
+
+  @@index([noteId])
+  @@index([workspaceId])
+}

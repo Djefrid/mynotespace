@@ -5,7 +5,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
 ![TipTap](https://img.shields.io/badge/TipTap-3-purple)
-![Firebase](https://img.shields.io/badge/Firebase-12-orange?logo=firebase)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-blue?logo=postgresql)
 ![PWA](https://img.shields.io/badge/PWA-installable-green)
 
 **URL de production :** https://notes.djefrid.ca
@@ -15,11 +15,13 @@
 ## Table des matières
 
 - [Fonctionnalités](#fonctionnalités)
+- [Stack](#stack)
 - [Structure du projet](#structure-du-projet)
-- [Firebase](#firebase)
-- [Configuration](#configuration-envlocal)
-- [Déploiement](#déploiement-vercel)
-- [Développement local](#développement-local)
+- [Installation](#installation)
+- [Configuration R2 Cloudflare](#configuration-r2-cloudflare)
+- [Déploiement Vercel](#déploiement-vercel)
+- [Scripts](#scripts)
+- [Tests](#tests)
 - [Points techniques](#points-techniques)
 
 ---
@@ -31,16 +33,15 @@
 - Police (famille, taille), styles (gras, italic, souligné, barré), couleurs, surlignage
 - Tableaux, listes (ul/ol/tâches), blockquotes, règles horizontales
 - Équations LaTeX inline via KaTeX (`$$formule$$`)
-- Blocs de code avec coloration syntaxique (16 langages — Haskell exclu)
+- Blocs de code avec coloration syntaxique (16 langages)
 - Indentation style Word (Tab/Shift+Tab)
-- Espacement de paragraphes style Word (margin-bottom: 0.75em)
-- Liens style Word (bleu + souligné uniquement)
+- Liens style Word (bleu + souligné)
 
 ### Organisation
 - **Dossiers** arborescents (sous-dossiers supportés)
 - **Dossiers intelligents** — filtres dynamiques (tags, épinglées, dates)
 - **Tags** auto-extraits depuis le contenu (#tag)
-- **Corbeille** avec restauration (auto-purge 30 jours)
+- **Corbeille** avec restauration (auto-purge 30 jours via Inngest)
 - **Inbox** — notes sans dossier
 - **Épinglées** — vue filtrée
 
@@ -48,56 +49,83 @@
 - **Autosave 1s** après dernière frappe + Ctrl+S immédiat
 - **Slash commands** : `/h1`, `/ul`, `/code`, `/table`, etc.
 - **Autocomplétion #tags** avec fuzzy match
-- **Sync multi-appareils** en temps réel (Firestore WebSocket)
 - **Focus mode** — éditeur plein écran sans distraction
+- **Recherche** full-text via Typesense
+- **Thème clair / sombre** — bascule en un clic, préférence système respectée
 
 ### Import / Export
 - **DOCX** : import (mammoth) + export (@turbodocx/html-to-docx)
 - **PDF** : extraction texte (pdfjs-dist)
 - **Markdown** : export (turndown)
+- **JSON** : export complet du workspace
 - **Excalidraw** : dessin intégré inline
-- **Images** inline via Firebase Storage (paste, drag-drop, upload)
+- **Images** inline via Cloudflare R2 (paste, drag-drop, upload)
   - Compression automatique avant upload (browser-image-compression — max 1 Mo / 1920px)
-- **Fichiers joints** via Firebase Storage (lien dans le texte)
+  - **Re-upload automatique** des images externes au collage — les URLs Firebase ou autres sources externes sont silencieusement ré-uploadées vers R2
+- **Fichiers joints** via Cloudflare R2
+
+### Profil & Sécurité
+- Modifier le nom sans re-login (JWT update)
+- Changer le mot de passe (bcrypt, rate-limited)
+- Statistiques du workspace (notes, dossiers, tags, fichiers, stockage)
+- Export JSON de toutes les données
+- Suppression de compte avec confirmation (cascade complète)
 
 ### PWA
 - Installable sur iOS, Android, Chrome desktop
 - Fonctionnement offline (cache Network First + CacheFirst pour icônes)
-- **Background Sync API** — implémentation réelle : SW notifie les clients (`postMessage BACKGROUND_SYNC_READY`) → NotesEditor re-tente l'autosave automatiquement
+- **Background Sync API** — SW notifie les clients → NotesEditor re-tente l'autosave
 - Service Worker v5
 
 ### Sécurité
-- **DOMPurify** sur l'import DOCX (XSS stored via mammoth)
-- **Firestore & Storage Security Rules** — gérées dans la Firebase Console
-- **CSP nonce-based** dans middleware.ts
-- `transformPastedHTML` — supprime background-color/color inline (dark themes)
+- **CSP nonce-based** par requête dans `middleware.ts`
+- **`import 'server-only'`** sur tous les modules backend — empêche les imports accidentels côté client
+- **Rate limiting** brute-force sur login (10 req/15min par IP via Upstash Redis)
+- **Rate limiting** sur changement de mot de passe + suppression de compte (5 req/15min)
+- **Rate limiting** sur re-upload d'images externes (60 req/min)
+- **Zod** sur tous les inputs API (prévention operator injection Prisma)
+- **X-Frame-Options: DENY** + frame-ancestors CSP
+- **DOMPurify** sur import DOCX (XSS stored)
+- **Protection SSRF** sur `POST /api/upload/from-url` — bloque localhost et toutes les plages IP privées
+- **Server Actions** restreintes au domaine de production (`allowedOrigins`)
+- `poweredByHeader: false` — supprime le header `X-Powered-By: Next.js`
+- Cascade delete : workspace → notes/dossiers/tags/fichiers → user
+- **Modales de confirmation** sur toutes les actions irréversibles
 
 ### Performance
 - `shouldRerenderOnTransaction: false` dans TipTap — zéro re-render parent à chaque frappe
-- `useEditorState` dans EditorToolbar — souscription sélective aux changements d'état
-- `persistentLocalCache` Firestore — cache offline IndexedDB + multi-onglets
-- `limit(200)` sur la requête notes — pagination légère
-- `React.memo` sur NoteCard — évite les re-renders des cartes non sélectionnées
+- `useEditorState` dans EditorToolbar — souscription sélective
+- `React.memo` sur NoteCard
 - `optimizePackageImports` Next.js — tree-shaking lucide-react + framer-motion
-- Image compression avant upload Firebase (browser-image-compression)
-- OG image générée dynamiquement (app/opengraph-image.tsx)
-- Error Boundary autour de l'éditeur — fallback élégant en cas de crash TipTap
+- Image compression avant upload R2
 
 ### Accessibilité
-- `aria-label="Se connecter avec Google"` sur le bouton Google
-- `role="navigation"` + `aria-label="Navigation des notes"` sur la sidebar
+- `role="navigation"` + `aria-label` sur la sidebar
 - Skip link WCAG 2.4.1
-- `role="dialog" aria-modal="true"` + focus trap Tab/Shift+Tab sur SmartFolderModal (WCAG 2.1.2)
-- Focus restauré automatiquement à la fermeture de la modal (WCAG 2.4.3)
-- `aria-hidden="true"` sur les icônes décoratives de la toolbar
-- `aria-busy="true"` + skeleton loading pendant le chargement Firestore
-- `maxLength` sur les champs titre (200), tag (50) et nom de dossier (80)
+- `role="dialog" aria-modal="true"` + focus trap sur les modales
+- Focus restauré automatiquement à la fermeture des modales
+- `aria-hidden="true"` sur les icônes décoratives
+- `aria-busy="true"` + skeleton loading pendant le chargement
+- `maxLength` sur tous les champs texte
 
-### Tests
-- **Vitest** + React Testing Library — `npm test`
-- Tests unitaires : `cn()`, `extractHashtags()`, `extractTextFromPdf()`, page login
-- Tests fonctions pures : `stripHtml()`, `fmtDate()`, `daysUntilPurge()`, `applySmartFilters()`, `buildFolderTree()` (lib/notes-utils.ts)
-- **69 tests passent** (5 fichiers de test)
+---
+
+## Stack
+
+| Couche | Technologie |
+|---|---|
+| Framework | Next.js 14 (App Router) |
+| Langage | TypeScript strict |
+| Style | Tailwind CSS + next-themes (dark mode) |
+| Auth | Auth.js v5 — JWT, credentials + Google OAuth |
+| Base de données | Neon PostgreSQL + Prisma 7 |
+| Stockage fichiers | Cloudflare R2 (`assets.djefrid.ca`) |
+| Recherche | Typesense |
+| Rate limiting | Upstash Redis (fail-open) |
+| Jobs async | Inngest v4 |
+| Éditeur | TipTap 3 (26 extensions) |
+| Tests | Vitest + Testing Library |
+| Déploiement | Vercel |
 
 ---
 
@@ -106,226 +134,304 @@
 ```
 mynotespace/
 ├── app/
-│   ├── layout.tsx                  — layout racine (ThemeProvider, skip link, metadataBase)
-│   ├── page.tsx                    — redirect → /notes
-│   ├── globals.css                 — styles globaux + TipTap (Word-like paragraphes)
-│   ├── manifest.ts                 — PWA manifest (icônes via /api/pwa-icon dynamique)
-│   ├── icon.tsx                    — favicon 32×32 (fond bleu #1e40af + page + MNS)
-│   ├── apple-icon.tsx              — icône iOS 180×180 (fond bleu #1e40af + page + MNS)
-│   ├── opengraph-image.tsx         — image OG 1200×630 (Next.js ImageResponse)
-│   ├── login/
-│   │   └── page.tsx                — connexion email/mdp + Google OAuth
-│   ├── notes/
-│   │   └── page.tsx                — page principale (garde auth + Error Boundary + NotesEditor)
+│   ├── layout.tsx                    — layout racine
+│   ├── globals.css                   — styles globaux + TipTap (light/dark)
+│   ├── manifest.ts                   — PWA manifest
+│   ├── (app)/
+│   │   ├── layout.tsx                — layout authentifié
+│   │   ├── notes/page.tsx            — éditeur principal
+│   │   └── profile/page.tsx          — profil, sécurité, stats, données
+│   ├── (public)/
+│   │   ├── login/page.tsx            — connexion
+│   │   └── page.tsx                  — landing
 │   └── api/
-│       └── pwa-icon/
-│           └── route.tsx           — icônes PWA dynamiques 192/512px (fond bleu #1e40af)
-├── components/
-│   ├── NotesEditor.tsx             — orchestrateur principal (~698 lignes — hooks + layout 3 colonnes)
-│   ├── NotesEditorErrorBoundary.tsx — Error Boundary React (class component)
-│   ├── Providers.tsx               — ThemeProvider + enregistrement SW
-│   └── notes/                      — sous-composants extraits de NotesEditor
-│       ├── NoteCard.tsx            — carte note (framer-motion + forwardRef + React.memo)
-│       ├── NoteListColumn.tsx      — colonne milieu : recherche + liste animée notes
-│       ├── NoteEditorColumn.tsx    — colonne droite : titre + toolbar + éditeur TipTap
-│       ├── NotesSidebar.tsx        — panneau gauche : vues, dossiers, tags, corbeille
-│       ├── EditorToolbar.tsx       — ribbon 4 onglets style Word (Accueil/Insertion/Paragraphe/Outils)
-│       ├── FolderTreeItem.tsx      — item récursif arbre dossiers (édition inline + menu)
-│       ├── SmartFolderModal.tsx    — modal création/édition dossiers intelligents
-│       ├── CodeModal.tsx           — modal édition bloc de code (création + édition)
-│       ├── ExcalidrawModal.tsx     — modal plein-écran dessin Excalidraw
-│       ├── BubbleLinkPopup.tsx     — popup URL dans le BubbleMenu TipTap
-│       └── FlyToTrash.tsx          — animation fantôme carte → bouton corbeille
-├── hooks/
-│   ├── useAdminNotes.ts            — 3 listeners Firestore (limit 200 + Promise.all purge)
-│   └── notes/                      — hooks extraits de NotesEditor
-│       ├── useNoteFilters.ts       — filtres, tri, recherche, notes filtrées
-│       ├── useNoteSelection.ts     — sélection note + CRUD dossiers/tags + fly-to-trash
-│       ├── useAutosave.ts          — autosave 1s + Ctrl+S + Background Sync
-│       ├── useContentAutocomplete.ts — autocomplétion contenu (#tags + slash commands)
-│       ├── useTitleAutocomplete.ts — autocomplétion titre (#tags)
-│       ├── useImageFile.ts         — upload images et fichiers joints Firebase Storage
-│       ├── useImportExport.ts      — import/export DOCX, PDF, Markdown
-│       └── useNoteEditor.tsx       — useEditor TipTap complet (26 extensions + modaux code/excalidraw)
-├── lib/
-│   ├── firebase/
-│   │   ├── config.ts               — initialisation Firebase (persistentLocalCache + 6 vars validées)
-│   │   └── hooks.ts                — useAuth() (signIn, signInWithGoogle, signOut)
-│   ├── tiptap-extensions/
-│   │   ├── indent.ts               — indentation custom Tab/Shift+Tab
-│   │   └── font-size.ts            — taille de police en points
-│   ├── notes-service.ts            — CRUD Firestore (notes, dossiers, tags) + types Note/Folder
-│   ├── notes-types.ts              — types, constantes, helpers partagés (ViewFilter, SortBy, SLASH_CMDS, LANGUAGES…)
-│   ├── notes-utils.ts              — fonctions pures testables (stripHtml, fmtDate, applySmartFilters…)
-│   ├── upload-image.ts             — upload Firebase Storage (images + fichiers)
-│   ├── docx-utils.ts               — import/export DOCX (DOMPurify sur import)
-│   ├── pdf-utils.ts                — extraction texte PDF
-│   └── utils.ts                    — cn() (clsx + tailwind-merge)
-├── types/
-│   └── index.ts                    — ré-exports types (Note, Folder, Tag)
+│       ├── notes/                    — CRUD notes + restore + content
+│       ├── folders/                  — CRUD dossiers
+│       ├── tags/                     — CRUD tags
+│       ├── search/                   — recherche Typesense
+│       ├── upload/
+│       │   ├── presign/              — URL présignée R2 (rate limit: 20/min)
+│       │   └── from-url/             — re-upload image externe → R2 (rate limit: 60/min)
+│       ├── attachments/              — pièces jointes
+│       ├── auth/
+│       │   ├── [...nextauth]/        — Auth.js handlers
+│       │   ├── profile/              — PATCH modifier nom
+│       │   ├── change-password/      — POST changer mot de passe
+│       │   └── account/              — DELETE supprimer compte
+│       ├── profile/stats/            — GET statistiques workspace
+│       └── inngest/                  — webhooks Inngest
+│
+├── src/
+│   ├── backend/
+│   │   ├── auth/
+│   │   │   ├── auth.ts               — NextAuth config (PrismaAdapter + JWT callbacks)
+│   │   │   ├── auth.config.ts        — config partagée (pages, callbacks base)
+│   │   │   └── session.ts            — requireSession(), requireWorkspaceId()
+│   │   ├── db/prisma.ts              — client Prisma singleton
+│   │   ├── integrations/
+│   │   │   ├── r2/                   — client S3 Cloudflare R2
+│   │   │   ├── typesense/            — client Typesense (lazy)
+│   │   │   ├── redis/                — client Upstash Redis (lazy)
+│   │   │   ├── inngest/              — client + fonctions Inngest
+│   │   │   └── storage/upload.ts     — uploadNoteImage, uploadNoteFile
+│   │   ├── services/                 — notes, folders, tags, search, attachments...
+│   │   ├── validators/               — schémas Zod (notes, auth, upload...)
+│   │   ├── policies/                 — autorisation (canAccessNote, etc.)
+│   │   ├── repositories/             — accès DB bas niveau
+│   │   ├── mappers/                  — DB entity → domain type
+│   │   └── lib/
+│   │       └── rate-limit.ts         — checkRateLimit() par route
+│   │
+│   ├── frontend/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   │   ├── ConfirmModal.tsx  — modale confirmation générique
+│   │   │   │   └── FlyToTrash.tsx   — animation fantôme → corbeille
+│   │   │   ├── editor/
+│   │   │   │   ├── NotesEditor.tsx  — orchestrateur principal (~700 lignes)
+│   │   │   │   ├── NoteEditorColumn.tsx
+│   │   │   │   ├── EditorToolbar.tsx
+│   │   │   │   ├── BubbleLinkPopup.tsx
+│   │   │   │   ├── CodeModal.tsx
+│   │   │   │   └── ExcalidrawModal.tsx
+│   │   │   ├── notes/
+│   │   │   │   ├── NotesSidebar.tsx  — sidebar + modales dossier/tag
+│   │   │   │   ├── NoteListColumn.tsx — liste + modale vider corbeille
+│   │   │   │   ├── NoteEditorColumn.tsx
+│   │   │   │   └── NoteCard.tsx
+│   │   │   └── folders/
+│   │   │       ├── FolderTreeItem.tsx
+│   │   │       └── SmartFolderModal.tsx
+│   │   ├── hooks/
+│   │   │   ├── data/                 — useNotes, useNotesApi, useAdminNotes, useSearch...
+│   │   │   ├── editor/               — useNoteEditor, useAutosave, useImageFile...
+│   │   │   └── ui/                   — useNoteSelection
+│   │   ├── services/
+│   │   │   └── notes-mutations-api.ts — toutes les mutations API
+│   │   ├── providers/Providers.tsx
+│   │   └── lib/
+│   │       ├── api-client/           — fetch wrapper typé
+│   │       ├── auth-client/          — helpers côté client
+│   │       └── utils/                — docx-utils, pdf-utils, tiptap-extensions
+│   │
+│   ├── domain/
+│   │   ├── notes/                    — Note types, utils, constants, content utils
+│   │   ├── folders/                  — Folder types
+│   │   ├── tags/                     — Tag types
+│   │   └── workspaces/               — Workspace types
+│   │
+│   └── shared/
+│       ├── types/index.ts
+│       └── utils/                    — cn(), dates, strings
+│
+├── prisma/
+│   └── schema.prisma                 — User, Workspace, Note, Folder, Tag, Attachment
+├── prisma.config.ts                  — URL DB (Prisma 7 pattern)
 ├── public/
-│   ├── sw.js                       — Service Worker PWA v5 (CacheFirst icônes + Background Sync)
-│   └── favicon.svg                 — fallback favicon SVG
-├── __tests__/
-│   ├── utils.test.ts               — tests cn() (fusion classes Tailwind)
-│   ├── extractHashtags.test.ts     — tests extractHashtags() (parsing #tags)
-│   ├── pdfUtils.test.ts            — tests extractTextFromPdf() (extraction texte PDF)
-│   ├── loginPage.test.tsx          — tests page de connexion (rendu + accessibilité)
-│   └── notesUtils.test.ts          — tests fonctions pures notes (stripHtml, fmtDate, applySmartFilters…)
-├── middleware.ts                   — CSP nonce-based + bypass /__/auth/*
-├── next.config.js                  — proxy Firebase Auth + headers sécurité + optimizePackageImports
-├── vitest.config.ts                — configuration Vitest (jsdom + alias @/)
-├── vitest.setup.ts                 — setup @testing-library/jest-dom
-└── .env.local                      — variables Firebase (gitignored)
+│   ├── favicon.svg                   — logo bleu (carré arrondi + lignes blanches)
+│   └── sw.js                         — Service Worker PWA
+├── scripts/                          — migration, setup, maintenance
+├── tests/unit/                       — tests unitaires Vitest
+├── middleware.ts                     — CSP nonce + rate-limit login
+├── next.config.js                    — headers sécurité + standalone output
+├── tailwind.config.ts                — content: ['./app/**/*', './src/**/*']
+└── .env.local                        — variables d'env (gitignored)
 ```
 
 ---
 
-## Firebase
+## Installation
 
-**Projet partagé avec le portfolio :** `your-firebase-project-id`
+```bash
+npm install
+cp .env.example .env.local
+# Remplir les variables dans .env.local
+npm run dev
+# → http://localhost:3000
+```
 
-> Les règles de sécurité Firestore et Storage sont gérées directement dans la **Firebase Console**.
-
-### Collections Firestore
-| Collection | Contenu |
-|---|---|
-| `adminNotes` | Notes (titre, HTML, pinned, folderId, tags, dates) |
-| `adminFolders` | Dossiers normaux + intelligents |
-| `adminTags` | Bibliothèque globale de tags |
-
-### Storage
-`notes/{noteId}/` → images inline
-`notes/{noteId}/files/` → fichiers joints
-
----
-
-## Configuration (.env.local)
+### Variables d'environnement
 
 ```env
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
+# Base de données (Neon PostgreSQL)
+DATABASE_URL=              # URL poolée (pgbouncer) — runtime Next.js
+DATABASE_URL_UNPOOLED=     # URL directe — migrations uniquement
 
-NEXT_PUBLIC_ADMIN_EMAIL=ton_email_admin@gmail.com
-NEXT_PUBLIC_ADMIN_EMAIL_2=ton_email_admin_2@gmail.com
+# Auth.js
+AUTH_SECRET=               # npx auth secret
+NEXTAUTH_URL=              # http://localhost:3000 en dev
 
-NEXT_PUBLIC_SITE_URL=https://ton-domaine.com
+# Google OAuth (optionnel)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Cloudflare R2
+R2_ACCOUNT_ID=             # ID de compte Cloudflare
+R2_ACCESS_KEY_ID=          # Clé d'accès R2
+R2_SECRET_ACCESS_KEY=      # Secret R2
+R2_BUCKET_NAME=            # mynotespace
+R2_PUBLIC_URL=             # https://assets.djefrid.ca
+
+# Typesense
+TYPESENSE_HOST=            # ex: abc123.typesense.net (sans https://)
+TYPESENSE_API_KEY=         # clé admin
+
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+
+# Inngest
+INNGEST_EVENT_KEY=
+INNGEST_SIGNING_KEY=
 ```
+
+> **Important :** Aucune variable `NEXT_PUBLIC_*` ne doit être présente en production. Ces variables sont exposées publiquement dans le bundle JavaScript client.
 
 ---
 
-## Déploiement (Vercel)
+## Configuration R2 Cloudflare
 
-### 1. Déployer sur Vercel
+### 1. CORS (obligatoire — upload direct browser → R2)
+
+Dans R2 → bucket `mynotespace` → Settings → **CORS Policy** → Edit :
+
+```json
+[{
+  "AllowedOrigins": [
+    "http://localhost:3000",
+    "https://notes.djefrid.ca"
+  ],
+  "AllowedMethods": ["PUT"],
+  "AllowedHeaders": [
+    "content-type",
+    "content-length",
+    "x-amz-checksum-crc32",
+    "x-amz-sdk-checksum-algorithm"
+  ],
+  "MaxAgeSeconds": 3600
+}]
+```
+
+### 2. Hotlink Protection (obligatoire — affichage images)
+
+Cloudflare dashboard → zone `djefrid.ca` → **Rules** → **Configuration Rules** → Create rule :
+
+- **Nom :** `Disable hotlink assets R2`
+- **Filter :** `(http.host eq "assets.djefrid.ca")`
+- **Setting :** Hotlink Protection → **Off**
+- Cliquer **Deploy**
+
+> Sans cette règle, les images uploadées dans R2 s'affichent en 403 dans l'app (Cloudflare bloque les requêtes cross-origin avec Referer).
+
+---
+
+## Déploiement Vercel
+
 ```bash
-cd mynotespace
 vercel --prod
 ```
 
-### 2. Configurer le domaine
-- Vercel Dashboard → Settings → Domains → Ajouter `notes.djefrid.ca`
-- Ajouter un CNAME DNS : `notes → cname.vercel-dns.com`
+1. Vercel Dashboard → Settings → Domains → Ajouter `notes.djefrid.ca`
+2. DNS Cloudflare : `notes` CNAME → `cname.vercel-dns.com`
+3. Ajouter toutes les variables d'env dans Vercel → Settings → Environment Variables
 
-### 3. Variables d'environnement Vercel
-Ajouter toutes les variables de `.env.local` dans Vercel Dashboard → Settings → Environment Variables.
-
-### 4. Google Cloud Console (Auth redirect mobile)
-APIs & Services → Credentials → OAuth 2.0 Client ID Web application → Authorized redirect URIs :
-- Ajouter `https://notes.djefrid.ca/__/auth/handler`
-
-### 5. Firebase Auth — Domaines autorisés
-Firebase Console → Authentication → Settings → Authorized domains :
-- Ajouter `notes.djefrid.ca`
+> **Sécurité :** Supprimer toute variable préfixée `NEXT_PUBLIC_` du dashboard Vercel. Ces variables sont injectées dans le bundle client et lisibles par n'importe quel visiteur.
 
 ---
 
-## Développement local
+## Scripts
 
 ```bash
-cd mynotespace
-npm run dev
-# → http://localhost:3000
-# → Se connecter sur /login avec email/mdp ou Google
+# Définir mot de passe d'un utilisateur
+npx tsx --env-file=.env.local scripts/set-password.ts <email> <password>
+
+# Réindexer toutes les notes dans Typesense
+npx tsx --env-file=.env.local scripts/reindex-typesense.ts
+
+# Remplir les extraits de notes manquants
+npx tsx --env-file=.env.local scripts/backfill-note-excerpts.ts
+
+# Configurer CORS R2 via API (nécessite token avec Bucket Settings Write)
+npx tsx --env-file=.env.local scripts/setup-r2-cors.ts
 ```
+
+---
+
+## Tests
+
+```bash
+npm test          # vitest
+npm run test:ui   # vitest avec interface
+```
+
+Tests unitaires dans `tests/unit/` :
+- `utils.test.ts` — cn() (fusion classes Tailwind)
+- `extractHashtags.test.ts` — parsing #tags
+- `pdfUtils.test.ts` — extraction texte PDF
+- `loginPage.test.tsx` — rendu page connexion
+- `notesUtils.test.ts` — fonctions pures (stripHtml, fmtDate, applySmartFilters…)
+
+**82 tests passent** — `npm run build` sans erreur.
 
 ---
 
 ## Points techniques
 
-### Architecture — refactoring NotesEditor (2026-03-18)
-`NotesEditor.tsx` était à 3 383 lignes monolithiques. Refactorisé en :
-- **8 hooks custom** dans `hooks/notes/` — logique métier complètement extraite
-- **11 sous-composants** dans `components/notes/` — JSX extrait
-- **`lib/notes-types.ts`** — types, constantes, helpers partagés
-- **Résultat** : NotesEditor.tsx réduit à ~698 lignes (orchestrateur pur)
+### Upload d'images — flux complet
+1. Paste / drag / bouton → `useImageFile.ts`
+2. `POST /api/upload/presign` → `{ uploadUrl, publicUrl }` (URL présignée R2, 5 min)
+3. XHR PUT direct browser → R2 (suivi progression)
+4. `publicUrl` (`https://assets.djefrid.ca/...`) insérée dans TipTap
 
-Pattern clé — **`editorRef` MutableRefObject** : résout la dépendance circulaire entre `useNoteEditor` (crée l'éditeur) et `useImageFile`/`useImportExport` (ont besoin de l'éditeur). La ref est créée dans NotesEditor, peuplée par `useNoteEditor` via `useEffect`, consommée par les autres hooks.
+### Re-upload automatique d'images externes
+Au collage de contenu contenant des images externes (ex : notes copiées depuis une ancienne version Firebase) :
+1. `handlePaste` dans `useNoteEditor.tsx` détecte les `<img src="...">` avec URL externe
+2. `POST /api/upload/from-url { url, noteId }` — le serveur fetch l'image (contourne le CORS)
+3. Validation MIME + taille (max 10 Mo), protection SSRF côté serveur
+4. Upload direct vers R2 via `PutObjectCommand`, retourne l'URL publique
+5. Sur 429 (rate limit) ou 413 (trop grande) : l'URL d'origine est conservée
+6. Sur erreur de source inaccessible : l'image est retirée du contenu collé
 
-### Icônes PWA — fond bleu dynamique
-`app/icon.tsx` (32px), `app/apple-icon.tsx` (180px), `app/api/pwa-icon/route.tsx` (192/512px) :
-fond `#1e40af` (bleu) — design : page blanche + coin replié jaune + texte "MNS" Playfair Display.
-Les anciens `public/icon-192.png` et `public/icon-512.png` supprimés (inutilisés — manifest utilise `/api/pwa-icon`).
+### Rate limits
 
-### Auth Google mobile
-- Desktop : `signInWithPopup` (popup classique)
-- Mobile : `signInWithRedirect` (navigateurs mobiles bloquent les popups)
-- Proxy `/__/auth/*` dans `next.config.js` → same-origin cookies → `getRedirectResult()` fonctionne
+| Route | Limite | Fenêtre |
+|-------|--------|---------|
+| search | 60 | 1 min |
+| presign | 20 | 1 min |
+| from-url | 60 | 1 min |
+| create | 30 | 1 min |
+| auth | 5 | 15 min |
 
-### TipTap 3 breaking change
-`setContent(html, false)` → `setContent(html, { emitUpdate: false })`
+### Thème clair / sombre
+- `next-themes` avec `attribute="class"` — classe `dark` sur `<html>`
+- Tous les composants utilisent les classes `dark:` Tailwind
+- `globals.css` : `.tiptap-editor` (light) + `.dark .tiptap-editor` (dark) — couleurs, headings, code, tableaux, liens, placeholder
 
-### Excalidraw SSR
-Excalidraw est SSR-incompatible → chargé en `dynamic(() => import(...), { ssr: false })` + useMemo
+### Auth.js — JWT sans re-login
+- `useSession().update({ name })` côté client
+- `trigger === 'update'` dans jwt callback → `token.name = session.name`
+- Session mise à jour sans déconnexion/reconnexion
 
-### Copier-coller Chrome
-Chrome ajoute `image/png` même lors d'une copie de texte formaté.
-Guard dans `handlePaste` : vérifier `hasText` avant d'intercepter l'image.
-`transformPastedHTML` : strip background-color/color pour les thèmes sombres (Claude.ai, Discord, etc.)
+### Modales de confirmation
+Toutes les actions irréversibles utilisent `ConfirmModal` (composant générique) :
+- Supprimer dossier, supprimer tag → `NotesSidebar.tsx`
+- Vider corbeille → `NoteListColumn.tsx`
+- Déconnexion, supprimer compte → `profile/page.tsx`
 
-### shouldRerenderOnTransaction
-`shouldRerenderOnTransaction: false` dans `useEditor` désactive les re-renders React du composant
-parent à chaque frappe/transaction TipTap. La toolbar utilise `useEditorState` pour rester réactive
-en souscrivant sélectivement uniquement aux changements d'état qui l'intéressent.
+### Prisma 7
+- `prisma.config.ts` à la racine (pas d'URL dans schema.prisma)
+- `DATABASE_URL` (pooled) pour le runtime, `DATABASE_URL_UNPOOLED` pour les migrations
 
-### persistentLocalCache Firestore
-Active le cache offline IndexedDB + synchronisation multi-onglets.
-Données disponibles offline ; synchronisées dès le retour en ligne.
+### Inngest v4
+- `createFunction({ id, triggers, retries }, handler)` — 2 args seulement
+- `eventType()` + `staticSchema()` pour les types d'événements
 
 ### Warning `sharp` (non-bloquant)
-`@turbodocx/html-to-docx` a `sharp` comme dépendance optionnelle.
-Le warning apparaît au build mais n'affecte pas le fonctionnement de l'export DOCX.
-
-### getRedirectResult — sans duplication
-`getRedirectResult()` est appelé **uniquement dans `useAuth()`** (hook). La page `/login` ne le répète pas pour éviter une double exécution inutile.
-
-### PDF.js — worker configuré une seule fois
-`GlobalWorkerOptions.workerSrc` est assigné via un flag `workerSrcSet` pour éviter de réécrire la propriété à chaque appel `extractTextFromPdf()`.
-
-### SmartFolderModal — accessibilité WCAG 2.1
-`role="dialog" aria-modal="true"` + focus trap Tab/Shift+Tab + restauration du focus à la fermeture.
+`@turbodocx/html-to-docx` requiert `sharp` optionnellement. Le warning n'affecte pas l'export DOCX.
 
 ### Background Sync — implémentation réelle
-Protocole SW ↔ App :
-1. Sauvegarde Firestore échoue → `registerBackgroundSync()` → SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')`
-2. Navigateur restaure la connexion → déclenche event `sync` dans le SW
-3. SW appelle `clients.matchAll()` → envoie `{ type: 'BACKGROUND_SYNC_READY' }` à chaque onglet
-4. NotesEditor écoute via `navigator.serviceWorker.addEventListener('message', ...)` → re-tente `updateNote()`
-
-Fallback : si Background Sync API non supporté (iOS Safari, Firefox), Firestore SDK gère la retry via sa file d'attente interne IndexedDB.
-
-### notes-utils.ts — fonctions pures testables
-`stripHtml`, `fmtDate`, `daysUntilPurge`, `applySmartFilters`, `buildFolderTree` sont extraites de `NotesEditor.tsx` vers `lib/notes-utils.ts`.
-NotesEditor les importe — zéro duplication. 36 tests les couvrent dans `__tests__/notesUtils.test.ts`.
-
-### Vulnérabilités npm restantes (5)
-- **nanoid + mermaid** : dans `@excalidraw/mermaid-to-excalidraw` — fix nécessite excalidraw@0.17.6 (breaking)
-- **next@14.x** : 4 CVE — fix nécessite Next.js 16.2.0 (breaking change majeur)
-- **dompurify** : fixé via `overrides` dans package.json (`^3.3.3`)
+SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` → connexion restaurée → SW envoie `{ type: 'BACKGROUND_SYNC_READY' }` → NotesEditor re-tente l'autosave.
 
 ---
 
-*Projet créé le 2026-03-18 — extrait de [portfolio](https://portfolio.djefrid.ca)*
+*Migré de Firebase vers PostgreSQL/R2/Auth.js — 2026-03-22*

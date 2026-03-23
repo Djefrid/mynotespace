@@ -14,7 +14,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { headers } from 'next/headers';
-import Providers from '@/components/Providers';
+import Providers from '@/src/frontend/providers/Providers';
 import './globals.css';
 
 /** Police Inter — auto-hébergée via next/font (aucune requête Google Fonts runtime) */
@@ -31,6 +31,11 @@ export const metadata: Metadata = {
   keywords: ['notes', 'éditeur', 'markdown', 'tiptap', 'pwa'],
   authors: [{ name: 'djefrid' }],
   // OpenGraph — image générée par app/opengraph-image.tsx
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   openGraph: {
     title: 'MyNoteSpace',
     description: 'Éditeur de notes riche personnel',
@@ -42,7 +47,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#eab308', // Jaune accent mynotespace
+  themeColor: '#3b82f6',
 };
 
 /**

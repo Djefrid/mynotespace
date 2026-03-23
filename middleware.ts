@@ -5,32 +5,63 @@
  *
  * Middleware Next.js exécuté sur chaque requête avant le rendu.
  * Responsabilités :
- *   1. Bypass total des routes /__/auth/* (handler Firebase proxié)
- *   2. Protection des routes /notes/* — redirige vers /login si non authentifié
- *      (Note : la vraie guard auth est côté client dans le layout Notes,
- *       le middleware ne peut pas vérifier le token Firebase côté serveur
- *       sans Firebase Admin SDK)
- *   3. Injection du Content-Security-Policy avec nonce aléatoire par requête
+ *   1. Rate-limit brute-force sur POST /api/auth/signin (10 req / 15 min par IP)
+ *   2. Injection du Content-Security-Policy avec nonce aléatoire par requête
  *
  * CSP :
  *   - nonce généré par crypto.randomUUID() à chaque requête
- *   - script-src : nonce + apis.google.com (Firebase Auth popup)
- *   - frame-src : *.firebaseapp.com (handler popup)
- *   - frame-ancestors : 'self' (iframes same-origin seulement — Firebase Auth iframe bridge)
+ *   - script-src : nonce + apis.google.com (Google OAuth popup)
+ *   - frame-src : www.google.com (Google OAuth)
+ *   - frame-ancestors : 'self' (iframes same-origin seulement)
  * ============================================================================
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+// ── Rate-limit login : 10 tentatives / 15 min par IP ──────────────────────────
+// Instancié une seule fois au niveau module (edge singleton par invocation froide).
+// Fail-open si les vars d'env sont absentes (dev local sans Redis).
+function getLoginRatelimit(): Ratelimit | null {
+  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  return new Ratelimit({
+    redis:   new Redis({ url, token }),
+    limiter: Ratelimit.slidingWindow(10, '15 m'),
+    prefix:  'rl:login',
+  });
+}
 
-  // ── Bypass Firebase Auth redirect handler ──────────────────────────────
-  // Le handler contient ses propres scripts sans nonce → bypass total CSP.
-  // Le proxy Next.js (next.config.js rewrites) doit traiter ces URLs directement.
-  if (pathname.startsWith('/__/auth/')) {
-    return NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // ── Rate-limit brute-force sur le login ───────────────────────────────
+  if (request.method === 'POST' && request.nextUrl.pathname === '/api/auth/signin') {
+    try {
+      const limiter = getLoginRatelimit();
+      if (limiter) {
+        const ip = request.ip
+          ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+          ?? 'unknown';
+        const { success, reset } = await limiter.limit(ip);
+        if (!success) {
+          const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
+          return new NextResponse(
+            JSON.stringify({ error: 'Trop de tentatives — réessayez dans quelques minutes.' }),
+            {
+              status: 429,
+              headers: {
+                'Content-Type':  'application/json',
+                'Retry-After':   String(retryAfter),
+              },
+            },
+          );
+        }
+      }
+    } catch {
+      // Fail-open : Redis indisponible → on laisse passer
+    }
   }
 
   // ── Génération du nonce CSP ────────────────────────────────────────────
@@ -44,9 +75,8 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
 
     // Scripts : nonce + strict-dynamic (code-splitting Next.js) + unsafe-eval (Next.js dev HMR + Excalidraw)
-    // apis.google.com : Firebase Auth signInWithPopup
-    // www.google.com + www.gstatic.com : reCAPTCHA scripts (App Check)
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://apis.google.com https://www.google.com https://www.gstatic.com`,
+    // apis.google.com : Google OAuth popup
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'sha256-c5Gm1Iytmxlbm7sLzBSUu/dpFv9EWweQTfDc8mG3PME=' 'sha256-rbbnijHn7DZ6ps39myQ3cVQF1H+U/PJfHh5ei/Q2kb8=' https://apis.google.com https://www.google.com https://www.gstatic.com`,
 
     // Styles : self + unsafe-inline (requis TipTap, KaTeX, Excalidraw)
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -54,14 +84,14 @@ export function middleware(request: NextRequest) {
     // Polices
     "font-src 'self' https://fonts.gstatic.com data:",
 
-    // Images : self + Firebase Storage + data URI (images inline TipTap)
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com",
+    // Images : self + R2 (assets) + Google avatar + data URI
+    "img-src 'self' data: blob: https://assets.djefrid.ca https://lh3.googleusercontent.com",
 
-    // Connexions réseau : Firebase, Firestore, Google APIs
-    "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebasestorage.app wss://*.firebaseio.com https://www.google.com https://identitytoolkit.googleapis.com",
+    // Connexions réseau : Auth.js, R2 (upload presigned PUT direct depuis le browser)
+    "connect-src 'self' https://www.google.com https://*.r2.cloudflarestorage.com",
 
-    // Iframes : Firebase Auth handler popup + same-origin (Firebase Auth iframe bridge)
-    "frame-src 'self' https://*.firebaseapp.com https://www.google.com",
+    // Iframes : Google OAuth
+    "frame-src 'self' https://www.google.com",
 
     // Workers : blob: pour PDF.js web worker
     "worker-src 'self' blob:",
@@ -70,7 +100,6 @@ export function middleware(request: NextRequest) {
     "manifest-src 'self'",
 
     // frame-ancestors : autorise uniquement les iframes same-origin
-    // Firebase Auth signInWithPopup crée un iframe /__/auth/iframe same-origin
     "frame-ancestors 'self'",
 
     // Bloque toutes les soumissions de formulaires vers des URLs externes

@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Landing page ────────────────────────────────────────────────────────── */
+@layer utilities {
+  .landing-hero-glow {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(59,130,246,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(99,102,241,0.10) 0%, transparent 70%);
+  }
+
+  .landing-headline-gradient {
+    background-image: linear-gradient(135deg, #60a5fa 0%, #818cf8 50%, #a78bfa 100%);
+  }
+
+  .landing-cta-bg {
+    background:
+      radial-gradient(ellipse 100% 100% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 70%),
+      rgba(255,255,255,0.02);
+  }
+}
+
 /* KaTeX (équations LaTeX) — chargé dans les composants qui en ont besoin */
 
 @layer base {
@@ -10,7 +29,8 @@
   }
 
   body {
-    @apply bg-dark-950 text-gray-100;
+    @apply bg-white text-gray-900 dark:bg-dark-950 dark:text-gray-100;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   :focus-visible {
@@ -69,15 +89,20 @@
 .tiptap-editor {
   outline: none;
   min-height: 100%;
-  /* Texte légèrement moins blanc — moins fatiguant en lecture longue (dark mode) */
-  color: #e8e8e8;
+  /* Mode clair — texte sombre */
+  color: #1f2937;
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: 0.01em;
   /* Curseur jaune accent comme iA Writer / Bear */
-  caret-color: #eab308;
+  caret-color: #ca8a04;
   /* Prend tout l'espace disponible en mode normal — le mode focus gère son propre centrage */
   width: 100%;
+}
+/* Mode sombre — texte légèrement moins blanc, moins fatigant en lecture longue */
+.dark .tiptap-editor {
+  color: #e8e8e8;
+  caret-color: #eab308;
 }
 /* Sélection de texte — fond semi-transparent jaune accent au lieu du bleu système */
 .tiptap-editor ::selection { background: rgba(234, 179, 8, 0.25); color: inherit; }
@@ -87,12 +112,13 @@
 .tiptap-editor p:last-child { margin-bottom: 0; }
 .tiptap-editor p.is-empty::before {
   content: attr(data-placeholder);
-  color: #4b5563;
+  color: #d1d5db;
   pointer-events: none;
   float: left;
   height: 0;
   white-space: pre-line;
 }
+.dark .tiptap-editor p.is-empty::before { color: #4b5563; }
 .tiptap-editor img {
   max-width: 100%;
   border-radius: 8px;
@@ -121,29 +147,37 @@
 .tiptap-editor ul ul    { list-style-type: circle; }
 .tiptap-editor ul ul ul { list-style-type: square; }
 .tiptap-editor li { margin: 0.15rem 0; padding-left: 0.15rem; }
-.tiptap-editor strong { color: #f9fafb; }
-.tiptap-editor em    { color: #d1d5db; }
+.tiptap-editor strong { color: #111827; }
+.tiptap-editor em    { color: #374151; }
 .tiptap-editor u     { text-decoration: underline; }
-.tiptap-editor s     { text-decoration: line-through; color: #9ca3af; }
+.tiptap-editor s     { text-decoration: line-through; color: #6b7280; }
+.dark .tiptap-editor strong { color: #f9fafb; }
+.dark .tiptap-editor em    { color: #d1d5db; }
+.dark .tiptap-editor s     { color: #9ca3af; }
 .tiptap-editor code {
-  background: rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.07);
   border-radius: 3px;
   padding: 1px 4px;
   font-size: 0.8em;
   font-family: 'Fira Code', 'Courier New', monospace;
 }
+.dark .tiptap-editor code { background: rgba(255,255,255,0.08); }
 /* Headings */
-.tiptap-editor h1 { font-size: 1.5rem; font-weight: 700; color: #f9fafb; margin: 0.75rem 0 0.25rem; line-height: 1.3; }
-.tiptap-editor h2 { font-size: 1.2rem; font-weight: 600; color: #f3f4f6; margin: 0.6rem 0 0.2rem;  line-height: 1.3; }
-.tiptap-editor h3 { font-size: 1rem;   font-weight: 600; color: #e5e7eb; margin: 0.5rem 0 0.15rem; line-height: 1.3; }
+.tiptap-editor h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0 0.25rem; line-height: 1.3; }
+.tiptap-editor h2 { font-size: 1.2rem; font-weight: 600; color: #1f2937; margin: 0.6rem 0 0.2rem;  line-height: 1.3; }
+.tiptap-editor h3 { font-size: 1rem;   font-weight: 600; color: #374151; margin: 0.5rem 0 0.15rem; line-height: 1.3; }
+.dark .tiptap-editor h1 { color: #f9fafb; }
+.dark .tiptap-editor h2 { color: #f3f4f6; }
+.dark .tiptap-editor h3 { color: #e5e7eb; }
 /* Blockquote */
 .tiptap-editor blockquote {
-  border-left: 3px solid #4b5563;
+  border-left: 3px solid #d1d5db;
   padding-left: 0.75rem;
   margin: 0.5rem 0;
-  color: #9ca3af;
+  color: #6b7280;
   font-style: italic;
 }
+.dark .tiptap-editor blockquote { border-left-color: #4b5563; color: #9ca3af; }
 /* Code block */
 .tiptap-editor pre {
   background: #1e1e2e;
@@ -176,7 +210,8 @@
   line-height: 1.65;
 }
 /* Horizontal rule */
-.tiptap-editor hr { border: none; border-top: 1px solid #374151; margin: 0.75rem 0; }
+.tiptap-editor hr { border: none; border-top: 1px solid #e5e7eb; margin: 0.75rem 0; }
+.dark .tiptap-editor hr { border-top-color: #374151; }
 /* Text alignment */
 .tiptap-editor [style*="text-align: center"]  { text-align: center; }
 .tiptap-editor [style*="text-align: right"]   { text-align: right; }
@@ -191,26 +226,35 @@
 }
 .tiptap-editor ul[data-type="taskList"] li[data-checked="true"] > div { color: #6b7280; text-decoration: line-through; }
 /* Table */
-.tiptap-editor .tableWrapper { overflow-x: auto; margin: 0.75rem 0; border-radius: 6px; border: 1px solid #374151; }
+.tiptap-editor .tableWrapper { overflow-x: auto; margin: 0.75rem 0; border-radius: 6px; border: 1px solid #e5e7eb; }
 .tiptap-editor table { border-collapse: collapse; width: 100%; font-size: 0.8rem; table-layout: fixed; }
-.tiptap-editor th, .tiptap-editor td { border: 1px solid #374151; padding: 0.45rem 0.65rem; text-align: left; min-width: 80px; position: relative; vertical-align: top; }
-.tiptap-editor th { background: #1f2937; color: #f3f4f6; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.02em; text-transform: uppercase; border-bottom: 2px solid #4b5563; }
-.tiptap-editor td { color: #d1d5db; background: transparent; }
-.tiptap-editor tr:nth-child(even) td { background: rgba(255,255,255,0.025); }
-.tiptap-editor tr:hover td { background: rgba(255,255,255,0.045); transition: background 0.1s; }
+.tiptap-editor th, .tiptap-editor td { border: 1px solid #e5e7eb; padding: 0.45rem 0.65rem; text-align: left; min-width: 80px; position: relative; vertical-align: top; }
+.tiptap-editor th { background: #f3f4f6; color: #374151; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.02em; text-transform: uppercase; border-bottom: 2px solid #d1d5db; }
+.tiptap-editor td { color: #374151; background: transparent; }
+.tiptap-editor tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+.tiptap-editor tr:hover td { background: rgba(0,0,0,0.035); transition: background 0.1s; }
+.dark .tiptap-editor .tableWrapper { border-color: #374151; }
+.dark .tiptap-editor th, .dark .tiptap-editor td { border-color: #374151; }
+.dark .tiptap-editor th { background: #1f2937; color: #f3f4f6; border-bottom-color: #4b5563; }
+.dark .tiptap-editor td { color: #d1d5db; }
+.dark .tiptap-editor tr:nth-child(even) td { background: rgba(255,255,255,0.025); }
+.dark .tiptap-editor tr:hover td { background: rgba(255,255,255,0.045); }
 .tiptap-editor .selectedCell { background: rgba(234,179,8,0.15) !important; outline: 2px solid rgba(234,179,8,0.4); outline-offset: -2px; }
 .tiptap-editor .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: rgba(234,179,8,0.5); cursor: col-resize; z-index: 20; }
 .tiptap-editor table.resize-cursor { cursor: col-resize; }
 /* Code modal textarea */
 .code-modal-textarea { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1.6; }
 /* Mathematics TipTap */
-.tiptap-editor .Tiptap-mathematics-editor { background: #1e293b; border: 1px solid #334155; border-radius: 4px; color: #f1f5f9; font-family: 'Courier New', monospace; font-size: 12px; padding: 2px 6px; outline: none; min-width: 80px; }
+.tiptap-editor .Tiptap-mathematics-editor { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; color: #1e293b; font-family: 'Courier New', monospace; font-size: 12px; padding: 2px 6px; outline: none; min-width: 80px; }
+.dark .tiptap-editor .Tiptap-mathematics-editor { background: #1e293b; border-color: #334155; color: #f1f5f9; }
 .tiptap-editor .Tiptap-mathematics-render { cursor: pointer; padding: 2px 4px; border-radius: 3px; transition: background 0.15s; }
 .tiptap-editor .Tiptap-mathematics-render:hover { background: rgba(234, 179, 8, 0.1); }
 .tiptap-editor .Tiptap-mathematics-render.ProseMirror-selectednode { background: rgba(234, 179, 8, 0.2); outline: 1px solid rgba(234, 179, 8, 0.5); }
 /* Liens — style Word : bleu souligné, rien de plus */
-.tiptap-editor a, .tiptap-link { color: #60a5fa; text-decoration: underline; cursor: pointer; }
-.tiptap-editor a:hover, .tiptap-link:hover { color: #93c5fd; }
+.tiptap-editor a, .tiptap-link { color: #2563eb; text-decoration: underline; cursor: pointer; }
+.tiptap-editor a:hover, .tiptap-link:hover { color: #1d4ed8; }
+.dark .tiptap-editor a, .dark .tiptap-link { color: #60a5fa; }
+.dark .tiptap-editor a:hover, .dark .tiptap-link:hover { color: #93c5fd; }
 /* Superscript / Subscript */
 .tiptap-editor sup { vertical-align: super; font-size: 0.7em; }
 .tiptap-editor sub { vertical-align: sub;   font-size: 0.7em; }

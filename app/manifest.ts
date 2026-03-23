@@ -39,8 +39,8 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: 'any',
     // Couleur de fond pendant le splash screen au démarrage
     background_color: '#0d0d0d',
-    // Couleur de la barre de statut (Android) — jaune accent mynotespace
-    theme_color: '#eab308',
+    // Couleur de la barre de statut (Android)
+    theme_color: '#3b82f6',
     // Catégorie pour les app stores PWA
     categories: ['productivity', 'utilities'],
     // Icônes pour l'écran d'accueil et le splash screen

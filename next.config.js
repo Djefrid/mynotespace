@@ -4,12 +4,6 @@
 //
 // Configuration de l'application mynotespace.
 //
-// Proxy Firebase Auth :
-//   Redirige /__/auth/* vers firebaseapp.com pour que signInWithRedirect
-//   fonctionne en same-origin sur mobile (Safari iOS, Chrome Android).
-//   Prérequis : ajouter https://notes.djefrid.ca/__/auth/handler dans les
-//   Authorized redirect URIs du client OAuth dans Google Cloud Console.
-//
 // Headers de sécurité :
 //   Le CSP nonce-based est géré dans middleware.ts.
 //   Ici : HSTS, COOP, Referrer-Policy, Permissions-Policy.
@@ -19,29 +13,26 @@
 const nextConfig = {
   output: 'standalone',
 
-  /**
-   * optimizePackageImports : Next.js analyse les imports des packages listés et
-   * n'inclut que les exports réellement utilisés dans le bundle (tree-shaking agressif).
-   * Réduit le bundle JS client, notamment pour lucide-react (600+ icônes non utilisées).
-   */
+  // Retire le header "X-Powered-By: Next.js" — évite de révéler la stack aux attaquants
+  poweredByHeader: false,
+
   experimental: {
+    // Restreint les Server Actions au domaine de production uniquement (anti-CSRF)
+    serverActions: {
+      allowedOrigins: ['notes.djefrid.ca', 'localhost:3000'],
+    },
+    // Tree-shaking agressif — réduit le bundle JS client
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
 
-  /**
-   * Proxy transparent pour Firebase Auth redirect flow.
-   * Same-origin cookies → getRedirectResult() fonctionne sur mobile.
-   */
-  async rewrites() {
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'portfolio-8d07b';
-    return {
-      beforeFiles: [
-        {
-          source: '/__/auth/:path*',
-          destination: `https://${projectId}.firebaseapp.com/__/auth/:path*`,
-        },
-      ],
-    };
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      // 'sharp' est un module natif Node.js — il ne peut pas être bundlé pour le browser.
+      // @turbodocx/html-to-docx l'importe conditionnellement mais webpack essaie quand même
+      // de le résoudre côté client. On le déclare externe (false = module vide).
+      config.resolve.fallback = { ...config.resolve.fallback, sharp: false };
+    }
+    return config;
   },
 
   async headers() {
@@ -59,8 +50,10 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
           // DNS prefetch
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          // Autorise les popups Firebase OAuth (signInWithPopup desktop)
+          // Autorise les popups Google OAuth
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          // Anti-clickjacking (complément défense en profondeur au CSP frame-ancestors)
+          { key: 'X-Frame-Options', value: 'DENY' },
         ],
       },
     ];
