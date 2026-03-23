@@ -50,7 +50,7 @@
 - **Slash commands** : `/h1`, `/ul`, `/code`, `/table`, etc.
 - **Autocomplétion #tags** avec fuzzy match
 - **Focus mode** — éditeur plein écran sans distraction
-- **Recherche** full-text via Typesense
+- **Recherche** full-text 3 couches : Typesense → PostgreSQL tsvector + GIN → ILIKE (fallback automatique)
 - **Thème clair / sombre** — bascule en un clic, préférence système respectée
 
 ### Import / Export
@@ -120,7 +120,7 @@
 | Auth | Auth.js v5 — JWT, credentials + Google OAuth |
 | Base de données | Neon PostgreSQL + Prisma 7 |
 | Stockage fichiers | Cloudflare R2 (`assets.djefrid.ca`) |
-| Recherche | Typesense |
+| Recherche | Typesense + PostgreSQL FTS (tsvector + GIN + unaccent) |
 | Rate limiting | Upstash Redis (fail-open) |
 | Jobs async | Inngest v4 |
 | Éditeur | TipTap 3 (26 extensions) |
@@ -345,6 +345,10 @@ vercel --prod
 # Définir mot de passe d'un utilisateur
 npx tsx --env-file=.env.local scripts/set-password.ts <email> <password>
 
+# Configurer la recherche full-text PostgreSQL (à faire 1× après déploiement)
+# Active unaccent + crée unaccent_immutable + crée les 2 index GIN
+npx tsx --env-file=.env.local scripts/setup-search.ts
+
 # Réindexer toutes les notes dans Typesense
 npx tsx --env-file=.env.local scripts/reindex-typesense.ts
 
@@ -371,7 +375,13 @@ Tests unitaires dans `tests/unit/` :
 - `loginPage.test.tsx` — rendu page connexion
 - `notesUtils.test.ts` — fonctions pures (stripHtml, fmtDate, applySmartFilters…)
 
-**82 tests passent** — `npm run build` sans erreur.
+Tests d'intégration dans `tests/integration/` :
+- `notes/notes-crud.test.ts` — GET & POST /api/notes (auth, pagination, rate limit, Zod)
+- `upload/presign.test.ts` — POST /api/upload/presign (auth, MIME, taille, R2)
+- `upload/from-url.test.ts` — POST /api/upload/from-url (SSRF, auth, rate limit, MIME)
+- `auth/account.test.ts` — DELETE /api/auth/account (auth, confirmation, cascade)
+
+**113 tests passent** — `npm run build` sans erreur.
 
 ---
 
@@ -425,6 +435,13 @@ Toutes les actions irréversibles utilisent `ConfirmModal` (composant génériqu
 ### Inngest v4
 - `createFunction({ id, triggers, retries }, handler)` — 2 args seulement
 - `eventType()` + `staticSchema()` pour les types d'événements
+
+### Recherche full-text — 3 couches
+1. **Typesense** (si `TYPESENSE_HOST` + `TYPESENSE_API_KEY` définis) — typo-tolérance, ranking avancé
+2. **PostgreSQL tsvector + GIN** — `websearch_to_tsquery`, `setweight('A'/'B')`, `ts_rank_cd`, `ts_headline`, `unaccent` (accent-insensitif). Requiert `scripts/setup-search.ts`.
+3. **PostgreSQL ILIKE** — filet de sécurité, aucune dépendance
+
+La couche 2 bascule automatiquement sur la couche 3 en cas d'erreur (extension manquante, etc.).
 
 ### Warning `sharp` (non-bloquant)
 `@turbodocx/html-to-docx` requiert `sharp` optionnellement. Le warning n'affecte pas l'export DOCX.
