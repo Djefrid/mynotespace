@@ -50,6 +50,8 @@ import {
   ChevronDown, Replace, Image as ImageIcon,
 } from 'lucide-react';
 
+import { normalizeUrl } from '@/src/shared/utils/strings';
+
 // ── Polices disponibles (style Word) ─────────────────────────────────────────
 export const FONT_FAMILIES = [
   { value: '',                  label: 'Par défaut' },
@@ -190,6 +192,8 @@ export default function EditorToolbar({
       isTaskList:      ctx.editor?.isActive('taskList')    ?? false,
       isBlockquote:    ctx.editor?.isActive('blockquote')  ?? false,
       isCodeBlock:     ctx.editor?.isActive('codeBlock')   ?? false,
+      charCount:       (ctx.editor?.storage.characterCount?.characters?.() as number | undefined) ?? 0,
+      wordCount:       (ctx.editor?.storage.characterCount?.words?.()     as number | undefined) ?? 0,
     }),
   });
 
@@ -258,8 +262,8 @@ export default function EditorToolbar({
     if (!linkVal.trim()) {
       editor.chain().focus().unsetLink().run();
     } else {
-      const href = linkVal.startsWith('http') ? linkVal : `https://${linkVal}`;
-      editor.chain().focus().setLink({ href }).run();
+      const href = normalizeUrl(linkVal);
+      if (href) editor.chain().focus().setLink({ href }).run();
     }
     setLinkOpen(false);
     setLinkVal('');
@@ -730,6 +734,11 @@ export default function EditorToolbar({
           <SEP />
           {TB(false, 'Exporter en Markdown', onExportMd,  <FileText size={13} />)}
           {TB(false, 'Imprimer / PDF',       onExportPdf, <Download size={13} />)}
+          <SEP />
+          {/* Compteur mots / caractères */}
+          <span className="text-[10px] text-gray-400 dark:text-slate-500 whitespace-nowrap px-1 select-none">
+            {editorState.wordCount} mot{editorState.wordCount !== 1 ? 's' : ''} · {editorState.charCount} car.
+          </span>
         </>}
 
       </div>

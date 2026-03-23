@@ -51,6 +51,7 @@ import type { MobilePanel } from '@/lib/notes-types';
 import type { Note, Folder } from '@/lib/notes-service';
 import EditorToolbar from '@/components/notes/EditorToolbar';
 import BubbleLinkPopup from '@/components/notes/BubbleLinkPopup';
+import { normalizeUrl } from '@/src/shared/utils/strings';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -780,11 +781,9 @@ export default function NoteEditorColumn({
                         value={bubbleLinkVal}
                         onChange={setBubbleLinkVal}
                         onConfirm={() => {
-                          const href = bubbleLinkVal.trim();
+                          const href = normalizeUrl(bubbleLinkVal);
                           if (!href) editor.chain().focus().unsetLink().run();
-                          else editor.chain().focus().setLink({
-                            href: href.startsWith('http') ? href : `https://${href}`,
-                          }).run();
+                          else editor.chain().focus().setLink({ href }).run();
                           setBubbleLinkOpen(false);
                           setBubbleLinkVal('');
                         }}

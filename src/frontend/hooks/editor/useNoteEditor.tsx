@@ -39,22 +39,7 @@ import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight } from 'lowlight';
-// Langages importés individuellement — Haskell exclu (crash Next.js prod : regex invalide)
-import langJs        from 'highlight.js/lib/languages/javascript';
-import langTs        from 'highlight.js/lib/languages/typescript';
-import langPy        from 'highlight.js/lib/languages/python';
-import langCss       from 'highlight.js/lib/languages/css';
-import langHtml      from 'highlight.js/lib/languages/xml';
-import langBash      from 'highlight.js/lib/languages/bash';
-import langJson      from 'highlight.js/lib/languages/json';
-import langSql       from 'highlight.js/lib/languages/sql';
-import langGo        from 'highlight.js/lib/languages/go';
-import langRust      from 'highlight.js/lib/languages/rust';
-import langJava      from 'highlight.js/lib/languages/java';
-import langPhp       from 'highlight.js/lib/languages/php';
-import langCsharp    from 'highlight.js/lib/languages/csharp';
-import langCpp       from 'highlight.js/lib/languages/cpp';
-import langMarkdown  from 'highlight.js/lib/languages/markdown';
+// Seul plaintext chargé au démarrage — les autres langages sont lazy-loadés après le mount
 import langPlaintext from 'highlight.js/lib/languages/plaintext';
 import ImageExtension from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -79,26 +64,45 @@ import { uploadNoteImage } from '@/lib/upload-image';
 import { SLASH_CMDS } from '@/lib/notes-types';
 
 // ── Lowlight — module-level pour éviter la recréation à chaque render ─────────
-// Liste sélective — Haskell exclu (crash prod : regex invalide dans grammar)
+// Seul plaintext est enregistré immédiatement. Les autres langages sont chargés
+// dynamiquement après le mount (lazy) pour réduire le bundle initial (~150 kB).
+// Haskell exclu : crash prod (regex invalide dans la grammaire highlight.js).
 const lowlight = createLowlight();
-lowlight.register({
-  javascript: langJs,
-  typescript: langTs,
-  python:     langPy,
-  css:        langCss,
-  xml:        langHtml,
-  bash:       langBash,
-  json:       langJson,
-  sql:        langSql,
-  go:         langGo,
-  rust:       langRust,
-  java:       langJava,
-  php:        langPhp,
-  csharp:     langCsharp,
-  cpp:        langCpp,
-  markdown:   langMarkdown,
-  plaintext:  langPlaintext,
-});
+lowlight.register({ plaintext: langPlaintext });
+
+/** Charge les langages de syntaxe en arrière-plan après le mount de l'éditeur */
+async function loadHighlightLanguages() {
+  const [
+    { default: langJs },   { default: langTs },  { default: langPy },
+    { default: langCss },  { default: langHtml }, { default: langBash },
+    { default: langJson }, { default: langSql },  { default: langGo },
+    { default: langRust }, { default: langJava }, { default: langPhp },
+    { default: langCsharp },{ default: langCpp }, { default: langMarkdown },
+  ] = await Promise.all([
+    import('highlight.js/lib/languages/javascript'),
+    import('highlight.js/lib/languages/typescript'),
+    import('highlight.js/lib/languages/python'),
+    import('highlight.js/lib/languages/css'),
+    import('highlight.js/lib/languages/xml'),
+    import('highlight.js/lib/languages/bash'),
+    import('highlight.js/lib/languages/json'),
+    import('highlight.js/lib/languages/sql'),
+    import('highlight.js/lib/languages/go'),
+    import('highlight.js/lib/languages/rust'),
+    import('highlight.js/lib/languages/java'),
+    import('highlight.js/lib/languages/php'),
+    import('highlight.js/lib/languages/csharp'),
+    import('highlight.js/lib/languages/cpp'),
+    import('highlight.js/lib/languages/markdown'),
+  ]);
+  lowlight.register({
+    javascript: langJs, typescript: langTs, python: langPy,
+    css: langCss,       xml: langHtml,      bash: langBash,
+    json: langJson,     sql: langSql,       go: langGo,
+    rust: langRust,     java: langJava,     php: langPhp,
+    csharp: langCsharp, cpp: langCpp,       markdown: langMarkdown,
+  });
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -215,18 +219,35 @@ export function useNoteEditor({
     }
   ), []);
 
+  // ── Lazy-load langages syntaxe (après mount) ───────────────────────────────
+  useEffect(() => { loadHighlightLanguages(); }, []);
+
   // ── Ref scheduleAutoSave anti-stale ────────────────────────────────────────
   /** Sync scheduleAutoSave dans une ref pour onUpdate (créé une fois par useEditor) */
   const scheduleAutoSaveRef = useRef<(t: string, c: string) => void>(() => {});
   useEffect(() => { scheduleAutoSaveRef.current = scheduleAutoSave; }, [scheduleAutoSave]);
+
+  // ── Debounce detectAtCursor (80ms) ─────────────────────────────────────────
+  /** Timer de debounce pour éviter d'appeler detectAtCursor à chaque frappe */
+  const detectDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleDetect = () => {
+    if (detectDebounceRef.current) clearTimeout(detectDebounceRef.current);
+    detectDebounceRef.current = setTimeout(() => detectAtCursorRef.current(), 80);
+  };
 
   // ── useEditor — configuration complète TipTap ───────────────────────────────
   const editor = useEditor({
     immediatelyRender:           false,   // SSR — évite les hydration errors (TipTap 3)
     shouldRerenderOnTransaction: false,   // Performance : pas de re-render React sur transaction
                                           // (la toolbar utilise useEditorState séparément)
+    autofocus: 'end',                     // Place le curseur en fin de note à l'ouverture
     extensions: [
-      StarterKit.configure({ codeBlock: false, link: false, underline: false }),
+      StarterKit.configure({
+        codeBlock:   false,
+        link:        false,
+        underline:   false,
+        dropcursor:  { color: '#3b82f6', width: 2 }, // Curseur de drop bleu (cohérent avec le thème)
+      }),
       CodeBlockLowlight.configure({
         lowlight,
         // defaultLanguage: 'plaintext' → jamais highlightAuto() → jamais de crash regex
@@ -258,7 +279,13 @@ export function useNoteEditor({
       Mathematics,
     ],
     editorProps: {
-      attributes: { class: 'tiptap-editor', spellcheck: 'true' },
+      attributes: {
+        class:           'tiptap-editor',
+        spellcheck:      'true',
+        role:            'textbox',
+        'aria-multiline':'true',
+        'aria-label':    'Éditeur de note',
+      },
 
       /**
        * Normalise le HTML avant parsing ProseMirror.
@@ -297,57 +324,64 @@ export function useNoteEditor({
        * 1. Image pure (screenshot) → upload R2 direct.
        * 2. HTML avec <img src="..."> externe → fetch + upload R2 chaque image,
        *    retire les <img> qui échouent, insère le HTML nettoyé.
+       *
+       * IMPORTANT : on utilise getData() synchrone pour détecter les images
+       * AVANT de décider si on bloque le paste. L'ancienne approche avec
+       * getAsString() (async) retournait `true` immédiatement même quand
+       * il n'y avait aucune image externe, bloquant tout paste de texte formaté.
        */
       handlePaste(_view, event) {
         const items   = Array.from(event.clipboardData?.items ?? []);
-        const htmlItem = items.find(i => i.type === 'text/html');
-        const imgItem  = items.find(i => i.type.startsWith('image/'));
+        const hasHtml = items.some(i => i.type === 'text/html');
+        const imgItem = items.find(i => i.type.startsWith('image/'));
 
         // Cas 1 : image pure dans le clipboard (screenshot, print screen)
-        if (!htmlItem && imgItem && selectedId) {
+        if (!hasHtml && imgItem && selectedId) {
           event.preventDefault();
           const file = imgItem.getAsFile();
           if (file) handleImageInsertRef.current(file);
           return true;
         }
 
-        // Cas 2 : HTML collé contenant des <img src="..."> externes
-        if (htmlItem && selectedId) {
-          htmlItem.getAsString(async (html) => {
-            const parser = new DOMParser();
-            const doc    = parser.parseFromString(html, 'text/html');
-            const imgs   = Array.from(doc.querySelectorAll('img'));
-            const external = imgs.filter(img => {
-              const src = img.getAttribute('src') ?? '';
-              return src.startsWith('http') && !src.startsWith(window.location.origin);
-            });
+        // Cas 2 : HTML collé — vérification synchrone des images externes
+        // getData() est synchrone, contrairement à getAsString()
+        if (hasHtml && selectedId) {
+          const html     = event.clipboardData?.getData('text/html') ?? '';
+          const parser   = new DOMParser();
+          const doc      = parser.parseFromString(html, 'text/html');
+          const imgs     = Array.from(doc.querySelectorAll('img'));
+          const external = imgs.filter(img => {
+            const src = img.getAttribute('src') ?? '';
+            return src.startsWith('http') && !src.startsWith(window.location.origin);
+          });
 
-            if (external.length === 0) return; // aucune img externe → TipTap gère normalement
+          // Aucune image externe → laisser TipTap gérer normalement (transformPastedHTML s'en occupe)
+          if (external.length === 0) return false;
 
-            event.preventDefault();
+          // Images externes détectées → bloquer le paste et re-uploader vers R2
+          event.preventDefault();
 
-            // Re-upload chaque image externe vers R2 via le serveur (évite le CORS navigateur)
-            await Promise.all(external.map(async (img) => {
-              const src = img.getAttribute('src') ?? '';
-              try {
-                const res = await fetch('/api/upload/from-url', {
-                  method:  'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body:    JSON.stringify({ url: src, noteId: selectedId }),
-                });
-                if (res.status === 429 || res.status === 413) return; // garder l'URL originale
-                if (!res.ok) { img.remove(); return; } // source inaccessible → retirer
-                const { data } = await res.json();
-                img.setAttribute('src', data.publicUrl);
-              } catch {
-                img.remove(); // erreur réseau → retirer
-              }
-            }));
-
+          // Re-upload chaque image externe vers R2 via le serveur (évite le CORS navigateur)
+          Promise.all(external.map(async (img) => {
+            const src = img.getAttribute('src') ?? '';
+            try {
+              const res = await fetch('/api/upload/from-url', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ url: src, noteId: selectedId }),
+              });
+              if (res.status === 429 || res.status === 413) return; // garder l'URL originale
+              if (!res.ok) { img.remove(); return; } // source inaccessible → retirer
+              const { data } = await res.json();
+              img.setAttribute('src', data.publicUrl);
+            } catch {
+              img.remove(); // erreur réseau → retirer
+            }
+          })).then(() => {
             const cleanHtml = doc.body.innerHTML;
             editorRef.current?.commands.insertContent(cleanHtml);
           });
-          return true; // bloque le paste natif pendant qu'on traite async
+          return true;
         }
 
         return false;
@@ -375,16 +409,12 @@ export function useNoteEditor({
         }
 
         event.preventDefault();
-        // Traitement séquentiel : images inline, autres fichiers en lien
-        (async () => {
-          for (const file of files) {
-            if (file.type.startsWith('image/')) {
-              await handleImageInsertRef.current(file);
-            } else {
-              await handleFileInsertRef.current(file);
-            }
-          }
-        })();
+        // Traitement parallèle : images inline, autres fichiers en lien
+        Promise.all(files.map(file =>
+          file.type.startsWith('image/')
+            ? handleImageInsertRef.current(file)
+            : handleFileInsertRef.current(file)
+        ));
         return true;
       },
 
@@ -450,12 +480,11 @@ export function useNoteEditor({
       const html = editor.getHTML();
       setContent(html);
       scheduleAutoSaveRef.current(titleRef.current?.value ?? '', html);
-      // setTimeout 0 → laisse TipTap finir sa transaction avant de détecter le curseur
-      setTimeout(() => detectAtCursorRef.current(), 0);
+      scheduleDetect();
     },
 
     /** Relance la détection de curseur lors des déplacements de sélection */
-    onSelectionUpdate: () => setTimeout(() => detectAtCursorRef.current(), 0),
+    onSelectionUpdate: () => scheduleDetect(),
 
     editable: true,
   });

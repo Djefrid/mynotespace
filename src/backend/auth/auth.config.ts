@@ -10,6 +10,10 @@ export const authConfig = {
     error: '/login',
   },
   session: { strategy: 'jwt' },
+  // trustHost : Auth.js v5 utilise le header x-forwarded-host (envoyé par Vercel/Cloudflare)
+  // pour construire les URLs de redirection. Sans ça, Auth.js tombe en fallback sur
+  // NEXTAUTH_URL (localhost:3000) et redirige vers localhost en production.
+  trustHost: true,
   providers: [],
   callbacks: {
     jwt({ token, user }) {
