@@ -124,7 +124,9 @@ import {
 // Types, constantes et helpers partagés entre sous-composants de l'éditeur
 import {
   ViewFilter, SortBy, SaveStatus, MobilePanel, LANGUAGES,
+  type NoteContentPayload,
 } from '@/lib/notes-types';
+import type { JSONContent } from '@tiptap/core';
 // Sous-composants extraits
 import FlyToTrash        from '@/components/notes/FlyToTrash';
 import CodeModal         from '@/components/notes/CodeModal';
@@ -172,7 +174,7 @@ export default function NotesEditor() {
   // prevSelectedId        : guard pour détecter le changement de note
   // hasRestoredRef        : exécution unique de la restauration localStorage
   const prevTitle      = useRef('');
-  const prevContent    = useRef('');
+  const prevContent    = useRef<NoteContentPayload | string>('');
   const prevSelectedId = useRef<string | null>(null);
   const hasRestoredRef = useRef(false);
 
@@ -347,7 +349,8 @@ export default function NotesEditor() {
     const oldTitle   = prevTitle.current;
     const oldContent = prevContent.current;
     if (oldId && oldId !== selectedId) {
-      if (!oldTitle.trim() && !stripHtml(oldContent).trim()) {
+      const oldHtml = typeof oldContent === 'string' ? oldContent : oldContent.html;
+      if (!oldTitle.trim() && !stripHtml(oldHtml).trim()) {
         silentlyDeleteNote(oldId).then(() => refreshNotes());
       }
     }
@@ -374,15 +377,26 @@ export default function NotesEditor() {
     let cancelled = false;
     fetch(`/api/notes/${selectedId}`)
       .then(r => (r.ok ? r.json() : null))
-      .then((json: { data?: { content?: { html?: string } } } | null) => {
-        if (cancelled || !json) return;
-        const html = json.data?.content?.html ?? '';
+      .then((res: { data?: { content?: { html?: string; json?: Record<string, unknown>; plainText?: string } } } | null) => {
+        if (cancelled || !res) return;
+        const html      = res.data?.content?.html ?? '';
+        const jsonDoc   = res.data?.content?.json;
+        const plainText = res.data?.content?.plainText ?? '';
         setContent(html);
-        prevContent.current = html;
+        prevContent.current = jsonDoc
+          ? { html, json: jsonDoc, plainText }
+          : html;
         const ed = editorRef.current;
-        if (ed && !ed.isDestroyed) ed.commands.setContent(html, { emitUpdate: false });
+        if (ed && !ed.isDestroyed) {
+          // Préfère le JSON (chargement natif ProseMirror, zéro re-parse HTML)
+          // Fallback HTML pour les notes existantes sans JSON encore
+          ed.commands.setContent(
+            jsonDoc ? jsonDoc as JSONContent : html,
+            { emitUpdate: false }
+          );
+        }
       })
-      .catch(() => {/* note introuvable en PG — contenu déjà chargé depuis Firebase si dispo */});
+      .catch(() => {/* note introuvable en PG */});
     return () => { cancelled = true; };
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -475,7 +489,7 @@ export default function NotesEditor() {
     warningAfterMs: 2.5 * 60 * 1000, // avertissement à 2min30
     logoutAfterMs:  3   * 60 * 1000, // déconnexion à 3min
     onWarning: () => setShowIdleWarning(true),
-    onLogout:  () => signOut({ callbackUrl: '/' }),
+    onLogout:  () => signOut({ callbackUrl: window.location.origin + '/' }),
     onReset:   () => setShowIdleWarning(false),
   });
 
@@ -540,7 +554,7 @@ export default function NotesEditor() {
             <div className="flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => signOut({ callbackUrl: window.location.origin + '/' })}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] transition-colors"
               >
                 Se déconnecter
@@ -670,7 +684,7 @@ export default function NotesEditor() {
               {/* Bouton déconnexion */}
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => signOut({ callbackUrl: window.location.origin + '/' })}
                 title="Se déconnecter"
                 className="text-gray-500 hover:text-red-400 transition-colors duration-[120ms] p-1 rounded"
               >

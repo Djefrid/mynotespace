@@ -7,7 +7,7 @@ import { inngest, noteWritten } from '@/src/backend/integrations/inngest/client'
 type Params = { params: Promise<{ id: string }> };
 
 // ─── PATCH /api/notes/[id]/content ────────────────────────────────────────────
-// Sauvegarde le HTML uniquement — ne touche pas version sur Note.
+// Sauvegarde json (source de vérité) + html (cache exports) + plainText (search).
 
 export async function PATCH(req: Request, { params }: Params) {
   let workspaceId: string;
@@ -28,7 +28,11 @@ export async function PATCH(req: Request, { params }: Params) {
     const session = await auth();
     const userId  = session!.user.id;
 
-    const ok = await saveNoteContent(id, workspaceId, userId, parsed.data.html);
+    const ok = await saveNoteContent(id, workspaceId, userId, {
+      html:      parsed.data.html,
+      json:      parsed.data.json as Record<string, unknown> | undefined,
+      plainText: parsed.data.plainText,
+    });
     if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
 
     // Réindexe titre + contenu après chaque autosave via Inngest (avec retry)

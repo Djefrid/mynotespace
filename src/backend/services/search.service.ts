@@ -57,7 +57,7 @@ export async function indexNoteById(noteId: string, workspaceId: string): Promis
     select: {
       id: true, title: true, status: true,
       isPinned: true, folderId: true, updatedAt: true,
-      content: { select: { html: true } },
+      content: { select: { html: true, plainText: true } },
     },
   });
   if (!note) return;
@@ -66,7 +66,7 @@ export async function indexNoteById(noteId: string, workspaceId: string): Promis
     id:           note.id,
     workspace_id: workspaceId,
     title:        note.title,
-    plain_text:   stripHtml(note.content?.html ?? ''),
+    plain_text:   note.content?.plainText || stripHtml(note.content?.html ?? ''),
     status:       note.status,
     is_pinned:    note.isPinned,
     folder_id:    note.folderId ?? '',
@@ -81,13 +81,13 @@ export async function indexNoteById(noteId: string, workspaceId: string): Promis
 export async function indexNoteFromData(data: {
   id: string; workspaceId: string; title: string;
   status: string; isPinned: boolean; folderId: string | null;
-  updatedAt: Date; html?: string;
+  updatedAt: Date; html?: string; plainText?: string;
 }): Promise<void> {
   await indexDocument({
     id:           data.id,
     workspace_id: data.workspaceId,
     title:        data.title,
-    plain_text:   stripHtml(data.html ?? ''),
+    plain_text:   data.plainText || stripHtml(data.html ?? ''),
     status:       data.status,
     is_pinned:    data.isPinned,
     folder_id:    data.folderId ?? '',

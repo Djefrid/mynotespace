@@ -151,6 +151,8 @@ model Note {
 model NoteContent {
   noteId    String   @id
   html      String   @db.Text
+  json      Json?    @db.JsonB
+  plainText String   @default("") @db.Text
   updatedAt DateTime @updatedAt
 
   note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)

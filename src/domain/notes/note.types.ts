@@ -45,6 +45,18 @@ export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
 /** Panneau visible sur mobile (une seule colonne à la fois) */
 export type MobilePanel = 'sidebar' | 'list' | 'editor';
 
+/**
+ * Payload complet du contenu d'une note — envoyé à l'API et stocké en DB.
+ * json  = source de vérité (structure ProseMirror native)
+ * html  = dérivé cache (exports DOCX/PDF/Markdown)
+ * plainText = dérivé search (Typesense, préview NoteCard)
+ */
+export type NoteContentPayload = {
+  html:      string;
+  json:      Record<string, unknown>;
+  plainText: string;
+};
+
 // ── Helpers purs ──────────────────────────────────────────────────────────────
 
 /**

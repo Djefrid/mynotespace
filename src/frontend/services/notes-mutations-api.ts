@@ -35,15 +35,25 @@ export async function createNote(folderId?: string | null): Promise<string> {
 }
 
 /**
+ * Payload contenu riche — json est la source de vérité,
+ * html et plainText sont des dérivés stockés en cache.
+ */
+type NoteContentPayload = {
+  html:      string;
+  json:      Record<string, unknown>;
+  plainText: string;
+};
+
+/**
  * Met à jour une note en bifurquant selon ce qui change :
  *   - métadonnées (title, pinned, folderId) → PATCH /api/notes/[id]
- *   - contenu HTML                          → PATCH /api/notes/[id]/content
+ *   - contenu                               → PATCH /api/notes/[id]/content
  * Les deux appels partent en parallèle si les deux sont nécessaires.
  * Version++ uniquement côté serveur sur isPinned/folderId (pas sur title ni content).
  */
 export async function updateNote(
   id: string,
-  data: Partial<{ title: string; content: string; pinned: boolean; folderId: string | null }>
+  data: Partial<{ title: string; content: NoteContentPayload | string; pinned: boolean; folderId: string | null }>
 ): Promise<void> {
   const calls: Promise<Response>[] = [];
 
@@ -60,11 +70,15 @@ export async function updateNote(
     }));
   }
 
-  // ── Contenu HTML ───────────────────────────────────────────────────────────
+  // ── Contenu — json (source de vérité) + html (cache) + plainText (search) ─
   if (data.content !== undefined) {
+    const c = data.content;
+    const body = typeof c === 'string'
+      ? { html: c }
+      : { html: c.html, json: c.json, plainText: c.plainText };
     calls.push(apiFetch(`/api/notes/${id}/content`, {
       method: 'PATCH',
-      body:   JSON.stringify({ html: data.content }),
+      body:   JSON.stringify(body),
     }));
   }
 

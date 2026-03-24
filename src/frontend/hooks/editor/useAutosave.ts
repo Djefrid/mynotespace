@@ -38,7 +38,7 @@ import type { MutableRefObject } from 'react';
 import { updateNote } from '../../services/notes-mutations-api';
 import { stripHtml } from '@/lib/notes-utils';
 import { AUTOSAVE_DELAY_MS } from '@/lib/notes-types';
-import type { SaveStatus } from '@/lib/notes-types';
+import type { SaveStatus, NoteContentPayload } from '@/lib/notes-types';
 
 // ── Interface paramètres ───────────────────────────────────────────────────────
 
@@ -54,10 +54,11 @@ interface UseAutosaveParams {
    */
   prevTitle:    MutableRefObject<string>;
   /**
-   * Ref partagée vers le contenu HTML courant (ownership : useNoteSelection).
-   * Même raison que prevTitle.
+   * Ref partagée vers le contenu courant (ownership : useNoteSelection).
+   * Contient le payload complet { html, json, plainText } après la première frappe,
+   * ou une string html pour la restauration localStorage / sync multi-appareil.
    */
-  prevContent:  MutableRefObject<string>;
+  prevContent:  MutableRefObject<NoteContentPayload | string>;
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -114,7 +115,7 @@ export function useAutosave({
    * @param t - Titre courant
    * @param c - Contenu HTML courant
    */
-  const scheduleAutoSave = useCallback((t: string, c: string) => {
+  const scheduleAutoSave = useCallback((t: string, c: NoteContentPayload | string) => {
     if (!selectedId || isReadOnly) return;
     prevTitle.current   = t;
     prevContent.current = c;
@@ -147,7 +148,7 @@ export function useAutosave({
    * @param t - Titre courant
    * @param c - Contenu HTML courant
    */
-  const saveImmediately = useCallback((t: string, c: string) => {
+  const saveImmediately = useCallback((t: string, c: NoteContentPayload | string) => {
     if (!selectedId || isReadOnly) return;
     clearTimeout(saveTimer.current);
     setSaveStatus('saving');
@@ -172,9 +173,10 @@ export function useAutosave({
     const handleSwMessage = (event: MessageEvent) => {
       if (event.data?.type !== 'BACKGROUND_SYNC_READY') return;
       // Lecture depuis les refs — valeurs stables, pas de re-création du listener
-      const t = prevTitle.current;
-      const c = prevContent.current;
-      if (!selectedId || isReadOnly || (!t.trim() && !stripHtml(c).trim())) return;
+      const t    = prevTitle.current;
+      const c    = prevContent.current;
+      const html = typeof c === 'string' ? c : c.html;
+      if (!selectedId || isReadOnly || (!t.trim() && !stripHtml(html).trim())) return;
       setSaveStatus('saving');
       const titleChanged = t !== savedTitleRef.current;
       updateNote(selectedId, { ...(titleChanged && { title: t }), content: c })

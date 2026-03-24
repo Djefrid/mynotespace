@@ -32,6 +32,7 @@ import {
   useState, useRef, useCallback, useEffect, useMemo,
 } from 'react';
 import type { MutableRefObject } from 'react';
+import type { NoteContentPayload } from '@/lib/notes-types';
 import dynamic from 'next/dynamic';
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
 import { useEditor } from '@tiptap/react';
@@ -133,6 +134,7 @@ interface UseNoteEditorParams {
   // ── Setters stables (useState — même référence entre les renders) ────────────
   /** Met à jour l'état React du contenu HTML (sync TipTap → React) */
   setContent:         (html: string) => void;
+
   setSlashFilter:     (v: string) => void;
   setSlashMenu:       (v: boolean) => void;
   setSlashIdx:        (fn: number | ((i: number) => number)) => void;
@@ -141,7 +143,7 @@ interface UseNoteEditorParams {
   setUploadProgress:  (pct: number | null) => void;
   // ── Callbacks stables ────────────────────────────────────────────────────────
   /** Planifie une sauvegarde différée (de useAutosave) */
-  scheduleAutoSave:   (t: string, c: string) => void;
+  scheduleAutoSave:   (t: string, c: NoteContentPayload | string) => void;
   // ── Refs anti-stale-closure (de useContentAutocomplete) ─────────────────────
   detectAtCursorRef:  MutableRefObject<() => void>;
   suggestionsRef:     MutableRefObject<string[]>;
@@ -224,7 +226,7 @@ export function useNoteEditor({
 
   // ── Ref scheduleAutoSave anti-stale ────────────────────────────────────────
   /** Sync scheduleAutoSave dans une ref pour onUpdate (créé une fois par useEditor) */
-  const scheduleAutoSaveRef = useRef<(t: string, c: string) => void>(() => {});
+  const scheduleAutoSaveRef = useRef<(t: string, c: NoteContentPayload | string) => void>(() => {});
   useEffect(() => { scheduleAutoSaveRef.current = scheduleAutoSave; }, [scheduleAutoSave]);
 
   // ── Debounce detectAtCursor (80ms) ─────────────────────────────────────────
@@ -475,11 +477,14 @@ export function useNoteEditor({
       },
     },
 
-    /** Met à jour le state React du contenu et planifie l'autosave après chaque frappe */
+    /** Met à jour le state React du contenu et planifie l'autosave après chaque frappe.
+     *  json = source de vérité · html = cache exports · plainText = search Typesense */
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
+      const html      = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(html);
-      scheduleAutoSaveRef.current(titleRef.current?.value ?? '', html);
+      scheduleAutoSaveRef.current(titleRef.current?.value ?? '', { html, json, plainText });
       scheduleDetect();
     },
 

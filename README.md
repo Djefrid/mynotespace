@@ -33,9 +33,10 @@
 - Police (famille, taille), styles (gras, italic, souligné, barré), couleurs, surlignage
 - Tableaux, listes (ul/ol/tâches), blockquotes, règles horizontales
 - Équations LaTeX inline via KaTeX (`$$formule$$`)
-- Blocs de code avec coloration syntaxique (16 langages)
+- Blocs de code avec coloration syntaxique (16 langages, chargés en lazy après mount)
 - Indentation style Word (Tab/Shift+Tab)
-- Liens style Word (bleu + souligné)
+- Liens style Word (bleu + souligné) — validation XSS (bloque `javascript:` / `data:`)
+- **Compteur mots / caractères** dans l'onglet Outils
 
 ### Organisation
 - **Dossiers** arborescents (sous-dossiers supportés)
@@ -87,6 +88,7 @@
 - **X-Frame-Options: DENY** + frame-ancestors CSP
 - **DOMPurify** sur import DOCX (XSS stored)
 - **Protection SSRF** sur `POST /api/upload/from-url` — bloque localhost et toutes les plages IP privées
+- **Validation URL XSS** sur les liens TipTap — `normalizeUrl()` bloque `javascript:`, `data:`, `vbscript:`
 - **Server Actions** restreintes au domaine de production (`allowedOrigins`)
 - `poweredByHeader: false` — supprime le header `X-Powered-By: Next.js`
 - Cascade delete : workspace → notes/dossiers/tags/fichiers → user
@@ -98,6 +100,9 @@
 - `React.memo` sur NoteCard
 - `optimizePackageImports` Next.js — tree-shaking lucide-react + framer-motion
 - Image compression avant upload R2
+- **Lazy-load langages lowlight** — 15 grammaires (~150 kB) chargées après mount, seul `plaintext` au démarrage
+- **Debounce detectAtCursor 80ms** — autocomplétion tags/slash commands sans appel à chaque frappe
+- **Upload drop parallèle** — `Promise.all` au lieu d'une boucle séquentielle
 
 ### Accessibilité
 - `role="navigation"` + `aria-label` sur la sidebar
@@ -107,6 +112,7 @@
 - `aria-hidden="true"` sur les icônes décoratives
 - `aria-busy="true"` + skeleton loading pendant le chargement
 - `maxLength` sur tous les champs texte
+- `role="textbox"` + `aria-multiline="true"` + `aria-label` sur la zone d'édition TipTap
 
 ---
 
@@ -144,6 +150,7 @@ mynotespace/
 │   ├── (public)/
 │   │   ├── login/page.tsx            — connexion
 │   │   └── page.tsx                  — landing
+│   ├── not-found.tsx                 — page 404 personnalisée
 │   └── api/
 │       ├── notes/                    — CRUD notes + restore + content
 │       ├── folders/                  — CRUD dossiers
@@ -257,9 +264,9 @@ npm run dev
 DATABASE_URL=              # URL poolée (pgbouncer) — runtime Next.js
 DATABASE_URL_UNPOOLED=     # URL directe — migrations uniquement
 
-# Auth.js
+# Auth.js v5
 AUTH_SECRET=               # npx auth secret
-NEXTAUTH_URL=              # http://localhost:3000 en dev
+AUTH_URL=                  # http://localhost:3000 en dev (pas nécessaire sur Vercel — trustHost: true)
 
 # Google OAuth (optionnel)
 GOOGLE_CLIENT_ID=
@@ -417,10 +424,11 @@ Au collage de contenu contenant des images externes (ex : notes copiées depuis 
 - Tous les composants utilisent les classes `dark:` Tailwind
 - `globals.css` : `.tiptap-editor` (light) + `.dark .tiptap-editor` (dark) — couleurs, headings, code, tableaux, liens, placeholder
 
-### Auth.js — JWT sans re-login
+### Auth.js v5 — JWT sans re-login
 - `useSession().update({ name })` côté client
 - `trigger === 'update'` dans jwt callback → `token.name = session.name`
 - Session mise à jour sans déconnexion/reconnexion
+- `trustHost: true` dans `auth.config.ts` — utilise `x-forwarded-host` (Vercel) pour les redirections. Sans ça, Auth.js tombe en fallback sur `NEXTAUTH_URL=localhost:3000` et redirige vers localhost en prod après déconnexion.
 
 ### Modales de confirmation
 Toutes les actions irréversibles utilisent `ConfirmModal` (composant générique) :
@@ -451,4 +459,7 @@ SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` →
 
 ---
 
+---
+
 *Migré de Firebase vers PostgreSQL/R2/Auth.js — 2026-03-22*
+*Améliorations TipTap (paste, sécurité, perf, a11y), fix Auth.js prod, page 404 — 2026-03-23*

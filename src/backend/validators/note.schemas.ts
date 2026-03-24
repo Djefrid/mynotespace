@@ -16,9 +16,15 @@ export const updateNoteSchema = z.object({
   { message: 'At least one field must be provided' }
 );
 
-/** Sauvegarde du contenu HTML — route dédiée /api/notes/[id]/content */
+/** Sauvegarde du contenu — route dédiée /api/notes/[id]/content.
+ *  json      = structure ProseMirror (source de vérité)
+ *  html      = dérivé cache (exports)
+ *  plainText = dérivé recherche (Typesense)
+ */
 export const saveContentSchema = z.object({
-  html: z.string(),
+  html:      z.string(),
+  json:      z.record(z.string(), z.unknown()).optional(),
+  plainText: z.string().optional(),
 });
 
 /** Paramètres de recherche Typesense */

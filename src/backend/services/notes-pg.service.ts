@@ -53,7 +53,7 @@ const noteListSelect = {
 /** Note complète avec contenu — utilisé pour la vue détail. */
 const noteDetailSelect = {
   ...noteListSelect,
-  content: { select: { html: true, updatedAt: true } },
+  content: { select: { html: true, json: true, plainText: true, updatedAt: true } },
 } satisfies Prisma.NoteSelect;
 
 // ─── Types inférés ────────────────────────────────────────────────────────────
@@ -170,7 +170,10 @@ export async function updateNote(
 }
 
 /**
- * Sauvegarde le contenu HTML d'une note (NoteContent).
+ * Sauvegarde le contenu d'une note (NoteContent).
+ * json      = source de vérité (structure ProseMirror native)
+ * html      = dérivé cache (exports DOCX/PDF/Markdown)
+ * plainText = dérivé recherche (Typesense, préview)
  * N'incrémente pas version — c'est de l'édition continue, pas un changement structurel.
  * Touche Note.updatedAt via updatedByUserId pour que les listes restent triées.
  */
@@ -178,7 +181,7 @@ export async function saveNoteContent(
   id: string,
   workspaceId: string,
   userId: string,
-  html: string
+  data: { html: string; json?: Record<string, unknown>; plainText?: string }
 ): Promise<boolean> {
   const exists = await prisma.note.findFirst({
     where: { id, workspaceId },
@@ -186,11 +189,17 @@ export async function saveNoteContent(
   });
   if (!exists) return false;
 
+  const contentData = {
+    html:      data.html,
+    plainText: data.plainText ?? '',
+    ...(data.json !== undefined && { json: data.json as Prisma.InputJsonValue }),
+  };
+
   await prisma.$transaction([
     prisma.noteContent.upsert({
       where:  { noteId: id },
-      create: { noteId: id, html },
-      update: { html },
+      create: { noteId: id, ...contentData },
+      update: contentData,
     }),
     // Touche Note.updatedAt pour que la liste reste triée par dernière modif
     prisma.note.update({
