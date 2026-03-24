@@ -166,7 +166,7 @@ export default function NotesEditor() {
    */
   const handleSignOut = useCallback(async () => {
     await signOut({ redirect: false });
-    router.push('/');
+    router.push('/login');
   }, [router]);
 
   // ── Filtres, vue, tri et recherche ──────────────────────────────────────────

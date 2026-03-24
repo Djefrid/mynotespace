@@ -329,7 +329,7 @@ export default function ProfilePage() {
     const res = await fetch('/api/auth/account', { method: 'DELETE' });
     if (!res.ok) throw new Error(PROFILE_DANGER.deleteErrorServer);
     await signOut({ redirect: false });
-    router.push('/');
+    router.push('/login');
   }
 
   return (
@@ -341,7 +341,7 @@ export default function ProfilePage() {
           confirmLabel={PROFILE_DANGER.logoutButton}
           danger
           onClose={() => setShowLogout(false)}
-          onConfirm={async () => { await signOut({ redirect: false }); router.push('/'); }}
+          onConfirm={async () => { await signOut({ redirect: false }); router.push('/login'); }}
         />
       )}
       {showDelete && (
