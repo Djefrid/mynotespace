@@ -91,7 +91,8 @@
 - **Validation URL XSS** sur les liens TipTap — `normalizeUrl()` bloque `javascript:`, `data:`, `vbscript:`
 - **Server Actions** restreintes au domaine de production (`allowedOrigins`)
 - `poweredByHeader: false` — supprime le header `X-Powered-By: Next.js`
-- **Fix signOut prod** : `callbackUrl: window.location.origin + '/'` — évite la redirection vers `localhost:3000` quand `AUTH_URL` est défini en local
+- **Fix signOut prod** : `redirect: false` + `router.push('/login')` partout — contourne la validation `callbackUrl` d'Auth.js ; `redirect` callback défensif dans `auth.ts` ; `NEXTAUTH_URL` retiré de Vercel
+- Toutes les déconnexions (idle timeout, sidebar, profil) redirigent vers `/login`
 - Cascade delete : workspace → notes/dossiers/tags/fichiers → user
 - **Modales de confirmation** sur toutes les actions irréversibles
 
