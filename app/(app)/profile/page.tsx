@@ -328,7 +328,7 @@ export default function ProfilePage() {
   async function handleDeleteAccount() {
     const res = await fetch('/api/auth/account', { method: 'DELETE' });
     if (!res.ok) throw new Error(PROFILE_DANGER.deleteErrorServer);
-    await signOut({ callbackUrl: '/' });
+    await signOut({ callbackUrl: window.location.origin + '/' });
   }
 
   return (
@@ -340,7 +340,7 @@ export default function ProfilePage() {
           confirmLabel={PROFILE_DANGER.logoutButton}
           danger
           onClose={() => setShowLogout(false)}
-          onConfirm={() => signOut({ callbackUrl: '/' })}
+          onConfirm={() => signOut({ callbackUrl: window.location.origin + '/' })}
         />
       )}
       {showDelete && (
