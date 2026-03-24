@@ -104,7 +104,7 @@
 "use client";
 
 import {
-  useState, useEffect, useRef,
+  useState, useEffect, useRef, useCallback,
 } from 'react';
 import {
   FolderPlus, ChevronRight, Zap,
@@ -112,6 +112,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import type { Editor } from '@tiptap/core';
 import { useNotes } from '@/src/frontend/hooks/data/useNotes';
 import { useSearch }     from '@/src/frontend/hooks/data/useSearch';
@@ -157,6 +158,16 @@ export default function NotesEditor() {
   const { notes, deletedNotes, folders, manualTags, loading, refreshNotes, refreshMeta } = useNotes();
   // ── Authentification — pour le profil utilisateur + déconnexion ───────────
   const { data: session } = useSession();
+  const router = useRouter();
+  /**
+   * Déconnexion robuste : redirect:false évite qu'Auth.js utilise AUTH_URL
+   * (qui peut pointer vers localhost en dev) pour construire la destination.
+   * La redirection est faite par le router Next.js — toujours vers le bon domaine.
+   */
+  const handleSignOut = useCallback(async () => {
+    await signOut({ redirect: false });
+    router.push('/');
+  }, [router]);
 
   // ── Filtres, vue, tri et recherche ──────────────────────────────────────────
   const {
@@ -489,7 +500,7 @@ export default function NotesEditor() {
     warningAfterMs: 2.5 * 60 * 1000, // avertissement à 2min30
     logoutAfterMs:  3   * 60 * 1000, // déconnexion à 3min
     onWarning: () => setShowIdleWarning(true),
-    onLogout:  () => signOut({ callbackUrl: window.location.origin + '/' }),
+    onLogout:  handleSignOut,
     onReset:   () => setShowIdleWarning(false),
   });
 
@@ -554,7 +565,7 @@ export default function NotesEditor() {
             <div className="flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: window.location.origin + '/' })}
+                onClick={handleSignOut}
                 className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] transition-colors"
               >
                 Se déconnecter
@@ -684,7 +695,7 @@ export default function NotesEditor() {
               {/* Bouton déconnexion */}
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: window.location.origin + '/' })}
+                onClick={handleSignOut}
                 title="Se déconnecter"
                 className="text-gray-500 hover:text-red-400 transition-colors duration-[120ms] p-1 rounded"
               >

@@ -60,6 +60,16 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     }),
   ],
   callbacks: {
+    /**
+     * Garantit que les redirections post-signIn/signOut pointent toujours
+     * vers le bon domaine — même si NEXTAUTH_URL/AUTH_URL est mal configuré.
+     * baseUrl est inféré depuis les headers HTTP réels (x-forwarded-host sur Vercel).
+     */
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === new URL(baseUrl).origin) return url;
+      return baseUrl;
+    },
     async jwt({ token, user, trigger, session }) {
       // `user` est présent uniquement lors du premier appel post-login
       if (user?.id) {
