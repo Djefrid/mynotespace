@@ -47,7 +47,7 @@
 - **Épinglées** — vue filtrée
 
 ### Productivité
-- **Autosave 1s** après dernière frappe + Ctrl+S immédiat
+- **Autosave 1s** après dernière frappe + Ctrl+S immédiat — envoie `{ html, json, plainText }` à chaque save
 - **Slash commands** : `/h1`, `/ul`, `/code`, `/table`, etc.
 - **Autocomplétion #tags** avec fuzzy match
 - **Focus mode** — éditeur plein écran sans distraction
@@ -91,8 +91,22 @@
 - **Validation URL XSS** sur les liens TipTap — `normalizeUrl()` bloque `javascript:`, `data:`, `vbscript:`
 - **Server Actions** restreintes au domaine de production (`allowedOrigins`)
 - `poweredByHeader: false` — supprime le header `X-Powered-By: Next.js`
+- **Fix signOut prod** : `callbackUrl: window.location.origin + '/'` — évite la redirection vers `localhost:3000` quand `AUTH_URL` est défini en local
 - Cascade delete : workspace → notes/dossiers/tags/fichiers → user
 - **Modales de confirmation** sur toutes les actions irréversibles
+
+### Stockage du contenu — JSON TipTap comme source de vérité
+La table `NoteContent` stocke 3 colonnes complémentaires depuis mars 2026 :
+
+| Colonne | Type | Rôle |
+|---|---|---|
+| `json` | JsonB (nullable) | Arbre ProseMirror natif — source de vérité pour le chargement éditeur |
+| `html` | Text | Dérivé cache — utilisé pour les exports DOCX/PDF/Markdown |
+| `plainText` | Text | Dérivé texte brut — Typesense, preview NoteCard |
+
+- **Chargement** : `setContent(json ?? html)` — les notes sans JSON chargent depuis HTML (rétrocompat)
+- **Autosave** : `editor.getJSON() + editor.getText() + editor.getHTML()` envoyés à chaque frappe
+- **Recherche** : `plainText` DB utilisé en priorité dans Typesense, `stripHtml(html)` en fallback
 
 ### Performance
 - `shouldRerenderOnTransaction: false` dans TipTap — zéro re-render parent à chaque frappe
