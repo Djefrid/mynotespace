@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * COLONNE LISTE DES NOTES — components/notes/NoteListColumn.tsx
  * ============================================================================
@@ -42,6 +42,7 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, StickyNote, ArrowLeft, X, ArrowUpDown, Trash2, Zap,
+  ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { permanentlyDeleteNote } from '@/src/frontend/services/notes-mutations-api';
 import { usePermissions } from '@/src/frontend/hooks/usePermissions';
@@ -100,6 +101,12 @@ interface NoteListColumnProps {
   onSelectNote: (note: Note) => void;
   /** Vrai pendant le chargement initial Firestore */
   loading: boolean;
+  /** Vrai si la colonne est rétractée (desktop) */
+  isCollapsed: boolean;
+  /** Toggle collapse/expand de la colonne */
+  onToggle: () => void;
+  /** Ré-ouvre la liste depuis le bord de l'éditeur */
+  onExpandFromEditor: () => void;
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -131,6 +138,9 @@ export default function NoteListColumn({
   selectedId,
   onSelectNote,
   loading,
+  isCollapsed,
+  onToggle,
+  onExpandFromEditor,
 }: NoteListColumnProps) {
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
   const { can } = usePermissions();
@@ -139,7 +149,9 @@ export default function NoteListColumn({
     /* ══ NOTE LIST ══════════════════════════════════════════════════════════ */
     <div className={`
       ${mobilePanel === 'list' ? 'flex' : 'hidden'} md:flex
-      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-[#0d1117] border-r border-gray-200 dark:border-dark-700
+      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700
+      transition-[width,min-width] duration-[280ms] ease-in-out overflow-hidden
+      ${isCollapsed ? '!w-0 !min-w-0' : ''}
     `}>
       {/* ── Header : titre de la vue, tri, nouvelle note ─────────────────── */}
       <div className="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-dark-700">
@@ -150,7 +162,7 @@ export default function NoteListColumn({
             onClick={() => setMobilePanel('sidebar')}
             className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
           >
-            <ArrowLeft size={13} />{viewLabel(view, folders)}
+            <ArrowLeft size={14} />{viewLabel(view, folders)}
           </button>
         </div>
 
@@ -240,6 +252,16 @@ export default function NoteListColumn({
                 onCancel={() => setShowEmptyTrashConfirm(false)}
               />
             )}
+
+            {/* Bouton collapse liste — desktop uniquement */}
+            <button
+              type="button"
+              title="Masquer la liste (Ctrl+Shift+\)"
+              onClick={onToggle}
+              className="hidden md:flex p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors"
+            >
+              <ChevronsLeft size={14} />
+            </button>
           </div>
         </div>
 
@@ -269,7 +291,7 @@ export default function NoteListColumn({
               onClick={() => setSearch('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
             >
-              <X size={11} />
+              <X size={12} />
             </button>
           )}
         </div>
@@ -309,7 +331,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="pinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#0d1117] sticky top-0 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#080c14] sticky top-0 z-10"
               >
                 Épinglées
               </div>
@@ -327,7 +349,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="unpinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#0d1117] sticky top-6 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#080c14] sticky top-6 z-10"
               >
                 Notes
               </div>

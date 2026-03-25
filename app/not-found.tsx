@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import ThemeToggle from '@/src/frontend/components/common/ThemeToggle';
@@ -23,7 +23,7 @@ export default function NotFound() {
         </Link>
 
         {/* Code 404 */}
-        <div className="text-[96px] font-black leading-none text-gray-100 dark:text-[#0d1117] select-none mb-2">
+        <div className="text-[96px] font-black leading-none text-gray-100 dark:text-[#080c14] select-none mb-2">
           404
         </div>
 

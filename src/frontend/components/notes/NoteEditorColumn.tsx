@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * COLONNE ÉDITEUR — components/notes/NoteEditorColumn.tsx
  * ============================================================================
@@ -263,7 +263,7 @@ export default function NoteEditorColumn({
     <div
       className={focusMode
         ? 'fixed inset-0 z-50 bg-white dark:bg-[#080c14] flex flex-col'
-        : `${mobilePanel === 'editor' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-gray-50 dark:bg-[#0d1117] min-w-0`}
+        : `${mobilePanel === 'editor' ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-gray-50 dark:bg-[#080c14] min-w-0`}
       onClick={e => e.stopPropagation()}
     >
       {/* ── État vide : aucune note sélectionnée ──────────────────────────── */}
@@ -533,7 +533,7 @@ export default function NoteEditorColumn({
               className={focusMode ? 'flex-1 min-h-0 overflow-y-auto' : 'flex-1 flex flex-col min-h-0'}
               onClick={focusMode ? () => editor?.commands.focus('end') : undefined}
             >
-              <div className={focusMode ? 'max-w-[1080px] mx-auto w-full py-8' : 'flex-1 flex flex-col min-h-0'}>
+              <div className={focusMode ? 'w-[70%] mx-auto py-8' : 'flex-1 flex flex-col min-h-0 w-full'}>
                 {/* ── Champ titre + autocomplétion tags ───────────────────── */}
                 <div className="relative">
                   <input
@@ -549,7 +549,7 @@ export default function NoteEditorColumn({
                     readOnly={isReadOnly}
                     aria-label="Titre de la note"
                     maxLength={200}
-                    className={`w-full px-6 pt-4 pb-1 bg-transparent text-xl font-bold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none ${
+                    className={`w-full px-6 pt-8 pb-2 bg-transparent text-[28px] font-semibold leading-tight text-[rgb(37,35,30)] dark:text-white placeholder-gray-300 dark:placeholder-gray-600 focus:outline-none ${
                       isReadOnly ? 'cursor-default' : ''
                     }`}
                   />
@@ -572,7 +572,7 @@ export default function NoteEditorColumn({
                               : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                           }`}
                         >
-                          <Hash size={11} />#{t}
+                          <Hash size={12} />#{t}
                         </button>
                       ))}
                       <p className="px-3 py-1 text-[10px] text-gray-600">↑↓ · Tab/Enter · Esc</p>
@@ -584,7 +584,7 @@ export default function NoteEditorColumn({
                 {selectedNote.folderId && (
                   <div className="px-6 pb-1">
                     <span className="flex items-center gap-1 text-xs text-gray-500">
-                      <FolderOpen size={11} />
+                      <FolderOpen size={12} />
                       {folders.find(f => f.id === selectedNote.folderId)?.name ?? 'Dossier'}
                     </span>
                   </div>
@@ -642,8 +642,8 @@ export default function NoteEditorColumn({
                 {/* ── Barre contextuelle bloc de code ─────────────────────── */}
                 {/* S'affiche quand le curseur est dans un bloc de code et que la note est éditable */}
                 {isInCodeBlock && !isReadOnly && editor && (
-                  <div className="px-3 py-1.5 border-b border-gray-100 dark:border-dark-800 flex items-center gap-2 bg-gray-50 dark:bg-[#0d1117] shrink-0">
-                    <Code2 size={11} className="text-yellow-400 shrink-0" />
+                  <div className="px-3 py-2.5 border-b border-gray-100 dark:border-dark-800 flex items-center gap-2 bg-gray-50 dark:bg-[#080c14] shrink-0">
+                    <Code2 size={12} className="text-yellow-400 shrink-0" />
 
                     {/* Sélecteur de langage */}
                     <select
@@ -855,7 +855,7 @@ export default function NoteEditorColumn({
                             : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                         }`}
                       >
-                        <Hash size={11} />#{item}
+                        <Hash size={12} />#{item}
                       </button>
                     ))}
                     <p className="px-3 py-1 text-[10px] text-gray-600">↑↓ · Tab/Enter · Esc</p>
@@ -876,7 +876,7 @@ export default function NoteEditorColumn({
                 {/* Cliquables → changement de vue vers le tag correspondant */}
                 {selectedNote.tags.length > 0 && (
                   <div className="px-6 py-2.5 border-t border-gray-100 dark:border-dark-800 flex items-center gap-1.5 flex-wrap">
-                    <Hash size={11} className="text-gray-600" />
+                    <Hash size={12} className="text-gray-600" />
                     {selectedNote.tags.map(t => (
                       <span
                         key={t}

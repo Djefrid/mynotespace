@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { useNotesApi }  from './useNotesApi';
-import type { Folder }  from '@/lib/notes-service';
+import { useCallback } from 'react';
+import useSWR from 'swr';
+import { useNotesApi } from './useNotesApi';
+import type { Folder } from '@/lib/notes-service';
 
 type ApiFolderItem = {
   id:          string;
@@ -18,68 +19,73 @@ type ApiTagItem = {
   name: string;
 };
 
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+const SWR_CONFIG = {
+  revalidateOnFocus:     true,
+  revalidateOnReconnect: true,
+  refreshInterval:       30_000,
+  refreshWhenHidden:     false,
+  refreshWhenOffline:    false,
+  dedupingInterval:      2_000,
+};
+
 /**
- * Charge notes, dossiers et tags depuis les routes API PostgreSQL.
+ * Charge notes, dossiers et tags depuis les routes API PostgreSQL via SWR.
+ * Tout se rafraîchit automatiquement au focus de l'onglet et toutes les 30s.
  */
 export function useNotes() {
-  const { notes, deletedNotes, loading: notesLoading, refresh: refreshNotes } = useNotesApi();
+  const {
+    notes, deletedNotes,
+    loading: notesLoading,
+    refresh: refreshNotes,
+    deleteNoteOptimistic,
+    permanentlyDeleteNoteOptimistic,
+    recoverNoteOptimistic,
+  } = useNotesApi();
 
-  const [folders,    setFolders]    = useState<Folder[]>([]);
-  const [manualTags, setManualTags] = useState<string[]>([]);
-  const [metaReady,  setMetaReady]  = useState(false);
-  const [metaKey,    setMetaKey]    = useState(0);
+  const {
+    data:    foldersData,
+    isLoading: foldersLoading,
+    mutate:  mutateFolders,
+  } = useSWR<{ data: ApiFolderItem[] }>('/api/folders', fetcher, SWR_CONFIG);
 
-  const refreshMeta = useCallback(() => setMetaKey(k => k + 1), []);
+  const {
+    data:    tagsData,
+    isLoading: tagsLoading,
+    mutate:  mutateTags,
+  } = useSWR<{ data: ApiTagItem[] }>('/api/tags', fetcher, SWR_CONFIG);
 
-  useEffect(() => {
-    let cancelled = false;
+  const folders: Folder[] = (foldersData?.data ?? []).map((f, i) => ({
+    id:        f.id,
+    name:      f.name,
+    order:     i,
+    parentId:  f.parentId,
+    isSmart:   false,
+    createdAt: new Date(f.createdAt),
+    updatedAt: new Date(f.updatedAt),
+  }));
 
-    async function fetchMeta() {
-      try {
-        const [fRes, tRes] = await Promise.all([
-          fetch('/api/folders'),
-          fetch('/api/tags'),
-        ]);
+  const manualTags = (tagsData?.data ?? [])
+    .map(t => t.name)
+    .sort((a, b) => a.localeCompare(b, 'fr'));
 
-        if (cancelled) return;
-
-        if (fRes.ok) {
-          const { data } = await fRes.json() as { data: ApiFolderItem[] };
-          setFolders(data.map((f, i) => ({
-            id:        f.id,
-            name:      f.name,
-            order:     i,
-            parentId:  f.parentId,
-            isSmart:   false,
-            createdAt: new Date(f.createdAt),
-            updatedAt: new Date(f.updatedAt),
-          })));
-        }
-
-        if (tRes.ok) {
-          const { data } = await tRes.json() as { data: ApiTagItem[] };
-          setManualTags(
-            data.map(t => t.name).sort((a, b) => a.localeCompare(b, 'fr'))
-          );
-        }
-      } catch (err) {
-        console.error('[useNotes]', err);
-      } finally {
-        if (!cancelled) setMetaReady(true);
-      }
-    }
-
-    fetchMeta();
-    return () => { cancelled = true; };
-  }, [metaKey]);
+  /** Force un re-fetch des dossiers et tags (après rename/create/delete dossier ou tag). */
+  const refreshMeta = useCallback(() => {
+    mutateFolders();
+    mutateTags();
+  }, [mutateFolders, mutateTags]);
 
   return {
     notes,
     deletedNotes,
     folders,
     manualTags,
-    loading:      notesLoading || !metaReady,
+    loading:      notesLoading || foldersLoading || tagsLoading,
     refreshNotes,
     refreshMeta,
+    deleteNoteOptimistic,
+    permanentlyDeleteNoteOptimistic,
+    recoverNoteOptimistic,
   };
 }

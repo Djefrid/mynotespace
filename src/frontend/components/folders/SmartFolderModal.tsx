@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * SMART FOLDER MODAL — components/notes/SmartFolderModal.tsx
  * ============================================================================
@@ -131,7 +131,7 @@ export default function SmartFolderModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="smart-folder-modal-title"
-        className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
+        className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
         onKeyDown={handleDialogKeyDown}
       >
@@ -207,7 +207,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={createdDays}
                 onChange={e => setCreatedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#0d1117] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#080c14] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours
@@ -220,7 +220,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={modifiedDays}
                 onChange={e => setModifiedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#0d1117] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#080c14] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours

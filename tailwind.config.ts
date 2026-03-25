@@ -24,8 +24,19 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        // Police Inter auto-hébergée via next/font
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        // Stack système Notion-style : Inter auto-hébergé + fallbacks OS natifs
+        // → SF Pro sur macOS, Segoe UI sur Windows, Roboto sur Android
+        sans: [
+          'var(--font-inter)',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
       },
       colors: {
         // Palette primary (bleu) — accents et boutons

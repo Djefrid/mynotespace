@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * ============================================================================
@@ -176,7 +176,7 @@ export default function CommandPalette({
     >
       {/* Modal */}
       <div
-        className="w-full max-w-lg bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Input de recherche */}
@@ -196,7 +196,7 @@ export default function CommandPalette({
           {query && (
             <button type="button" onClick={() => setQuery('')}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-              <X size={13} />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -240,7 +240,7 @@ export default function CommandPalette({
                         {item.subtitle && (
                           <span className="text-xs text-gray-400 ml-auto shrink-0">{item.subtitle}</span>
                         )}
-                        <ArrowRight size={11} className="shrink-0 text-gray-400 opacity-50" />
+                        <ArrowRight size={12} className="shrink-0 text-gray-400 opacity-50" />
                       </Link>
                     );
                   }

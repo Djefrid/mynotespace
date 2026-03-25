@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * NOTES SIDEBAR — components/notes/NotesSidebar.tsx
  * ============================================================================
@@ -37,7 +37,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus, Pin, Trash2, Search, StickyNote, FolderOpen,
-  Hash, MoreHorizontal, Folder, Zap, X,
+  Hash, MoreHorizontal, Folder, Zap, X, FolderPlus,
 } from 'lucide-react';
 import { updateFolder, deleteFolder, createTag } from '@/src/frontend/services/notes-mutations-api';
 import type { Note, Folder as FolderType } from '@/lib/notes-service';
@@ -77,7 +77,11 @@ interface NotesSidebarProps {
   /** Déclenche l'animation shake sur le bouton corbeille */
   trashShake:         boolean;
   /** Crée un sous-dossier sous le dossier donné */
-  onCreateSubfolder:  (parentId: string) => void;
+  onCreateSubfolder:    (parentId: string) => void;
+  /** Crée un dossier normal */
+  onCreateFolder:       () => void;
+  /** Ouvre la modal de création de dossier intelligent */
+  onCreateSmartFolder:  () => void;
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -86,6 +90,7 @@ export default function NotesSidebar({
   notes, deletedNotes, folders, manualTags, view, onSelectView,
   newFolderPendingId, onFolderCreated, onEditSmartFolder,
   onCreateTag, onDeleteTag, trashBtnRef, trashShake, onCreateSubfolder,
+  onCreateFolder, onCreateSmartFolder,
 }: NotesSidebarProps) {
   // ── État local ─────────────────────────────────────────────────────────────
   const [editingId,       setEditingId]       = useState<string | null>(null);
@@ -102,6 +107,8 @@ export default function NotesSidebar({
   const [confirmDeleteFolderId, setConfirmDeleteFolderId] = useState<string | null>(null);
   /** Nom du tag dont la suppression est en attente de confirmation */
   const [confirmDeleteTag,      setConfirmDeleteTag]      = useState<string | null>(null);
+  /** Dropdown "Nouveau dossier / intelligent" dans le header de section */
+  const [showFolderMenu, setShowFolderMenu] = useState(false);
 
   /** Bascule l'état expansé/réduit d'un dossier (mémoïsé pour éviter re-renders) */
   const toggleExpand = useCallback((id: string) => {
@@ -156,10 +163,10 @@ export default function NotesSidebar({
 
   /** Classes CSS d'une ligne de navigation selon l'état actif */
   const row = (v: ViewFilter) =>
-    `w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-sm transition-colors ${
+    `w-full flex items-center justify-between px-2 py-2 rounded-lg text-sm transition-all ${
       viewEq(view, v)
-        ? 'bg-yellow-500/15 text-yellow-300 font-medium'
-        : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
+        ? 'ring-1 ring-yellow-500/70 text-gray-900 dark:text-white font-medium'
+        : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/5 dark:hover:bg-[#111520]'
     }`;
 
   /** Valide le renommage d'un dossier et met à jour Firestore */
@@ -233,31 +240,9 @@ export default function NotesSidebar({
       className="flex flex-col h-full overflow-y-auto select-none"
       onClick={() => setMenuId(null)}
     >
-      {/* ── Smart views ─────────────────────────────────────────────────────── */}
-      <div className="px-2 pt-3 pb-2 space-y-0.5">
-        {folders.length > 0 && (
-          <button type="button" className={row('all')} onClick={() => onSelectView('all')}>
-            <span className="flex items-center gap-2"><StickyNote size={13} /><span className="hidden lg:inline">Toutes</span></span>
-            <span className="text-xs opacity-50 hidden lg:inline">{counts.all}</span>
-          </button>
-        )}
-        {counts.pinned > 0 && (
-          <button type="button" className={row('pinned')} onClick={() => onSelectView('pinned')}>
-            <span className="flex items-center gap-2"><Pin size={13} /><span className="hidden lg:inline">Épinglées</span></span>
-            <span className="text-xs opacity-50 hidden lg:inline">{counts.pinned}</span>
-          </button>
-        )}
-        <button type="button" className={row('inbox')} onClick={() => onSelectView('inbox')}>
-          <span className="flex items-center gap-2"><Folder size={13} /><span className="hidden lg:inline">Toutes mes notes</span></span>
-          <span className="text-xs opacity-50 hidden lg:inline">{counts.inbox}</span>
-        </button>
-      </div>
-
-      <div className="mx-2 border-t border-gray-200 dark:border-dark-700" />
-
-      {/* ── Barre de recherche dossiers/tags — filtre la sidebar uniquement ── */}
-      <div className="hidden lg:block px-2 pt-2 pb-1 relative">
-        <Search size={11} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+      {/* ── Barre de recherche dossiers/tags — en tête de sidebar, pattern Notion/Linear ── */}
+      <div className="block md:hidden lg:block px-2 pt-3 pb-2 relative">
+        <Search size={12} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
         <input
           name="sidebar-search"
           type="text"
@@ -275,10 +260,32 @@ export default function NotesSidebar({
             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
             aria-label="Effacer la recherche"
           >
-            <X size={10} />
+            <X size={12} />
           </button>
         )}
       </div>
+
+      {/* ── Smart views ─────────────────────────────────────────────────────── */}
+      <div className="px-2 pt-1 pb-2 space-y-0.5">
+        {folders.length > 0 && (
+          <button type="button" className={row('all')} onClick={() => onSelectView('all')}>
+            <span className="flex items-center gap-2"><StickyNote size={14} /><span className="inline md:hidden lg:inline">Toutes</span></span>
+            <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{counts.all}</span>
+          </button>
+        )}
+        {counts.pinned > 0 && (
+          <button type="button" className={row('pinned')} onClick={() => onSelectView('pinned')}>
+            <span className="flex items-center gap-2"><Pin size={14} /><span className="inline md:hidden lg:inline">Épinglées</span></span>
+            <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{counts.pinned}</span>
+          </button>
+        )}
+        <button type="button" className={row('inbox')} onClick={() => onSelectView('inbox')}>
+          <span className="flex items-center gap-2"><Folder size={14} /><span className="inline md:hidden lg:inline">Toutes mes notes</span></span>
+          <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{counts.inbox}</span>
+        </button>
+      </div>
+
+      <div className="mx-2 border-t border-gray-200 dark:border-dark-700" />
 
       {/* ── Mode recherche : liste plate OU sections normales (dossiers + tags) */}
       {folderSearch.trim() ? (
@@ -297,10 +304,10 @@ export default function NotesSidebar({
                 onClick={() => { onSelectView({ type: 'folder', id: f.id }); setFolderSearch(''); }}
               >
                 <span className="flex items-center gap-2 truncate min-w-0">
-                  <FolderOpen size={13} className="shrink-0" />
+                  <FolderOpen size={14} className="shrink-0" />
                   <span className="truncate">{f.name}</span>
                 </span>
-                <span className="text-xs opacity-50 shrink-0">{counts.byFolder[f.id] ?? 0}</span>
+                <span className="text-[11px] opacity-40 shrink-0">{counts.byFolder[f.id] ?? 0}</span>
               </button>
             ))
           }
@@ -315,7 +322,7 @@ export default function NotesSidebar({
                 onClick={() => { onSelectView({ type: 'folder', id: f.id }); setFolderSearch(''); }}
               >
                 <span className="flex items-center gap-2 truncate min-w-0">
-                  <Zap size={12} className="text-yellow-400 shrink-0" />
+                  <Zap size={12} className="text-yellow-400 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
                   <span className="truncate">{f.name}</span>
                 </span>
               </button>
@@ -335,7 +342,7 @@ export default function NotesSidebar({
                   <Hash size={12} className="shrink-0" />
                   <span className="truncate">#{tag}</span>
                 </span>
-                <span className="text-xs opacity-50 shrink-0">{counts.byTag[tag] ?? 0}</span>
+                <span className="text-[11px] opacity-40 shrink-0">{counts.byTag[tag] ?? 0}</span>
               </button>
             ))
           }
@@ -350,9 +357,44 @@ export default function NotesSidebar({
         <>
           {/* ── Dossiers normaux — arbre récursif ───────────────────────────── */}
           {folderTree.length > 0 && (
-            <div className="pt-1 pb-1">
+            <div className="pt-3 pb-2">
               <div className="px-3 mb-1 flex items-center justify-between group/section">
-                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tracking-wide hidden lg:inline">Dossiers</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400/55 dark:text-gray-500/70 inline md:hidden lg:inline">Dossiers</span>
+
+                {/* Bouton hover-reveal — pattern Notion/Linear */}
+                <div className="relative block md:hidden lg:block">
+                  <button
+                    type="button"
+                    title="Nouveau dossier"
+                    onClick={e => { e.stopPropagation(); setShowFolderMenu(m => !m); }}
+                    className="flex items-center gap-1 opacity-0 group-hover/section:opacity-100 transition-opacity text-gray-400 hover:text-yellow-400 px-1 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-[#111520]"
+                  >
+                    <FolderPlus size={12} />
+                    <span className="text-[10px]">Nouveau</span>
+                  </button>
+
+                  {showFolderMenu && (
+                    <div
+                      className="absolute right-0 top-full z-50 mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-48"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => { onCreateFolder(); setShowFolderMenu(false); }}
+                        className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
+                      >
+                        <FolderPlus size={12} /> Dossier normal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { onCreateSmartFolder(); setShowFolderMenu(false); }}
+                        className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
+                      >
+                        <Zap size={12} className="text-yellow-400" /> Dossier intelligent
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               {folderTree.map(node => (
                 <FolderTreeItem
@@ -380,9 +422,9 @@ export default function NotesSidebar({
 
           {/* ── Dossiers intelligents — liste plate ─────────────────────────── */}
           {smartFolders.length > 0 && (
-            <div className="pt-1 pb-1">
+            <div className="pt-3 pb-2">
               <div className="px-3 mb-1">
-                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tracking-wide hidden lg:inline">Intelligents</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400/55 dark:text-gray-500/70 inline md:hidden lg:inline">Intelligents</span>
               </div>
 
               <div className="space-y-0.5 px-2">
@@ -401,7 +443,7 @@ export default function NotesSidebar({
                           if (e.key === 'Enter')  commitRename(f.id);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
-                        className="w-full px-2 py-1.5 text-sm bg-gray-200 dark:bg-[#0d1117] border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none"
+                        className="w-full px-2 py-1.5 text-sm bg-gray-200 dark:bg-[#080c14] border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none"
                       />
                     ) : (
                       /* div role="button" — évite <button> imbriqué dans <button> (HTML invalide) */
@@ -413,8 +455,8 @@ export default function NotesSidebar({
                         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectView({ type: 'folder', id: f.id }); } }}
                       >
                         <span className="flex items-center gap-2 truncate min-w-0">
-                          <Zap size={12} className="text-yellow-400 shrink-0" />
-                          <span className="truncate hidden lg:inline">{f.name}</span>
+                          <Zap size={12} className="text-yellow-400 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+                          <span className="truncate inline md:hidden lg:inline">{f.name}</span>
                         </span>
                         <span className="flex items-center gap-1 shrink-0">
                           <button
@@ -423,7 +465,7 @@ export default function NotesSidebar({
                             onClick={e => { e.stopPropagation(); setMenuId(menuId === f.id ? null : f.id); }}
                             className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-300 dark:hover:bg-[#111520] transition-opacity"
                           >
-                            <MoreHorizontal size={11} />
+                            <MoreHorizontal size={12} />
                           </button>
                         </span>
                       </div>
@@ -459,16 +501,17 @@ export default function NotesSidebar({
           <div className="mx-2 border-t border-gray-200 dark:border-dark-700" />
 
           {/* ── Tags — toujours visible avec bouton "+" pour créer ───────────── */}
-          <div className="px-2 pt-2 pb-2">
-            <div className="px-1 mb-1 flex items-center justify-between">
-              <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 tracking-wide hidden lg:inline">Tags</span>
+          <div className="px-2 pt-3 pb-3">
+            <div className="px-1 mb-1 flex items-center justify-between group/section">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400/55 dark:text-gray-500/70 inline md:hidden lg:inline">Tags</span>
               <button
                 type="button"
                 title="Nouveau tag"
                 onClick={e => { e.stopPropagation(); setShowNewTag(true); }}
-                className="text-gray-500 hover:text-yellow-400 transition-colors p-0.5 rounded"
+                className="flex md:hidden lg:flex items-center gap-1 opacity-0 group-hover/section:opacity-100 transition-opacity text-gray-400 hover:text-yellow-400 px-1 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-[#111520]"
               >
-                <Plus size={11} />
+                <Plus size={12} />
+                <span className="text-[10px]">Nouveau</span>
               </button>
             </div>
 
@@ -487,7 +530,7 @@ export default function NotesSidebar({
                   onBlur={() => setTimeout(commitNewTag, 150)}
                   onFocus={() => handleTagInputChange(newTagInput)}
                   maxLength={50}
-                  className="w-full px-2 py-1 text-xs bg-gray-200 dark:bg-[#0d1117] border border-yellow-500/50 rounded text-gray-900 dark:text-white focus:outline-none placeholder-gray-500 dark:placeholder-gray-600"
+                  className="w-full px-2 py-1 text-xs bg-gray-200 dark:bg-[#080c14] border border-yellow-500/50 rounded text-gray-900 dark:text-white focus:outline-none placeholder-gray-500 dark:placeholder-gray-600"
                 />
                 {tagInputSuggs.length > 0 && (
                   <div className="absolute left-0 top-full z-50 w-full mt-0.5 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden">
@@ -495,9 +538,9 @@ export default function NotesSidebar({
                       <button key={t} type="button"
                         onMouseDown={e => { e.preventDefault(); applyTagInputSugg(t); }}
                         className={`w-full px-2 py-1 text-xs text-left flex items-center gap-1.5 transition-colors ${
-                          i === tagInputSuggIdx ? 'bg-yellow-500/20 text-yellow-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
+                          i === tagInputSuggIdx ? 'ring-1 ring-yellow-500/60 text-yellow-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
                         }`}
-                      ><Hash size={10} />#{t}</button>
+                      ><Hash size={12} />#{t}</button>
                     ))}
                   </div>
                 )}
@@ -524,10 +567,10 @@ export default function NotesSidebar({
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectView({ type: 'tag', tag }); } }}
                   >
                     <span className="flex items-center gap-2">
-                      <Hash size={12} /><span className="truncate hidden lg:inline">{tag}</span>
+                      <Hash size={14} /><span className="truncate inline md:hidden lg:inline">{tag}</span>
                     </span>
                     <span className="flex items-center gap-1 shrink-0">
-                      <span className="text-xs opacity-50 hidden lg:inline">{counts.byTag[tag] ?? 0}</span>
+                      <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{counts.byTag[tag] ?? 0}</span>
                       {/* Bouton supprimer uniquement sur les tags manuels */}
                       {manualTags.includes(tag) && (
                         <button
@@ -536,7 +579,7 @@ export default function NotesSidebar({
                           onClick={e => { e.stopPropagation(); setConfirmDeleteTag(tag); }}
                           className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:text-red-400 transition-opacity"
                         >
-                          <X size={10} />
+                          <X size={12} />
                         </button>
                       )}
                     </span>
@@ -581,9 +624,9 @@ export default function NotesSidebar({
             : { x: 0, rotate: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <span className="flex items-center gap-2"><Trash2 size={13} /><span className="hidden lg:inline">Corbeille</span></span>
+          <span className="flex items-center gap-2"><Trash2 size={14} /><span className="inline md:hidden lg:inline">Corbeille</span></span>
           {deletedNotes.length > 0 && (
-            <span className="text-xs opacity-50 hidden lg:inline">{deletedNotes.length}</span>
+            <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{deletedNotes.length}</span>
           )}
         </motion.button>
       </div>

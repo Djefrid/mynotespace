@@ -129,9 +129,9 @@ describe('fmtDate', () => {
     vi.useRealTimers();
   });
 
-  it('retourne "Auj." pour aujourd\'hui', () => {
+  it('retourne "Il y a Xh" pour aujourd\'hui', () => {
     const today = new Date('2026-03-18T08:00:00.000Z');
-    expect(fmtDate(today)).toBe('Auj.');
+    expect(fmtDate(today)).toBe('Il y a 4h');
   });
 
   it('retourne "Hier" pour hier', () => {
@@ -139,9 +139,9 @@ describe('fmtDate', () => {
     expect(fmtDate(yesterday)).toBe('Hier');
   });
 
-  it('retourne "Nj" pour N < 7 jours', () => {
+  it('retourne "Il y a Nj" pour N < 7 jours', () => {
     const threeDaysAgo = new Date('2026-03-15T08:00:00.000Z');
-    expect(fmtDate(threeDaysAgo)).toBe('3j');
+    expect(fmtDate(threeDaysAgo)).toBe('Il y a 3j');
   });
 
   it('retourne la date formatée pour >= 7 jours', () => {
@@ -152,9 +152,9 @@ describe('fmtDate', () => {
     expect(result.toLowerCase()).toContain('mars');
   });
 
-  it('retourne "6j" pour 6 jours', () => {
+  it('retourne "Il y a 6j" pour 6 jours', () => {
     const sixDaysAgo = new Date('2026-03-12T08:00:00.000Z');
-    expect(fmtDate(sixDaysAgo)).toBe('6j');
+    expect(fmtDate(sixDaysAgo)).toBe('Il y a 6j');
   });
 });
 

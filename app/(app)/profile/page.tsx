@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
@@ -75,7 +75,7 @@ function Sidebar({ active }: { active: string }) {
                 : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520]/50'
             }`}
           >
-            <Icon size={11} className="shrink-0" />
+            <Icon size={12} className="shrink-0" />
             {label}
           </button>
         ))}
@@ -117,7 +117,7 @@ function Feedback({ state }: { state: FeedbackState }) {
   if (!state) return null;
   return (
     <p className={`flex items-center gap-1.5 text-xs ${state.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-      {state.type === 'success' ? <Check size={11} /> : <AlertCircle size={11} />}
+      {state.type === 'success' ? <Check size={12} /> : <AlertCircle size={12} />}
       {state.message}
     </p>
   );
@@ -151,7 +151,7 @@ function ConfirmModal({
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="confirm-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 w-full max-w-sm shadow-xl">
+      <div className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 w-full max-w-sm shadow-xl">
         <div className="flex items-start justify-between mb-3">
           <h2 id="confirm-title" className="font-semibold text-gray-900 dark:text-white text-sm">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Fermer"
@@ -196,7 +196,7 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="delete-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="bg-white dark:bg-[#0d1117] border border-red-500/30 rounded-xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-white dark:bg-[#080c14] border border-red-500/30 rounded-xl p-6 w-full max-w-md shadow-xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-2 text-red-500 dark:text-red-400">
             <AlertTriangle size={18} />
@@ -456,7 +456,7 @@ export default function ProfilePage() {
             <div className="flex-1 min-w-0 space-y-4">
 
               {/* ── Compte ──────────────────────────────────────────────── */}
-              <section id="compte" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="compte" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                     <UserIcon size={12} /> {PROFILE_ACCOUNT.sectionTitle}
@@ -465,7 +465,7 @@ export default function ProfilePage() {
                     <button type="button"
                       onClick={() => { setName(session?.user?.name ?? ''); setNameFeedback(null); setEditingName(true); }}
                       className="flex items-center gap-1.5 px-3 py-1 text-xs text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-dark-600 rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-dark-500 transition-colors">
-                      <Pencil size={11} /> {PROFILE_ACCOUNT.editButton}
+                      <Pencil size={12} /> {PROFILE_ACCOUNT.editButton}
                     </button>
                   )}
                 </div>
@@ -514,7 +514,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Sécurité ────────────────────────────────────────────── */}
-              <section id="securite" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="securite" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Shield size={12} /> {PROFILE_SECURITY.sectionTitle}
                 </h2>
@@ -578,7 +578,7 @@ export default function ProfilePage() {
                       <button type="button"
                         onClick={() => { setPwdFeedback(null); setEditingPwd(true); }}
                         className="flex items-center gap-1.5 px-3 py-1 text-xs text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-dark-600 rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-dark-500 transition-colors">
-                        <Pencil size={11} /> {PROFILE_SECURITY.passwordEditBtn}
+                        <Pencil size={12} /> {PROFILE_SECURITY.passwordEditBtn}
                       </button>
                     )}
                   </div>
@@ -614,7 +614,7 @@ export default function ProfilePage() {
                           placeholder="••••••••" />
                         {pwdConfirmError && (
                           <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
-                            <AlertCircle size={11} /> {PROFILE_SECURITY.pwdMismatch}
+                            <AlertCircle size={12} /> {PROFILE_SECURITY.pwdMismatch}
                           </p>
                         )}
                       </div>
@@ -636,7 +636,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Apparence ───────────────────────────────────────────── */}
-              <section id="apparence" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="apparence" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <Palette size={12} /> {PROFILE_APPEARANCE.sectionTitle}
                 </h2>
@@ -651,7 +651,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Espace personnel ────────────────────────────────────── */}
-              <section id="espace" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="espace" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                   <FolderOpen size={12} /> {PROFILE_WORKSPACE.sectionTitle}
                 </h2>
@@ -667,7 +667,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Membres du workspace ────────────────────────────────── */}
-              <section id="membres" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="membres" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                     <Users size={12} /> {PROFILE_MEMBERS.sectionTitle}
@@ -752,7 +752,7 @@ export default function ProfilePage() {
                               disabled={removingId === m.userId}
                               className="p-1 text-gray-400 hover:text-red-400 transition-colors rounded disabled:opacity-40"
                             >
-                              <X size={13} />
+                              <X size={14} />
                             </button>
                           )}
                         </li>
@@ -763,7 +763,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Données & confidentialité ───────────────────────────── */}
-              <section id="donnees" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+              <section id="donnees" className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <FileText size={12} /> {PROFILE_DATA.sectionTitle}
                 </h2>
@@ -778,7 +778,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Zone de danger ──────────────────────────────────────── */}
-              <section id="danger" className="bg-white dark:bg-[#0d1117] border border-red-500/20 border-l-4 border-l-red-500/70 rounded-xl p-5 scroll-mt-6">
+              <section id="danger" className="bg-white dark:bg-[#080c14] border border-red-500/20 border-l-4 border-l-red-500/70 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-red-500/70 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <AlertTriangle size={12} /> {PROFILE_DANGER.sectionTitle}
                 </h2>
@@ -790,7 +790,7 @@ export default function ProfilePage() {
                   </div>
                   <button type="button" onClick={() => setShowLogout(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 dark:text-red-400 border border-red-400/30 rounded-lg hover:bg-red-500/10 transition-colors">
-                    <LogOut size={13} /> {PROFILE_DANGER.logoutButton}
+                    <LogOut size={14} /> {PROFILE_DANGER.logoutButton}
                   </button>
                 </div>
 
@@ -801,7 +801,7 @@ export default function ProfilePage() {
                   </div>
                   <button type="button" onClick={() => setShowDelete(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-500 dark:text-red-400 border border-red-400/30 rounded-lg hover:bg-red-500/10 transition-colors">
-                    <Trash2 size={13} /> {PROFILE_DANGER.deleteButton}
+                    <Trash2 size={14} /> {PROFILE_DANGER.deleteButton}
                   </button>
                 </div>
               </section>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * POPUP LIEN BUBBLE MENU — components/notes/BubbleLinkPopup.tsx
  * ============================================================================
@@ -50,7 +50,7 @@ export default function BubbleLinkPopup({
           if (e.key === 'Escape') { onClose(); }
         }}
         placeholder="https://..."
-        className="flex-1 text-xs bg-gray-100 dark:bg-[#0d1117] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded px-2 py-1 focus:outline-none border border-gray-300 dark:border-dark-600 focus:border-yellow-500/50"
+        className="flex-1 text-xs bg-gray-100 dark:bg-[#080c14] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded px-2 py-1 focus:outline-none border border-gray-300 dark:border-dark-600 focus:border-yellow-500/50"
       />
       {/* Bouton OK */}
       <button

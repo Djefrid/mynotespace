@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -19,6 +19,13 @@
       radial-gradient(ellipse 100% 100% at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 70%),
       rgba(255,255,255,0.02);
   }
+}
+
+/* ── Lucide icons — stroke fin style Notion/Linear ──────────────────────── */
+/* Les attributs SVG (stroke-width="2") ont une spécificité inférieure aux
+   sélecteurs CSS de classe, donc cette règle s'applique sans !important.   */
+.lucide {
+  stroke-width: 1.5;
 }
 
 /* KaTeX (équations LaTeX) — chargé dans les composants qui en ont besoin */
@@ -89,19 +96,19 @@
 .tiptap-editor {
   outline: none;
   min-height: 100%;
-  /* Mode clair — texte sombre */
-  color: #1f2937;
-  font-size: 1rem;
-  line-height: 1.7;
-  letter-spacing: 0.01em;
-  /* Curseur jaune accent comme iA Writer / Bear */
+  /* Notion : near-black chaud rgb(55,53,47) — jamais #000 pur */
+  color: rgb(55, 53, 47);
+  /* Notion : 16px corps / 1.5 line-height — standard lecture optimale */
+  font-size: 16px;
+  line-height: 1.5;
+  /* Notion : zéro letter-spacing sur le corps */
+  letter-spacing: 0;
   caret-color: #ca8a04;
-  /* Prend tout l'espace disponible en mode normal — le mode focus gère son propre centrage */
   width: 100%;
 }
-/* Mode sombre — texte légèrement moins blanc, moins fatigant en lecture longue */
+/* Mode sombre — blanc doux, pas #fff pur (fatigue oculaire) */
 .dark .tiptap-editor {
-  color: #e8e8e8;
+  color: rgba(255, 255, 255, 0.87);
   caret-color: #eab308;
 }
 /* Sélection de texte — fond semi-transparent jaune accent au lieu du bleu système */
@@ -147,8 +154,8 @@
 .tiptap-editor ul ul    { list-style-type: circle; }
 .tiptap-editor ul ul ul { list-style-type: square; }
 .tiptap-editor li { margin: 0.15rem 0; padding-left: 0.15rem; }
-.tiptap-editor strong { color: #111827; }
-.tiptap-editor em    { color: #374151; }
+.tiptap-editor strong { color: rgb(37, 35, 30); }
+.tiptap-editor em    { color: rgb(55, 53, 47); }
 .tiptap-editor u     { text-decoration: underline; }
 .tiptap-editor s     { text-decoration: line-through; color: #6b7280; }
 .dark .tiptap-editor strong { color: #f9fafb; }
@@ -163,12 +170,13 @@
 }
 .dark .tiptap-editor code { background: rgba(255,255,255,0.08); }
 /* Headings */
-.tiptap-editor h1 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0.75rem 0 0.25rem; line-height: 1.3; }
-.tiptap-editor h2 { font-size: 1.2rem; font-weight: 600; color: #1f2937; margin: 0.6rem 0 0.2rem;  line-height: 1.3; }
-.tiptap-editor h3 { font-size: 1rem;   font-weight: 600; color: #374151; margin: 0.5rem 0 0.15rem; line-height: 1.3; }
-.dark .tiptap-editor h1 { color: #f9fafb; }
-.dark .tiptap-editor h2 { color: #f3f4f6; }
-.dark .tiptap-editor h3 { color: #e5e7eb; }
+/* Headings — scale Notion : 1.875em=30px / 1.5em=24px / 1.25em=20px, weight 600 */
+.tiptap-editor h1 { font-size: 1.875em; font-weight: 600; color: rgb(55, 53, 47);       margin: 1.4em 0 0.25em; line-height: 1.3; }
+.tiptap-editor h2 { font-size: 1.5em;   font-weight: 600; color: rgb(55, 53, 47);       margin: 1.1em 0 0.25em; line-height: 1.3; }
+.tiptap-editor h3 { font-size: 1.25em;  font-weight: 600; color: rgb(55, 53, 47);       margin: 0.9em 0 0.2em;  line-height: 1.3; }
+.dark .tiptap-editor h1 { color: rgba(255, 255, 255, 0.95); }
+.dark .tiptap-editor h2 { color: rgba(255, 255, 255, 0.90); }
+.dark .tiptap-editor h3 { color: rgba(255, 255, 255, 0.85); }
 /* Blockquote */
 .tiptap-editor blockquote {
   border-left: 3px solid #d1d5db;

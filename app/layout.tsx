@@ -17,8 +17,9 @@ import { headers } from 'next/headers';
 import Providers from '@/src/frontend/providers/Providers';
 import './globals.css';
 
-/** Police Inter — auto-hébergée via next/font (aucune requête Google Fonts runtime) */
-const inter = Inter({ subsets: ['latin'] });
+/** Police Inter — auto-hébergée via next/font (aucune requête Google Fonts runtime)
+ *  Poids 400/500/600 : body / nav interactive / titres — même hiérarchie que Notion */
+const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
 /** Métadonnées SEO et PWA */
 export const metadata: Metadata = {

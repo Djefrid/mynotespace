@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * ANIMATION FLY TO TRASH — components/notes/FlyToTrash.tsx
  * ============================================================================
@@ -53,7 +53,7 @@ export default function FlyToTrash({ flyItem }: { flyItem: FlyItem | null }) {
           }}
           className="bg-gray-100 dark:bg-[#111520] border border-yellow-500/40 rounded-lg shadow-2xl flex items-center gap-2 px-3 py-1 overflow-hidden"
         >
-          <StickyNote size={11} className="text-yellow-400 shrink-0" />
+          <StickyNote size={12} className="text-yellow-400 shrink-0" />
           <span className="text-xs text-gray-600 dark:text-gray-300 truncate">{flyItem.label}</span>
         </motion.div>
       )}

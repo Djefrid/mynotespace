@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * ÉDITEUR DE NOTES — components/admin/NotesEditor.tsx
  * ============================================================================
@@ -107,8 +107,9 @@ import {
   useState, useEffect, useRef, useCallback,
 } from 'react';
 import {
-  FolderPlus, ChevronRight, Zap,
-  LogOut, User as UserIcon, Settings, Search as SearchIcon,
+  FolderPlus, ChevronRight, ChevronDown, Zap,
+  LogOut, Settings, Search as SearchIcon,
+  ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
@@ -147,6 +148,7 @@ import { useImportExport }         from '@/hooks/notes/useImportExport';
 import { useTitleAutocomplete }    from '@/hooks/notes/useTitleAutocomplete';
 import { useNoteEditor }           from '@/hooks/notes/useNoteEditor';
 import CommandPalette             from '@/src/frontend/components/common/CommandPalette';
+import { usePanelCollapse }       from '@/src/frontend/hooks/ui/usePanelCollapse';
 
 // ── Types, constantes et helpers — importés depuis lib/notes-types.ts ────────
 // ViewFilter, SortBy, SaveStatus, MobilePanel, viewEq, viewLabel,
@@ -156,7 +158,7 @@ import CommandPalette             from '@/src/frontend/components/common/Command
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function NotesEditor() {
-  const { notes, deletedNotes, folders, manualTags, loading, refreshNotes, refreshMeta } = useNotes();
+  const { notes, deletedNotes, folders, manualTags, loading, refreshNotes, refreshMeta, deleteNoteOptimistic, permanentlyDeleteNoteOptimistic, recoverNoteOptimistic } = useNotes();
   // ── Authentification — pour le profil utilisateur + déconnexion ───────────
   const { data: session } = useSession();
   const { can } = usePermissions();
@@ -238,7 +240,7 @@ export default function NotesEditor() {
     handleEditSmartFolder,
     handleCreateTag,
     handleDeleteTag,
-  } = useNoteSelection({ notes, deletedNotes, folders, currentFolder, setView, refreshNotes, refreshMeta });
+  } = useNoteSelection({ notes, deletedNotes, folders, currentFolder, setView, refreshNotes, refreshMeta, deleteNoteOptimistic, permanentlyDeleteNoteOptimistic, recoverNoteOptimistic });
 
   // VIEWER ne peut pas modifier — l'éditeur est en lecture seule même hors corbeille
   const effectiveReadOnly = isReadOnly || !can('notes:update');
@@ -489,7 +491,12 @@ export default function NotesEditor() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, effectiveReadOnly, title, content]);
 
+  // ── Panneaux rétractables (persistance localStorage) ─────────────────────────
+  const [sidebarOpen,  toggleSidebar,  setSidebarOpen]  = usePanelCollapse('mns:sidebar-open');
+  const [noteListOpen, toggleNoteList, setNoteListOpen] = usePanelCollapse('mns:notelist-open');
+
   // ── Ctrl+F / Cmd+F → focus barre de recherche ───────────────────────────────
+  // ── Ctrl+\ → toggle sidebar · Ctrl+Shift+\ → toggle liste ───────────────────
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
@@ -497,10 +504,19 @@ export default function NotesEditor() {
         setMobilePanel('list');
         setTimeout(() => searchRef.current?.focus(), 50);
       }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === '\\') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === '\\' || e.key === '|')) {
+        e.preventDefault();
+        toggleNoteList();
+      }
     };
     window.addEventListener('keydown', handleGlobalKey);
     return () => window.removeEventListener('keydown', handleGlobalKey);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toggleSidebar, toggleNoteList]);
 
   // ── Command palette (Ctrl+K) ──────────────────────────────────────────────────
   const [cmdPaletteOpen,  setCmdPaletteOpen]  = useState(false);
@@ -571,113 +587,71 @@ export default function NotesEditor() {
         }}
       >
         {/* ══ SIDEBAR ══════════════════════════════════════════════════════════ */}
-        <div className={`
-          ${mobilePanel === 'sidebar' ? 'flex' : 'hidden'} md:flex
-          w-full md:w-12 lg:w-52 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 overflow-x-hidden
-        `}>
-          <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-dark-700">
-            {/* Header mobile — logo + nom app */}
-            <div className="flex items-center gap-1.5">
-              <img src="/favicon.svg" width="18" height="18" alt="" aria-hidden="true" />
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">MyNoteSpace</span>
-            </div>
-            <button type="button" title="Voir la liste" onClick={() => setMobilePanel('list')} className="text-gray-400 hover:text-gray-700 dark:hover:text-white">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <div className="px-2 pt-3 pb-1 flex items-center justify-between">
-            {/* Header desktop — logo + nom app (style Notion workspace header) */}
-            <div className="flex items-center gap-1.5">
-              <img src="/favicon.svg" width="16" height="16" alt="" aria-hidden="true" />
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">MyNoteSpace</span>
-            </div>
-            <div className="relative">
+        <div
+          className={`
+            ${mobilePanel === 'sidebar' ? 'flex' : 'hidden'} md:flex
+            w-full md:w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 overflow-hidden
+            transition-[width,min-width] duration-[280ms] ease-in-out
+            ${!sidebarOpen ? '!w-0 !min-w-0' : ''}
+          `}
+        >
+          {/* ── Workspace header — style Notion, une seule ligne ── */}
+          <div className="relative border-b border-gray-200 dark:border-dark-700">
+            <div className="flex items-center gap-1 px-2 py-3">
+
+              {/* Bouton workspace — avatar + label + chevron ▾ */}
               <button
+                ref={avatarBtnRef}
                 type="button"
-                onClick={e => { e.stopPropagation(); setShowNewFolderMenu(!showNewFolderMenu); }}
-                title="Nouveau dossier"
-                className="text-gray-500 hover:text-yellow-400 transition-colors p-1 rounded"
+                onClick={e => { e.stopPropagation(); setAvatarPopover(o => !o); }}
+                title="Espace de travail"
+                className="flex-1 min-w-0 flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors text-left"
               >
-                <FolderPlus size={13} />
-              </button>
-              {showNewFolderMenu && (
-                <div
-                  className="absolute right-0 top-full z-50 mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-48"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() => { handleCreateRegularFolder(); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
-                  >
-                    <FolderPlus size={13} /> Nouveau dossier
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setEditingSmartId(null); setShowSmartModal(true); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
-                  >
-                    <Zap size={13} className="text-yellow-400" /> Dossier intelligent
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <NotesSidebar
-            notes={notes}
-            deletedNotes={deletedNotes}
-            folders={folders}
-            manualTags={manualTags}
-            view={view}
-            onSelectView={v => { setView(v); setMobilePanel('list'); }}
-            newFolderPendingId={newFolderPendingId}
-            onFolderCreated={() => setNewFolderPendingId(null)}
-            onEditSmartFolder={handleEditSmartFolder}
-            onCreateTag={handleCreateTag}
-            onDeleteTag={handleDeleteTag}
-            trashBtnRef={trashBtnRef}
-            trashShake={trashShake}
-            onCreateSubfolder={handleCreateSubfolder}
-          />
-
-          {/* ── Profil utilisateur — bouton avatar compact avec popover ────── */}
-          <div className="mt-auto border-t border-gray-200 dark:border-dark-700/60 p-2 relative">
-            <button
-              ref={avatarBtnRef}
-              type="button"
-              onClick={e => { e.stopPropagation(); setAvatarPopover(o => !o); }}
-              title={session?.user?.name ?? 'Profil'}
-              className="w-full flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors text-left"
-            >
-              {session?.user?.image ? (
-                <img src={session.user.image} alt="Avatar" referrerPolicy="no-referrer"
-                  className="w-6 h-6 rounded-full shrink-0 ring-1 ring-gray-300 dark:ring-dark-600" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
-                  <span className="text-[10px] font-semibold text-yellow-500 uppercase leading-none">
-                    {(session?.user?.name ?? session?.user?.email ?? 'U').charAt(0)}
+                {session?.user?.image ? (
+                  <img src={session.user.image} alt="Avatar" referrerPolicy="no-referrer"
+                    className="w-5 h-5 rounded-full shrink-0 ring-1 ring-gray-300 dark:ring-dark-600" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
+                    <span className="text-[9px] font-bold text-yellow-500 uppercase leading-none">
+                      {(session?.user?.name ?? session?.user?.email ?? 'U').charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <span className="flex-1 min-w-0 text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                  Espace de{' '}
+                  <span className="font-semibold">
+                    {session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0] || 'Utilisateur'}
                   </span>
-                </div>
-              )}
-              <span className="flex-1 min-w-0 text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                {session?.user?.name || session?.user?.email?.split('@')[0] || 'Utilisateur'}
-              </span>
-            </button>
+                </span>
+                <ChevronDown size={12} className="shrink-0 text-gray-400" />
+              </button>
 
-            {/* Popover avatar */}
+              {/* Action droite : collapse sidebar */}
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  title="Masquer la barre latérale (Ctrl+\)"
+                  onClick={toggleSidebar}
+                  className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors p-1 rounded"
+                >
+                  <ChevronsLeft size={14} />
+                </button>
+              </div>
+
+            </div>
+
+            {/* Popover — s'ouvre vers le bas */}
             {avatarPopover && (
               <div
-                className="absolute bottom-full left-2 right-2 mb-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden z-50"
+                className="absolute top-full left-2 right-2 mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden z-50"
                 onClick={e => e.stopPropagation()}
               >
-                {/* En-tête identité */}
                 <div className="px-3 py-2.5 border-b border-gray-100 dark:border-dark-700">
                   <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
                     {session?.user?.name || 'Utilisateur'}
                   </p>
                   <p className="text-[10px] text-gray-500 truncate">{session?.user?.email}</p>
                 </div>
-                {/* Actions */}
                 <Link
                   href="/profile"
                   onClick={() => setAvatarPopover(false)}
@@ -695,7 +669,39 @@ export default function NotesEditor() {
               </div>
             )}
           </div>
+
+          <NotesSidebar
+            notes={notes}
+            deletedNotes={deletedNotes}
+            folders={folders}
+            manualTags={manualTags}
+            view={view}
+            onSelectView={v => { setView(v); setMobilePanel('list'); }}
+            newFolderPendingId={newFolderPendingId}
+            onFolderCreated={() => setNewFolderPendingId(null)}
+            onEditSmartFolder={handleEditSmartFolder}
+            onCreateTag={handleCreateTag}
+            onDeleteTag={handleDeleteTag}
+            trashBtnRef={trashBtnRef}
+            trashShake={trashShake}
+            onCreateSubfolder={handleCreateSubfolder}
+            onCreateFolder={handleCreateRegularFolder}
+            onCreateSmartFolder={() => { setEditingSmartId(null); setShowSmartModal(true); }}
+          />
+
         </div>
+
+        {/* Expand sidebar — bande visible uniquement quand sidebar fermée (desktop) */}
+        {!sidebarOpen && (
+          <button
+            type="button"
+            title="Afficher la barre latérale (Ctrl+\)"
+            onClick={() => setSidebarOpen(true)}
+            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 text-gray-400 hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+          >
+            <ChevronsRight size={12} />
+          </button>
+        )}
 
         {/* ══ NOTE LIST — composant extrait dans NoteListColumn.tsx ══════════ */}
         <NoteListColumn
@@ -721,7 +727,22 @@ export default function NotesEditor() {
           loading={loading || (!!search.trim() && isSearching)}
           selectedId={selectedId}
           onSelectNote={handleSelectNote}
+          isCollapsed={!noteListOpen}
+          onToggle={toggleNoteList}
+          onExpandFromEditor={() => setNoteListOpen(true)}
         />
+
+        {/* Expand note list — bande visible uniquement quand liste fermée (desktop) */}
+        {!noteListOpen && (
+          <button
+            type="button"
+            title="Afficher la liste (Ctrl+Shift+\)"
+            onClick={() => setNoteListOpen(true)}
+            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 text-gray-400 hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+          >
+            <ChevronsRight size={12} />
+          </button>
+        )}
 
         {/* ══ EDITOR — composant extrait dans NoteEditorColumn.tsx ══════════ */}
         <NoteEditorColumn

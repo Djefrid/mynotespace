@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * MODAL EXCALIDRAW — components/notes/ExcalidrawModal.tsx
  * ============================================================================
@@ -53,7 +53,7 @@ export default function ExcalidrawModal({
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-gray-50 dark:bg-[#080c14]">
       {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-dark-800 shrink-0 bg-white dark:bg-[#0d1117]">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-dark-800 shrink-0 bg-white dark:bg-[#080c14]">
         <Pencil size={14} className="text-yellow-500 dark:text-yellow-400" />
         <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Dessin</span>
         <span className="text-xs text-gray-500">

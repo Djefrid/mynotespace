@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 interface ConfirmModalProps {
   /** Titre affiché en haut de la modale */

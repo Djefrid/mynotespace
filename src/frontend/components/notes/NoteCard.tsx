@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * NOTE CARD — components/notes/NoteCard.tsx
  * ============================================================================
@@ -65,13 +65,13 @@ const NoteCard = memo(forwardRef<HTMLDivElement, NoteCardProps>(
         <button
           type="button"
           onClick={() => onSelect(note)}
-          className={`w-full text-left px-3 py-2.5 border-b border-gray-100 dark:border-dark-800 transition-colors duration-[120ms] ${
+          className={`w-full text-left px-3 py-3 border-b border-gray-100 dark:border-dark-800 transition-colors duration-[120ms] ${
             selected ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : 'hover:bg-gray-100/80 dark:hover:bg-[#111520]/70'
           }`}
         >
           {/* ── Ligne 1 : épingle + titre ──────────────────────────────────── */}
           <div className="flex items-center gap-1.5 mb-0.5">
-            {note.pinned && <Pin size={9} className="text-yellow-400 shrink-0" />}
+            {note.pinned && <Pin size={12} className="text-yellow-400 shrink-0" />}
             <span className="text-xs font-semibold text-gray-900 dark:text-white truncate">
               {note.title || 'Sans titre'}
             </span>

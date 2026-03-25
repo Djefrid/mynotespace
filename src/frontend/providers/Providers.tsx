@@ -21,6 +21,7 @@
 import { ReactNode, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { SessionProvider } from 'next-auth/react';
+import { SWRConfig } from 'swr';
 
 /**
  * Enveloppe l'application avec ThemeProvider.
@@ -42,13 +43,12 @@ export default function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    // ThemeProvider : gestion du mode sombre/clair via next-themes
-    // defaultTheme="system" : respecte la préférence de l'OS par défaut
-    // enableSystem={true} : suit prefers-color-scheme si aucun choix explicite
-    <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
-        {children}
-      </ThemeProvider>
-    </SessionProvider>
+    <SWRConfig value={{ provider: () => new Map() }}>
+      <SessionProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
+          {children}
+        </ThemeProvider>
+      </SessionProvider>
+    </SWRConfig>
   );
 }

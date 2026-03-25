@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * FOLDER TREE ITEM — components/notes/FolderTreeItem.tsx
  * ============================================================================
@@ -82,10 +82,10 @@ export default function FolderTreeItem({
   const isExpanded  = expandedIds[node.id] ?? true;
 
   /** Classes CSS de la ligne selon l'état actif */
-  const rowCls = `w-full flex items-center justify-between rounded-lg text-sm transition-colors ${
+  const rowCls = `w-full flex items-center justify-between rounded-lg text-sm transition-all ${
     isActive
-      ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-300 font-medium'
-      : 'text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#111520]'
+      ? 'ring-1 ring-yellow-500/70 text-gray-900 dark:text-white font-medium'
+      : 'text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-white/5 dark:hover:bg-[#111520]'
   }`;
 
   return (
@@ -105,7 +105,7 @@ export default function FolderTreeItem({
               if (e.key === 'Enter')  commitRename(node.id);
               if (e.key === 'Escape') setEditingId(null);
             }}
-            className="w-full px-2 py-1.5 text-sm bg-gray-100 dark:bg-[#0d1117] border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none my-0.5"
+            className="w-full px-2 py-1.5 text-sm bg-gray-100 dark:bg-[#080c14] border border-yellow-500/50 rounded-lg text-gray-900 dark:text-white focus:outline-none my-0.5"
           />
         ) : (
           /* div role="button" — évite le nesting <button>/<button> invalide en HTML */
@@ -113,7 +113,7 @@ export default function FolderTreeItem({
             role="button"
             tabIndex={0}
             title={node.name}
-            className={`${rowCls} px-1.5 py-1.5 cursor-pointer`}
+            className={`${rowCls} px-1.5 py-2 cursor-pointer`}
             onClick={() => onSelectView({ type: 'folder', id: node.id })}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectView({ type: 'folder', id: node.id }); } }}
           >
@@ -122,17 +122,17 @@ export default function FolderTreeItem({
               <button
                 type="button"
                 onClick={e => { e.stopPropagation(); if (hasChildren) toggleExpand(node.id); }}
-                className={`shrink-0 transition-transform ${hasChildren ? 'opacity-60 hover:opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`shrink-0 transition-all ${hasChildren ? 'opacity-0 group-hover:opacity-60 hover:!opacity-100' : 'opacity-0 pointer-events-none'}`}
                 style={{ width: 12 }}
               >
-                <ChevronRight size={10} className={`transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
+                <ChevronRight size={12} className={`transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
               </button>
-              <FolderOpen size={13} className="shrink-0" />
-              <span className="truncate hidden lg:inline">{node.name}</span>
+              <FolderOpen size={14} className="shrink-0" />
+              <span className="truncate inline md:hidden lg:inline">{node.name}</span>
             </span>
             <span className="flex items-center gap-1 shrink-0">
               {/* Compteur de notes */}
-              <span className="text-xs opacity-50 hidden lg:inline">{counts.byFolder[node.id] ?? 0}</span>
+              <span className="text-[11px] opacity-40 inline md:hidden lg:inline">{counts.byFolder[node.id] ?? 0}</span>
               {/* Bouton menu contextuel — visible au survol */}
               <button
                 type="button"
@@ -140,7 +140,7 @@ export default function FolderTreeItem({
                 onClick={e => { e.stopPropagation(); setMenuId(menuId === node.id ? null : node.id); }}
                 className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-[#111520] transition-opacity"
               >
-                <MoreHorizontal size={11} />
+                <MoreHorizontal size={12} />
               </button>
             </span>
           </div>

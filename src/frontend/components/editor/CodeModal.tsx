@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * MODAL BLOC DE CODE — components/notes/CodeModal.tsx
  * ============================================================================
@@ -61,7 +61,7 @@ export default function CodeModal({
       onClick={() => setCodeModal(null)}
     >
       <div
-        className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl w-[700px] max-w-[95vw] flex flex-col max-h-[80vh]"
+        className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl w-[700px] max-w-[95vw] flex flex-col max-h-[80vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* ── Header ── */}

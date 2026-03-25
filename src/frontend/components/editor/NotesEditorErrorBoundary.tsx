@@ -77,17 +77,17 @@ export class NotesEditorErrorBoundary extends Component<Props, State> {
           <div className="text-5xl">⚠️</div>
 
           {/* Message principal */}
-          <div>
+          <div className="text-center max-w-sm">
             <h2 className="text-gray-900 dark:text-white text-lg font-semibold mb-2">
               L&apos;éditeur a rencontré une erreur
             </h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               Une erreur inattendue s&apos;est produite. Vos notes sont en sécurité —
               elles ont été sauvegardées automatiquement.
             </p>
             {/* Message technique visible en dev uniquement */}
             {process.env.NODE_ENV === 'development' && (
-              <p className="text-red-500 dark:text-red-400 text-xs mt-2 font-mono">
+              <p className="text-red-500 dark:text-red-400 text-xs mt-2 font-mono break-all">
                 {this.state.errorMessage}
               </p>
             )}

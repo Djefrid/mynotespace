@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * EDITOR TOOLBAR — components/notes/EditorToolbar.tsx
  * ============================================================================
@@ -362,7 +362,7 @@ export default function EditorToolbar({
         {/* Bouton Focus — toujours visible, poussé à droite */}
         <div className="ml-auto pr-1">
           {TB(focusMode, focusMode ? 'Quitter le mode focus' : 'Mode focus (plein écran)', onFocusToggle,
-            focusMode ? <Minimize2 size={13} /> : <Maximize2 size={13} />)}
+            focusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />)}
         </div>
       </div>
 
@@ -372,8 +372,8 @@ export default function EditorToolbar({
         {/* ─── Onglet ACCUEIL ──────────────────────────────────────────────── */}
         {activeTab === 'accueil' && <>
           {/* Historique */}
-          {TB(false, 'Annuler (Ctrl+Z)', () => editor.chain().focus().undo().run(), <Undo2 size={13} />, !editorState.canUndo)}
-          {TB(false, 'Refaire (Ctrl+Y)', () => editor.chain().focus().redo().run(), <Redo2 size={13} />, !editorState.canRedo)}
+          {TB(false, 'Annuler (Ctrl+Z)', () => editor.chain().focus().undo().run(), <Undo2 size={14} />, !editorState.canUndo)}
+          {TB(false, 'Refaire (Ctrl+Y)', () => editor.chain().focus().redo().run(), <Redo2 size={14} />, !editorState.canRedo)}
           <SEP />
 
           {/* Famille de police */}
@@ -427,12 +427,12 @@ export default function EditorToolbar({
           <SEP />
 
           {/* Formatage caractère */}
-          {TB(editorState.isBold,        'Gras (Ctrl+B)',      () => editor.chain().focus().toggleBold().run(),        <Bold size={13} />)}
-          {TB(editorState.isItalic,      'Italique (Ctrl+I)',  () => editor.chain().focus().toggleItalic().run(),      <Italic size={13} />)}
-          {TB(editorState.isUnderline,   'Souligné (Ctrl+U)', () => editor.chain().focus().toggleUnderline().run(),   <UnderlineIcon size={13} />)}
-          {TB(editorState.isStrike,      'Barré',             () => editor.chain().focus().toggleStrike().run(),      <Strikethrough size={13} />)}
-          {TB(editorState.isSuperscript, 'Exposant',          () => editor.chain().focus().toggleSuperscript().run(), <SupIcon size={13} />)}
-          {TB(editorState.isSubscript,   'Indice',            () => editor.chain().focus().toggleSubscript().run(),   <SubIcon size={13} />)}
+          {TB(editorState.isBold,        'Gras (Ctrl+B)',      () => editor.chain().focus().toggleBold().run(),        <Bold size={14} />)}
+          {TB(editorState.isItalic,      'Italique (Ctrl+I)',  () => editor.chain().focus().toggleItalic().run(),      <Italic size={14} />)}
+          {TB(editorState.isUnderline,   'Souligné (Ctrl+U)', () => editor.chain().focus().toggleUnderline().run(),   <UnderlineIcon size={14} />)}
+          {TB(editorState.isStrike,      'Barré',             () => editor.chain().focus().toggleStrike().run(),      <Strikethrough size={14} />)}
+          {TB(editorState.isSuperscript, 'Exposant',          () => editor.chain().focus().toggleSuperscript().run(), <SupIcon size={14} />)}
+          {TB(editorState.isSubscript,   'Indice',            () => editor.chain().focus().toggleSubscript().run(),   <SubIcon size={14} />)}
           <SEP />
 
           {/* Effacer le formatage */}
@@ -445,15 +445,15 @@ export default function EditorToolbar({
               }
             });
             editor.chain().focus().unsetLineHeight().run();
-          }, <Eraser size={13} />)}
+          }, <Eraser size={14} />)}
 
           {/* Changer la casse */}
           <div className="relative shrink-0" ref={caseRef}>
             <button type="button" title="Changer la casse"
               onClick={() => setCaseOpen(o => !o)}
               className={`p-1.5 rounded transition-colors flex items-center gap-0.5 ${caseOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'}`}>
-              <CaseSensitive size={13} />
-              <ChevronDown size={9} />
+              <CaseSensitive size={14} />
+              <ChevronDown size={12} />
             </button>
             {caseOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-1 min-w-[160px]"
@@ -552,7 +552,7 @@ export default function EditorToolbar({
             <button type="button" title="Insérer un tableau"
               onClick={() => setTableOpen(o => !o)}
               className={`p-1.5 rounded transition-colors ${tableOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'}`}>
-              <TableIcon size={13} />
+              <TableIcon size={14} />
             </button>
             {tableOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg p-2.5 shadow-2xl select-none"
@@ -591,7 +591,7 @@ export default function EditorToolbar({
             {TB(editorState.isLink, 'Lien hypertexte', () => {
               if (editorState.isLink) { editor.chain().focus().unsetLink().run(); setLinkOpen(false); }
               else { setLinkVal(editor.getAttributes('link').href || ''); setLinkOpen(o => !o); }
-            }, <LinkIcon size={13} />)}
+            }, <LinkIcon size={14} />)}
             {linkOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[210px]"
                 onMouseDown={e => e.stopPropagation()}>
@@ -608,18 +608,18 @@ export default function EditorToolbar({
           <SEP />
 
           {/* Image + Fichier */}
-          {TB(false, 'Insérer une image',  onImageClick, <ImageIcon size={13} />)}
-          {TB(false, 'Joindre un fichier', onFileClick,  <FileUp size={13} />)}
+          {TB(false, 'Insérer une image',  onImageClick, <ImageIcon size={14} />)}
+          {TB(false, 'Joindre un fichier', onFileClick,  <FileUp size={14} />)}
           <SEP />
 
           {/* Dessin Excalidraw */}
-          {TB(false, 'Dessin (Excalidraw)', onDrawClick, <Pencil size={13} />)}
+          {TB(false, 'Dessin (Excalidraw)', onDrawClick, <Pencil size={14} />)}
 
           {/* Équation LaTeX */}
           {TB(false, 'Équation LaTeX (cliquer puis éditer)', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (editor.chain().focus() as any).insertInlineMath({ latex: 'E=mc^2' }).run();
-          }, <Sigma size={13} />)}
+          }, <Sigma size={14} />)}
 
           {/* Symboles spéciaux */}
           <div className="relative shrink-0" ref={symbolsRef}>
@@ -650,15 +650,15 @@ export default function EditorToolbar({
         {/* ─── Onglet PARAGRAPHE ───────────────────────────────────────────── */}
         {activeTab === 'paragraphe' && <>
           {/* Alignement */}
-          {TB(editorState.isAlignLeft,    'Aligner gauche (Ctrl+L)', () => editor.chain().focus().setTextAlign('left').run(),    <AlignLeft size={13} />)}
-          {TB(editorState.isAlignCenter,  'Centrer (Ctrl+E)',        () => editor.chain().focus().setTextAlign('center').run(),  <AlignCenter size={13} />)}
-          {TB(editorState.isAlignRight,   'Aligner droite (Ctrl+R)', () => editor.chain().focus().setTextAlign('right').run(),   <AlignRight size={13} />)}
-          {TB(editorState.isAlignJustify, 'Justifier (Ctrl+J)',      () => editor.chain().focus().setTextAlign('justify').run(), <AlignJustify size={13} />)}
+          {TB(editorState.isAlignLeft,    'Aligner gauche (Ctrl+L)', () => editor.chain().focus().setTextAlign('left').run(),    <AlignLeft size={14} />)}
+          {TB(editorState.isAlignCenter,  'Centrer (Ctrl+E)',        () => editor.chain().focus().setTextAlign('center').run(),  <AlignCenter size={14} />)}
+          {TB(editorState.isAlignRight,   'Aligner droite (Ctrl+R)', () => editor.chain().focus().setTextAlign('right').run(),   <AlignRight size={14} />)}
+          {TB(editorState.isAlignJustify, 'Justifier (Ctrl+J)',      () => editor.chain().focus().setTextAlign('justify').run(), <AlignJustify size={14} />)}
           <SEP />
 
           {/* Retrait */}
-          {TB(false, 'Diminuer le retrait (Shift+Tab)', () => editor.chain().focus().outdent().run(), <IndentDecrease size={13} />)}
-          {TB(false, 'Augmenter le retrait (Tab)',      () => editor.chain().focus().indent().run(),  <IndentIncrease size={13} />)}
+          {TB(false, 'Diminuer le retrait (Shift+Tab)', () => editor.chain().focus().outdent().run(), <IndentDecrease size={14} />)}
+          {TB(false, 'Augmenter le retrait (Tab)',      () => editor.chain().focus().indent().run(),  <IndentIncrease size={14} />)}
           <SEP />
 
           {/* Interligne */}
@@ -675,22 +675,22 @@ export default function EditorToolbar({
           <SEP />
 
           {/* Listes */}
-          {TB(editorState.isBulletList,  'Liste à puces',   () => editor.chain().focus().toggleBulletList().run(),  <List size={13} />)}
-          {TB(editorState.isOrderedList, 'Liste numérotée', () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={13} />)}
-          {TB(editorState.isTaskList,    'Liste de tâches', () => editor.chain().focus().toggleTaskList().run(),    <ListChecks size={13} />)}
+          {TB(editorState.isBulletList,  'Liste à puces',   () => editor.chain().focus().toggleBulletList().run(),  <List size={14} />)}
+          {TB(editorState.isOrderedList, 'Liste numérotée', () => editor.chain().focus().toggleOrderedList().run(), <ListOrdered size={14} />)}
+          {TB(editorState.isTaskList,    'Liste de tâches', () => editor.chain().focus().toggleTaskList().run(),    <ListChecks size={14} />)}
           <SEP />
 
           {/* Blocs */}
-          {TB(editorState.isBlockquote, 'Citation',     () => editor.chain().focus().toggleBlockquote().run(), <Quote size={13} />)}
-          {TB(editorState.isCodeBlock,  'Bloc de code', onCodeBlockClick,  <Code2 size={13} />)}
-          {TB(false,                         'Séparateur horizontal', () => editor.chain().focus().setHorizontalRule().run(), <Minus size={13} />)}
+          {TB(editorState.isBlockquote, 'Citation',     () => editor.chain().focus().toggleBlockquote().run(), <Quote size={14} />)}
+          {TB(editorState.isCodeBlock,  'Bloc de code', onCodeBlockClick,  <Code2 size={14} />)}
+          {TB(false,                         'Séparateur horizontal', () => editor.chain().focus().setHorizontalRule().run(), <Minus size={14} />)}
         </>}
 
         {/* ─── Onglet OUTILS ───────────────────────────────────────────────── */}
         {activeTab === 'outils' && <>
           {/* Recherche & Remplacement */}
           <div className="relative shrink-0">
-            {TB(findOpen, 'Rechercher & Remplacer (Ctrl+H)', () => setFindOpen(o => !o), <SearchCode size={13} />)}
+            {TB(findOpen, 'Rechercher & Remplacer (Ctrl+H)', () => setFindOpen(o => !o), <SearchCode size={14} />)}
             {findOpen && (
               <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-3 min-w-[260px]"
                 onMouseDown={e => e.stopPropagation()}>
@@ -714,7 +714,7 @@ export default function EditorToolbar({
                   <div className="flex flex-col gap-1">
                     <button type="button" title="Remplacer" onClick={doReplace}
                       className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded hover:bg-yellow-500/30 whitespace-nowrap">
-                      <Replace size={11} />
+                      <Replace size={12} />
                     </button>
                     <button type="button" onClick={doReplaceAll}
                       className="text-[10px] bg-yellow-500/10 text-yellow-500/70 px-2 py-1 rounded hover:bg-yellow-500/20 whitespace-nowrap">
@@ -728,12 +728,12 @@ export default function EditorToolbar({
           <SEP />
 
           {/* Import / Export documents */}
-          {TB(false, 'Importer un fichier Word (.docx)', onImportDocxClick, <FilePlus size={13} />)}
-          {TB(false, 'Exporter en Word (.docx)',         onExportDocxClick, <FileDown size={13} />)}
-          {TB(false, 'Importer un PDF (texte)',          onImportPdfClick,  <BookOpen size={13} />)}
+          {TB(false, 'Importer un fichier Word (.docx)', onImportDocxClick, <FilePlus size={14} />)}
+          {TB(false, 'Exporter en Word (.docx)',         onExportDocxClick, <FileDown size={14} />)}
+          {TB(false, 'Importer un PDF (texte)',          onImportPdfClick,  <BookOpen size={14} />)}
           <SEP />
-          {TB(false, 'Exporter en Markdown', onExportMd,  <FileText size={13} />)}
-          {TB(false, 'Imprimer / PDF',       onExportPdf, <Download size={13} />)}
+          {TB(false, 'Exporter en Markdown', onExportMd,  <FileText size={14} />)}
+          {TB(false, 'Imprimer / PDF',       onExportPdf, <Download size={14} />)}
           <SEP />
           {/* Compteur mots / caractères */}
           <span className="text-[10px] text-gray-400 dark:text-slate-500 whitespace-nowrap px-1 select-none">

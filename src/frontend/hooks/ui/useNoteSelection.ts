@@ -28,8 +28,7 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import type { Note, Folder as FolderType, SmartFolderFilter } from '@/lib/notes-service';
 import {
-  createNote, updateNote, deleteNote, moveNote,
-  permanentlyDeleteNote, recoverNote,
+  createNote, updateNote, moveNote,
   createFolder, createSmartFolder, updateSmartFolderFilters,
   createTag, deleteTag,
 } from '../../services/notes-mutations-api';
@@ -45,6 +44,9 @@ export function useNoteSelection({
   setView,
   refreshNotes,
   refreshMeta,
+  deleteNoteOptimistic,
+  permanentlyDeleteNoteOptimistic,
+  recoverNoteOptimistic,
 }: {
   notes:          Note[];
   deletedNotes:   Note[];
@@ -55,6 +57,12 @@ export function useNoteSelection({
   refreshNotes:   () => void;
   /** Re-fetche les dossiers et tags depuis l'API après une mutation. */
   refreshMeta:    () => void;
+  /** Suppression douce optimiste (retire de la liste active + appel serveur + rollback si erreur). */
+  deleteNoteOptimistic:            (id: string) => Promise<void>;
+  /** Suppression définitive optimiste (retire de la corbeille + appel serveur + rollback si erreur). */
+  permanentlyDeleteNoteOptimistic: (id: string) => Promise<void>;
+  /** Restauration optimiste (retire de la corbeille + appel serveur + rollback si erreur). */
+  recoverNoteOptimistic:           (id: string) => Promise<void>;
 }) {
 
   // ── État principal de sélection ─────────────────────────────────────────────
@@ -207,30 +215,30 @@ export function useNoteSelection({
   const handleDelete = async () => {
     if (!selectedId) return;
     if (!confirmDel) { setConfirmDel(true); return; }
-    triggerFlyToTrash(selectedId, title || 'Sans titre');
-    await deleteNote(selectedId);
-    refreshNotes();
+    const id = selectedId;
+    triggerFlyToTrash(id, title || 'Sans titre');
     setSelectedId(null); setTitle(''); setContent('');
     setMobilePanel('list'); setConfirmDel(false);
+    await deleteNoteOptimistic(id);
   };
 
   /** Restaure une note depuis la corbeille → inbox */
   const handleRecover = async () => {
     if (!selectedId) return;
-    await recoverNote(selectedId);
-    refreshNotes();
+    const id = selectedId;
     setSelectedId(null); setTitle(''); setContent('');
     setView('inbox'); setMobilePanel('list');
+    await recoverNoteOptimistic(id);
   };
 
   /** Suppression définitive avec double-confirmation */
   const handlePermanentDelete = async () => {
     if (!selectedId) return;
     if (!confirmDel) { setConfirmDel(true); return; }
-    await permanentlyDeleteNote(selectedId);
-    refreshNotes();
+    const id = selectedId;
     setSelectedId(null); setTitle(''); setContent('');
     setMobilePanel('list'); setConfirmDel(false);
+    await permanentlyDeleteNoteOptimistic(id);
   };
 
   /** Déplace la note dans le dossier spécifié (null = inbox) */
