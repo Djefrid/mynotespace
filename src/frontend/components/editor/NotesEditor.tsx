@@ -196,6 +196,10 @@ export default function NotesEditor() {
   const prevSelectedId = useRef<string | null>(null);
   const hasRestoredRef = useRef(false);
 
+  // ── Guard anti-flash : masque l'UI jusqu'à ce que la restauration localStorage
+  // soit terminée (évite le flash inbox → bon dossier au rechargement)
+  const [isRestored, setIsRestored] = useState(false);
+
   // ── Ref pour la barre de recherche (Ctrl+F) ──────────────────────────────────
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -346,10 +350,15 @@ export default function NotesEditor() {
   // Appellent le handler de base (state seul, depuis useNoteSelection) +
   // editor.commands.setContent pour synchroniser l'éditeur TipTap.
 
-  /** Sélectionne une note — met à jour l'état ET l'éditeur */
+  /** Sélectionne une note — met à jour l'état React, vide l'éditeur, active le skeleton.
+   * Le skeleton et le setContent('') se font dans le même render → zéro flash.
+   * Le contenu riche (HTML/JSON) est chargé par le useEffect([selectedId])
+   * via GET /api/notes/[id]. On n'injecte PAS note.content (plainText de la
+   * liste API) pour éviter le flash texte brut → HTML formaté. */
   const handleSelectNote = (note: Note) => {
+    setNoteContentLoading(true);
     handleSelectNoteBase(note);
-    editorRef.current?.commands.setContent(note.content, { emitUpdate: false });
+    editorRef.current?.commands.setContent('', { emitUpdate: false });
   };
 
   /** Crée une nouvelle note — initialise l'état ET vide l'éditeur */
@@ -386,6 +395,10 @@ export default function NotesEditor() {
     setSuggestions([]);
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── État : chargement du contenu de la note ──────────────────────────────────
+  /** true pendant le fetch GET /api/notes/[id] — affiche un skeleton dans l'éditeur */
+  const [noteContentLoading, setNoteContentLoading] = useState(false);
+
   // ── Effet : chargement du contenu HTML complet depuis l'API ─────────────────
   /**
    * La liste API ne contient pas le contenu des notes (html).
@@ -396,6 +409,7 @@ export default function NotesEditor() {
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
+    setNoteContentLoading(true);
     fetch(`/api/notes/${selectedId}`)
       .then(r => (r.ok ? r.json() : null))
       .then((res: { data?: { content?: { html?: string; json?: Record<string, unknown>; plainText?: string } } } | null) => {
@@ -416,8 +430,9 @@ export default function NotesEditor() {
             { emitUpdate: false }
           );
         }
+        setNoteContentLoading(false);
       })
-      .catch(() => {/* note introuvable en PG */});
+      .catch(() => { setNoteContentLoading(false); /* note introuvable en PG */ });
     return () => { cancelled = true; };
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -487,6 +502,8 @@ export default function NotesEditor() {
       editor.commands.setContent(target.content, { emitUpdate: false });
       setMobilePanel('editor');
     } catch { /* ignore — localStorage peut être bloqué */ }
+    // Lever le masque anti-flash — l'UI s'affiche avec le bon état dès le premier render visible
+    setIsRestored(true);
   }, [loading, editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Ctrl+S / Ctrl+N / Ctrl+K ──────────────────────────────────────────────────
@@ -573,6 +590,37 @@ export default function NotesEditor() {
   const regularFolders = folders.filter(f => !f.isSmart);
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  // Skeleton anti-flash : affiché tant que les données ou la restauration localStorage ne sont pas prêtes.
+  // Empêche le flash "inbox vide → bon dossier + bonne note" au rechargement.
+  if (loading || !isRestored) {
+    return (
+      <div className="flex h-screen overflow-hidden rounded-xl animate-pulse">
+        {/* Sidebar skeleton */}
+        <div className="hidden md:flex w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 p-3 gap-2">
+          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-700 mb-2" />
+          {(['w-[70%]','w-[80%]','w-[90%]','w-[70%]','w-[80%]','w-[90%]'] as const).map((w, i) => (
+            <div key={i} className={`h-6 rounded bg-gray-200 dark:bg-dark-700 ${w}`} />
+          ))}
+        </div>
+        {/* Liste skeleton */}
+        <div className="hidden md:flex w-64 shrink-0 flex-col bg-white dark:bg-[#0d1117] border-r border-gray-200 dark:border-dark-700 p-3 gap-2">
+          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-700 mb-2" />
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-dark-800" />
+          ))}
+        </div>
+        {/* Éditeur skeleton */}
+        <div className="flex-1 flex flex-col bg-white dark:bg-[#0d1117] p-6 gap-3">
+          <div className="h-8 w-2/3 rounded bg-gray-200 dark:bg-dark-700" />
+          <div className="h-4 w-full rounded bg-gray-100 dark:bg-dark-800" />
+          <div className="h-4 w-5/6 rounded bg-gray-100 dark:bg-dark-800" />
+          <div className="h-4 w-4/6 rounded bg-gray-100 dark:bg-dark-800" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {showSmartModal && (
@@ -798,6 +846,7 @@ export default function NotesEditor() {
           docxInputRef={docxInputRef}
           pdfInputRef={pdfInputRef}
           uploadProgress={uploadProgress}
+          noteContentLoading={noteContentLoading}
           onExportMarkdown={handleExportMarkdown}
           onExportPDF={handleExportPDF}
           onCodeBlockClick={openCodeModal}

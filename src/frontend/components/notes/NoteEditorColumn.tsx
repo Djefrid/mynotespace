@@ -174,6 +174,8 @@ interface NoteEditorColumnProps {
   suggestionIdx: number;
   /** Applique un tag sélectionné dans le contenu */
   applySuggestion: (tag: string) => void;
+  /** Vrai pendant le chargement du contenu de la note depuis l'API */
+  noteContentLoading?: boolean;
   /** Vrai si la popup d'insertion de lien du BubbleMenu est ouverte */
   bubbleLinkOpen: boolean;
   /** Setter de la popup de lien */
@@ -253,6 +255,7 @@ export default function NoteEditorColumn({
   setBubbleLinkOpen,
   bubbleLinkVal,
   setBubbleLinkVal,
+  noteContentLoading = false,
   emptyReason = 'no-selection',
   searchQuery = '',
 }: NoteEditorColumnProps) {
@@ -794,10 +797,17 @@ export default function NoteEditorColumn({
 
                 {/* ── Zone d'édition TipTap ────────────────────────────────── */}
                 {/* En focusMode : le scroll est géré par le scroll-wrapper parent → pas d'overflow-y ici */}
-                <EditorContent
-                  editor={editor}
-                  className={focusMode ? 'px-6 py-2' : 'flex-1 px-6 py-2 overflow-y-auto min-h-0'}
-                />
+                <div className={focusMode ? 'relative px-6 py-2' : 'relative flex-1 px-6 py-2 overflow-y-auto min-h-0'}>
+                  {noteContentLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-[#0d1117]">
+                      <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                  <EditorContent
+                    editor={editor}
+                    className={`${focusMode ? '' : 'h-full'} ${noteContentLoading ? 'invisible' : ''}`}
+                  />
+                </div>
 
                 {/* ── Menu slash commands ──────────────────────────────────── */}
                 {/* Déclenché par "/" en début de paragraphe */}
