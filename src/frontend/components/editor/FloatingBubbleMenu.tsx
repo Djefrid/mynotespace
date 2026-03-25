@@ -31,6 +31,16 @@ import {
   Heading1, Heading2, Code, MoreHorizontal,
   Superscript, Subscript, RemoveFormatting,
 } from 'lucide-react';
+
+// Palette complète 6×10 (style Word) pour la couleur du texte
+const TEXT_COLOR_GRID = [
+  ['#000000','#1a1a1a','#333333','#4d4d4d','#666666','#808080','#999999','#b3b3b3','#cccccc','#ffffff'],
+  ['#1e3a5f','#1e40af','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe','#eff6ff'],
+  ['#14532d','#166534','#15803d','#16a34a','#22c55e','#4ade80','#86efac','#bbf7d0','#dcfce7','#f0fdf4'],
+  ['#7f1d1d','#991b1b','#b91c1c','#dc2626','#ef4444','#f87171','#fca5a5','#fecaca','#fee2e2','#fff1f2'],
+  ['#7c2d12','#c2410c','#ea580c','#f97316','#fb923c','#fdba74','#fcd34d','#fef08a','#fef9c3','#fffbeb'],
+  ['#4c1d95','#6d28d9','#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#be185d','#ec4899','#fbcfe8','#fdf4ff'],
+];
 import BubbleLinkPopup from './BubbleLinkPopup';
 import { normalizeUrl } from '@/src/shared/utils/strings';
 
@@ -184,7 +194,7 @@ export default function FloatingBubbleMenu({
 
         {overflowOpen && (
           <div
-            className="absolute right-0 top-full mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg shadow-2xl overflow-hidden z-50 w-44"
+            className="absolute right-0 top-full mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg shadow-2xl overflow-hidden z-50 w-56"
             onMouseDown={e => e.stopPropagation()}
           >
             {[
@@ -207,6 +217,34 @@ export default function FloatingBubbleMenu({
                 {item.label}
               </button>
             ))}
+
+            {/* ── Couleur du texte — grille 6×10 style Word ─────────────── */}
+            <div className="px-3 py-2 border-t border-gray-200 dark:border-dark-700">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Couleur du texte</p>
+              <div className="flex flex-col gap-0.5">
+                {TEXT_COLOR_GRID.map((row, ri) => (
+                  <div key={ri} className="flex gap-0.5">
+                    {row.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        title={c}
+                        onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run(); setOverflowOpen(false); }}
+                        style={{ background: c }}
+                        className="w-4 h-4 rounded-sm border border-gray-300 dark:border-dark-600 hover:scale-125 transition-transform"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run(); setOverflowOpen(false); }}
+                className="mt-1.5 text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                Réinitialiser la couleur
+              </button>
+            </div>
           </div>
         )}
       </div>

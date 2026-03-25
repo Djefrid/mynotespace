@@ -399,6 +399,72 @@ export default function NotesEditor() {
   /** true pendant le fetch GET /api/notes/[id] — affiche un skeleton dans l'éditeur */
   const [noteContentLoading, setNoteContentLoading] = useState(false);
 
+  // ── Pinceau de format (Format Painter) ────────────────────────────────────────
+  type FormatPainterMode = 'off' | 'once' | 'persistent';
+  const [formatPainterMode, setFormatPainterMode] = useState<FormatPainterMode>('off');
+  const formatPainterModeRef = useRef<FormatPainterMode>('off');
+  const copiedMarksRef = useRef<{ type: string; attrs: Record<string, unknown> }[]>([]);
+
+  const handleFormatPainterClick = useCallback(() => {
+    if (formatPainterModeRef.current !== 'off') {
+      // Déjà actif — désactiver
+      formatPainterModeRef.current = 'off';
+      setFormatPainterMode('off');
+      return;
+    }
+    // Capturer les marques à la position du curseur
+    if (editorRef.current) {
+      const { $from } = editorRef.current.state.selection;
+      copiedMarksRef.current = $from.marks().map(m => ({ type: m.type.name, attrs: { ...m.attrs } }));
+    }
+    formatPainterModeRef.current = 'once';
+    setFormatPainterMode('once');
+  }, []);
+
+  const handleFormatPainterDoubleClick = useCallback(() => {
+    if (editorRef.current) {
+      const { $from } = editorRef.current.state.selection;
+      copiedMarksRef.current = $from.marks().map(m => ({ type: m.type.name, attrs: { ...m.attrs } }));
+    }
+    formatPainterModeRef.current = 'persistent';
+    setFormatPainterMode('persistent');
+  }, []);
+
+  // Applique les marques copiées sur mouseup dans l'éditeur
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom;
+    const handleMouseUp = () => {
+      if (formatPainterModeRef.current === 'off') return;
+      if (!copiedMarksRef.current.length) return;
+      const { from, to } = editor.state.selection;
+      if (from === to) return;
+      let chain = editor.chain().unsetAllMarks();
+      for (const mark of copiedMarksRef.current) {
+        chain = chain.setMark(mark.type, mark.attrs);
+      }
+      chain.run();
+      if (formatPainterModeRef.current === 'once') {
+        formatPainterModeRef.current = 'off';
+        setFormatPainterMode('off');
+      }
+    };
+    dom.addEventListener('mouseup', handleMouseUp);
+    return () => { dom.removeEventListener('mouseup', handleMouseUp); };
+  }, [editor]);
+
+  // Échap pour annuler le pinceau de format
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && formatPainterModeRef.current !== 'off') {
+        formatPainterModeRef.current = 'off';
+        setFormatPainterMode('off');
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
+  }, []);
+
   // ── Effet : chargement du contenu HTML complet depuis l'API ─────────────────
   /**
    * La liste API ne contient pas le contenu des notes (html).
@@ -890,6 +956,9 @@ export default function NotesEditor() {
           setBubbleLinkOpen={setBubbleLinkOpen}
           bubbleLinkVal={bubbleLinkVal}
           setBubbleLinkVal={setBubbleLinkVal}
+          formatPainterMode={formatPainterMode}
+          onFormatPainterClick={handleFormatPainterClick}
+          onFormatPainterDoubleClick={handleFormatPainterDoubleClick}
         />
       </div>
       {/* ── Modal bloc de code ──────────────────────────────────────────────── */}

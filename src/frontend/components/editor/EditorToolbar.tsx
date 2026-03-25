@@ -47,7 +47,7 @@ import {
   Undo2, Redo2, FileUp, Maximize2, Minimize2, Download, FileText, Pencil,
   FileDown, FilePlus, BookOpen,
   Eraser, IndentIncrease, IndentDecrease, CaseSensitive, Sigma, SearchCode,
-  ChevronDown, Replace, Image as ImageIcon,
+  ChevronDown, Replace, Image as ImageIcon, Paintbrush,
 } from 'lucide-react';
 
 import { normalizeUrl } from '@/src/shared/utils/strings';
@@ -127,6 +127,12 @@ interface EditorToolbarProps {
   onExportDocxClick:  () => void;
   /** Ouvre le sélecteur d'import PDF */
   onImportPdfClick:   () => void;
+  /** Mode actif du pinceau de format */
+  formatPainterMode:  'off' | 'once' | 'persistent';
+  /** Clic simple sur le pinceau de format */
+  onFormatPainterClick: () => void;
+  /** Double-clic sur le pinceau de format (mode persistant) */
+  onFormatPainterDoubleClick: () => void;
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -135,6 +141,7 @@ export default function EditorToolbar({
   editor, onImageClick, onFileClick, uploadProgress, focusMode, onFocusToggle,
   onExportMd, onExportPdf, onCodeBlockClick, onDrawClick,
   onImportDocxClick, onExportDocxClick, onImportPdfClick,
+  formatPainterMode, onFormatPainterClick, onFormatPainterDoubleClick,
 }: EditorToolbarProps) {
   // ── État des onglets du Ribbon ─────────────────────────────────────────────
   type RibbonTab = 'accueil' | 'insertion' | 'paragraphe' | 'outils';
@@ -374,6 +381,31 @@ export default function EditorToolbar({
           {/* Historique */}
           {TB(false, 'Annuler (Ctrl+Z)', () => editor.chain().focus().undo().run(), <Undo2 size={14} />, !editorState.canUndo)}
           {TB(false, 'Refaire (Ctrl+Y)', () => editor.chain().focus().redo().run(), <Redo2 size={14} />, !editorState.canRedo)}
+          <SEP />
+
+          {/* Pinceau de format — clic : une fois, double-clic : persistant, Échap : annuler */}
+          <button
+            type="button"
+            title={
+              formatPainterMode === 'persistent'
+                ? 'Pinceau de format actif (persistant) — Échap pour annuler'
+                : formatPainterMode === 'once'
+                ? 'Pinceau de format actif — Sélectionnez le texte cible'
+                : 'Pinceau de format — 1 clic : une fois · 2 clics : persistant'
+            }
+            aria-label="Pinceau de format"
+            onClick={e => {
+              if (e.detail === 2) onFormatPainterDoubleClick();
+              else onFormatPainterClick();
+            }}
+            className={`p-1.5 rounded transition-colors ${
+              formatPainterMode !== 'off'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
+            }`}
+          >
+            <span aria-hidden="true"><Paintbrush size={14} /></span>
+          </button>
           <SEP />
 
           {/* Famille de police */}
