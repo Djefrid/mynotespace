@@ -195,6 +195,9 @@ export default function NotesEditor() {
   const prevContent    = useRef<NoteContentPayload | string>('');
   const prevSelectedId = useRef<string | null>(null);
   const hasRestoredRef = useRef(false);
+  // lastSyncedTitleRef : titre tel que l'API l'a fourni — empêche l'effet SWR
+  // d'écraser une modification locale non encore sauvegardée.
+  const lastSyncedTitleRef = useRef('');
 
   // ── Guard anti-flash : masque l'UI jusqu'à ce que la restauration localStorage
   // soit terminée (évite le flash inbox → bon dossier au rechargement)
@@ -502,6 +505,15 @@ export default function NotesEditor() {
     return () => { cancelled = true; };
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Effet : initialise lastSyncedTitleRef à chaque changement de note ────────
+  // Garantit que le guard de synchronisation pointe sur le bon titre dès la
+  // sélection d'une note (via handleSelectNote ou restauration localStorage).
+  useEffect(() => {
+    if (!selectedId) return;
+    const note = notes.find(n => n.id === selectedId);
+    if (note) lastSyncedTitleRef.current = note.title;
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Effet bridge : sync titre depuis la liste API ────────────────────────────
   /**
    * Synchronise uniquement le titre depuis la liste SWR.
@@ -514,9 +526,13 @@ export default function NotesEditor() {
     if (!selectedId || saveStatus !== 'saved') return;
     const note = notes.find(n => n.id === selectedId);
     if (!note) return;
-    if (note.title !== title) {
+    // Ne synchroniser que si l'utilisateur n'a pas modifié le titre localement.
+    // lastSyncedTitleRef contient le dernier titre reçu de l'API ;
+    // si title === lastSyncedTitleRef.current, l'utilisateur n'a pas tapé → sync OK.
+    if (note.title !== lastSyncedTitleRef.current && title === lastSyncedTitleRef.current) {
       setTitle(note.title);
       prevTitle.current = note.title;
+      lastSyncedTitleRef.current = note.title;
     }
   }, [notes]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -560,8 +576,9 @@ export default function NotesEditor() {
         setView(isVisible ? savedView : 'all');
       }
 
-      prevTitle.current   = target.title;
-      prevContent.current = target.content;
+      prevTitle.current        = target.title;
+      lastSyncedTitleRef.current = target.title;
+      prevContent.current      = target.content;
       setSelectedId(target.id);
       setTitle(target.title);
       setContent(target.content);
