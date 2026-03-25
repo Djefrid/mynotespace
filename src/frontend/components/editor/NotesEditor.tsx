@@ -631,7 +631,10 @@ export default function NotesEditor() {
                 <button
                   type="button"
                   title="Masquer la barre latérale (Ctrl+\)"
-                  onClick={toggleSidebar}
+                  onClick={() => {
+                    if (window.innerWidth < 768) setMobilePanel('list');
+                    else toggleSidebar();
+                  }}
                   className="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors p-1 rounded"
                 >
                   <ChevronsLeft size={14} />
