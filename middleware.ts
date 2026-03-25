@@ -89,7 +89,7 @@ export default auth(async function middleware(request) {
 
     // Scripts : nonce + strict-dynamic (code-splitting Next.js) + unsafe-eval (Next.js dev HMR + Excalidraw)
     // apis.google.com : Google OAuth popup
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'sha256-c5Gm1Iytmxlbm7sLzBSUu/dpFv9EWweQTfDc8mG3PME=' 'sha256-rbbnijHn7DZ6ps39myQ3cVQF1H+U/PJfHh5ei/Q2kb8=' https://apis.google.com https://www.google.com https://www.gstatic.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'sha256-c5Gm1Iytmxlbm7sLzBSUu/dpFv9EWweQTfDc8mG3PME=' 'sha256-rbbnijHn7DZ6ps39myQ3cVQF1H+U/PJfHh5ei/Q2kb8=' 'sha256-/KN0/03EYPY1SuWz9KFP9s36ubZrjCFj1IsX7zorIL0=' https://apis.google.com https://www.google.com https://www.gstatic.com https://vercel.live`,
 
     // Styles : self + unsafe-inline (requis TipTap, KaTeX, Excalidraw)
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -100,11 +100,11 @@ export default auth(async function middleware(request) {
     // Images : self + R2 (assets) + Google avatar + data URI
     "img-src 'self' data: blob: https://assets.djefrid.ca https://lh3.googleusercontent.com",
 
-    // Connexions réseau : Auth.js, R2 (upload presigned PUT direct depuis le browser)
-    "connect-src 'self' https://www.google.com https://*.r2.cloudflarestorage.com",
+    // Connexions réseau : Auth.js, R2 (upload presigned PUT direct depuis le browser), Vercel toolbar
+    "connect-src 'self' https://www.google.com https://*.r2.cloudflarestorage.com https://vercel.live wss://ws-us3.pusher.com",
 
-    // Iframes : Google OAuth
-    "frame-src 'self' https://www.google.com",
+    // Iframes : Google OAuth + Vercel toolbar
+    "frame-src 'self' https://www.google.com https://vercel.live",
 
     // Workers : blob: pour PDF.js web worker
     "worker-src 'self' blob:",
