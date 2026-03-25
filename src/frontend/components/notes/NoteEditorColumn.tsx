@@ -804,6 +804,9 @@ export default function NoteEditorColumn({
                     setBubbleLinkOpen={setBubbleLinkOpen}
                     bubbleLinkVal={bubbleLinkVal}
                     setBubbleLinkVal={setBubbleLinkVal}
+                    formatPainterMode={formatPainterMode}
+                    onFormatPainterClick={onFormatPainterClick}
+                    onFormatPainterDoubleClick={onFormatPainterDoubleClick}
                   />
                 )}
 

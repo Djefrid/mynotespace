@@ -29,7 +29,7 @@ import {
   Bold, Italic, Underline, Strikethrough,
   Highlighter, Link as LinkIcon,
   Heading1, Heading2, Code, MoreHorizontal,
-  Superscript, Subscript, RemoveFormatting,
+  Superscript, Subscript, RemoveFormatting, Paintbrush,
 } from 'lucide-react';
 
 // Palette complète 6×10 (style Word) pour la couleur du texte
@@ -47,11 +47,14 @@ import { normalizeUrl } from '@/src/shared/utils/strings';
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface FloatingBubbleMenuProps {
-  editor:             Editor;
-  bubbleLinkOpen:     boolean;
-  setBubbleLinkOpen:  (v: boolean | ((p: boolean) => boolean)) => void;
-  bubbleLinkVal:      string;
-  setBubbleLinkVal:   (v: string) => void;
+  editor:                     Editor;
+  bubbleLinkOpen:             boolean;
+  setBubbleLinkOpen:          (v: boolean | ((p: boolean) => boolean)) => void;
+  bubbleLinkVal:              string;
+  setBubbleLinkVal:           (v: string) => void;
+  formatPainterMode:          'off' | 'once' | 'persistent';
+  onFormatPainterClick:       () => void;
+  onFormatPainterDoubleClick: () => void;
 }
 
 // ── Helper bouton ─────────────────────────────────────────────────────────────
@@ -90,6 +93,7 @@ export default function FloatingBubbleMenu({
   editor,
   bubbleLinkOpen, setBubbleLinkOpen,
   bubbleLinkVal,  setBubbleLinkVal,
+  formatPainterMode, onFormatPainterClick, onFormatPainterDoubleClick,
 }: FloatingBubbleMenuProps) {
   const [overflowOpen, setOverflowOpen] = useState(false);
 
@@ -121,6 +125,29 @@ export default function FloatingBubbleMenu({
       }}
       className="flex items-center gap-0.5 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg px-1.5 py-1 shadow-2xl z-50"
     >
+      {/* ── Pinceau de format ─────────────────────────────────────── */}
+      <button
+        type="button"
+        title={
+          formatPainterMode === 'persistent'
+            ? 'Pinceau de format actif (persistant) — Échap pour annuler'
+            : formatPainterMode === 'once'
+            ? 'Pinceau de format actif — Sélectionnez le texte cible'
+            : 'Pinceau de format — 1 clic : une fois · 2 clics : persistant'
+        }
+        aria-label="Pinceau de format"
+        onMouseDown={e => { e.preventDefault(); if (e.detail === 2) onFormatPainterDoubleClick(); else onFormatPainterClick(); }}
+        className={`p-1.5 rounded transition-colors ${
+          formatPainterMode !== 'off'
+            ? 'bg-yellow-500/20 text-yellow-400'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
+        }`}
+      >
+        <Paintbrush size={12} />
+      </button>
+
+      <Sep />
+
       {/* ── Style ─────────────────────────────────────────────────── */}
       <Btn title="Gras (Ctrl+B)"        active={s.bold}      onClick={() => editor.chain().focus().toggleBold().run()}>
         <Bold size={12} />
