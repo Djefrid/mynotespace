@@ -605,9 +605,11 @@ export function useNoteEditor({
       const file = new File([blob], `drawing-${Date.now()}.png`, { type: 'image/png' });
       const url  = await uploadNoteImage(file, selectedId, pct => setUploadProgress(pct));
       editor.chain().focus().setImage({ src: url, alt: 'Dessin' }).run();
-      const html = editor.getHTML();
+      const html      = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(html);
-      scheduleAutoSave(title, html);
+      scheduleAutoSave(title, { html, json, plainText });
       setExcalidrawModal(null);
     } catch (err) {
       console.error('Export Excalidraw:', err);

@@ -28,6 +28,7 @@ import { useRef, useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import type { Editor } from '@tiptap/core';
 import type { Note } from '@/lib/notes-service';
+import type { NoteContentPayload } from '@/lib/notes-types';
 import { importDocx, exportDocx } from '@/lib/docx-utils';
 import { extractTextFromPdf } from '@/lib/pdf-utils';
 
@@ -47,8 +48,8 @@ export function useImportExport({
   title:              string;
   /** Note sélectionnée — guard avant export (null → export désactivé) */
   selectedNote:       Note | null;
-  /** Planifie une sauvegarde différée après import (met à jour Firestore) */
-  scheduleAutoSave:   (t: string, c: string) => void;
+  /** Planifie une sauvegarde différée après import — JSON source de vérité */
+  scheduleAutoSave:   (t: string, c: NoteContentPayload | string) => void;
   /** Met à jour l'état React du contenu après import (sync TipTap → React) */
   setContent:         (html: string) => void;
   /** Affiche la progression de l'import PDF dans la toolbar */
@@ -72,11 +73,13 @@ export function useImportExport({
     if (!editor) return;
     try {
       const html = await importDocx(file);
-      // emitUpdate: false → pas d'onUpdate, pas d'autosave déclenchée par TipTap
+      // emitUpdate: false → pas d'onUpdate, on envoie le payload complet manuellement
       editor.commands.setContent(html, { emitUpdate: false });
-      const newHtml = editor.getHTML();
+      const newHtml   = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(newHtml);
-      scheduleAutoSave(title, newHtml);
+      scheduleAutoSave(title, { html: newHtml, json, plainText });
     } catch (err) {
       console.error('Import DOCX:', err);
     }
@@ -114,9 +117,11 @@ export function useImportExport({
         .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
         .join('');
       editor.commands.setContent(paragraphs || '<p></p>', { emitUpdate: false });
-      const html = editor.getHTML();
+      const html      = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(html);
-      scheduleAutoSave(title, html);
+      scheduleAutoSave(title, { html, json, plainText });
     } catch (err) {
       console.error('Import PDF:', err);
     } finally {

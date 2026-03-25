@@ -812,7 +812,7 @@ export default function NoteEditorColumn({
 
                 {/* ── Zone d'édition TipTap ────────────────────────────────── */}
                 {/* En focusMode : le scroll est géré par le scroll-wrapper parent → pas d'overflow-y ici */}
-                <div className={`${focusMode ? 'relative px-6 py-2' : 'relative flex-1 px-6 py-2 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden md:[&::-webkit-scrollbar]:w-2 md:[&::-webkit-scrollbar-track]:bg-transparent md:[&::-webkit-scrollbar-thumb]:rounded-full md:[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-dark-600 md:[&::-webkit-scrollbar-thumb:hover]:bg-gray-400'} ${formatPainterMode !== 'off' ? '[&_.ProseMirror]:!cursor-crosshair' : ''}`}>
+                <div className={`${focusMode ? 'relative px-6 py-2' : 'relative flex-1 px-6 py-2 overflow-y-auto min-h-0 editor-scrollarea'} ${formatPainterMode !== 'off' ? '[&_.ProseMirror]:!cursor-crosshair' : ''}`}>
                   {noteContentLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-[#0d1117]">
                       <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />

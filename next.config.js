@@ -19,7 +19,10 @@ const nextConfig = {
   experimental: {
     // Restreint les Server Actions au domaine de production uniquement (anti-CSRF)
     serverActions: {
-      allowedOrigins: ['notes.djefrid.ca', 'localhost:3000'],
+      allowedOrigins: [
+        process.env.NEXT_PUBLIC_SITE_URL?.replace(/^https?:\/\//, '') ?? '',
+        'localhost:3000',
+      ].filter(Boolean),
     },
     // Tree-shaking agressif — réduit le bundle JS client
     optimizePackageImports: ['lucide-react', 'framer-motion'],

@@ -83,6 +83,11 @@ export default auth(async function middleware(request) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
   // ── Construction du Content-Security-Policy ───────────────────────────
+  // R2_PUBLIC_URL : domaine custom R2 (ex: https://assets.djefrid.ca)
+  // Fallback sur *.r2.cloudflarestorage.com si la variable est absente (dev sans config)
+  const r2PublicUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, '') ?? '';
+  const r2ImgSrc   = r2PublicUrl || 'https://*.r2.cloudflarestorage.com';
+
   const csp = [
     // Politiques de base
     "default-src 'self'",
@@ -97,8 +102,8 @@ export default auth(async function middleware(request) {
     // Polices
     "font-src 'self' https://fonts.gstatic.com data:",
 
-    // Images : self + R2 (assets) + Google avatar + data URI
-    "img-src 'self' data: blob: https://assets.djefrid.ca https://lh3.googleusercontent.com",
+    // Images : self + R2 (domaine dynamique depuis R2_PUBLIC_URL) + Google avatar + data URI
+    `img-src 'self' data: blob: ${r2ImgSrc} https://lh3.googleusercontent.com`,
 
     // Connexions réseau : Auth.js, R2 (upload presigned PUT direct depuis le browser), Vercel toolbar
     "connect-src 'self' https://www.google.com https://*.r2.cloudflarestorage.com https://vercel.live wss://ws-us3.pusher.com",
