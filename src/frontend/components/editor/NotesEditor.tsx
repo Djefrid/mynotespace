@@ -77,9 +77,12 @@
  * ── Persistance localStorage ───────────────────────────────────────────────
  *
  * `notes_view`       : dernier filtre actif (inbox, dossier, tag...)
+ * `notes_sortBy`     : dernier critère de tri (persisté dans useNoteFilters)
  * `notes_selectedId` : dernière note ouverte
- * Restauration au montage, après que Firestore ET l'éditeur soient prêts
+ * Restauration au montage, après que les données ET l'éditeur soient prêts
  * (`hasRestoredRef` garantit l'exécution unique).
+ * Si la note sauvegardée n'est pas visible dans la vue restaurée, bascule sur
+ * 'all' (actives) ou 'trash' (corbeille). Fallback : première note de la liste.
  *
  * ── Suppression douce des notes vides ──────────────────────────────────────
  *
@@ -418,52 +421,70 @@ export default function NotesEditor() {
     return () => { cancelled = true; };
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Effet bridge : sync temps réel multi-appareil ────────────────────────────
+  // ── Effet bridge : sync titre depuis la liste API ────────────────────────────
   /**
-   * Surveille les changements Firestore (notes onSnapshot).
-   * Si la note ouverte a changé sur un autre appareil ET que l'éditeur n'a pas
-   * le focus → met à jour title, content, et l'éditeur TipTap.
-   * Guard `editorFocused` : ne jamais écraser la frappe locale en cours.
+   * Synchronise uniquement le titre depuis la liste SWR.
+   * La liste n'inclut pas le contenu HTML complet (seulement plainText) —
+   * le contenu riche est chargé via GET /api/notes/[id] (effet ci-dessus).
+   * Seul le titre est synchronisé ici pour éviter d'écraser le contenu HTML
+   * de l'éditeur avec le plainText de la liste.
    */
   useEffect(() => {
     if (!selectedId || saveStatus !== 'saved') return;
     const note = notes.find(n => n.id === selectedId);
     if (!note) return;
-    const ed = editorRef.current;
-    const editorFocused = !!(ed && !ed.isDestroyed && ed.view.hasFocus());
-    if (note.title !== title || note.content !== content) {
+    if (note.title !== title) {
       setTitle(note.title);
-      if (!editorFocused) {
-        setContent(note.content);
-        prevTitle.current   = note.title;
-        prevContent.current = note.content;
-        if (ed && !ed.isDestroyed) {
-          ed.commands.setContent(note.content, { emitUpdate: false });
-        }
-      }
+      prevTitle.current = note.title;
     }
   }, [notes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Effet bridge : restauration localStorage post-hydration ──────────────────
   /**
-   * Exécuté une seule fois quand Firestore ET l'éditeur sont prêts.
+   * Exécuté une seule fois quand les données ET l'éditeur sont prêts.
    * Restaure la dernière note ouverte (notes_selectedId) depuis localStorage.
+   * - Si note en corbeille → bascule la vue sur 'trash'
+   * - Si note active hors de la vue courante → bascule sur 'all'
+   * - Si note introuvable → ouvre la première note de la liste
    * Guard hasRestoredRef : empêche la ré-exécution sur re-renders ultérieurs.
    */
   useEffect(() => {
     if (loading || !editor || editor.isDestroyed || hasRestoredRef.current) return;
     hasRestoredRef.current = true;
     try {
-      const savedId = localStorage.getItem('notes_selectedId');
-      if (!savedId) return;
-      const note = [...notes, ...deletedNotes].find(n => n.id === savedId);
-      if (!note) return;
-      prevTitle.current   = note.title;
-      prevContent.current = note.content;
-      setSelectedId(savedId);
-      setTitle(note.title);
-      setContent(note.content);
-      editor.commands.setContent(note.content, { emitUpdate: false });
+      const savedId     = localStorage.getItem('notes_selectedId');
+      const activeNote  = savedId ? notes.find(n => n.id === savedId)        : null;
+      const deletedNote = savedId ? deletedNotes.find(n => n.id === savedId) : null;
+      // Fallback : première note active si la note sauvegardée est introuvable
+      const target = activeNote ?? deletedNote ?? notes[0] ?? null;
+      if (!target) return;
+
+      // Lire la vue sauvegardée DIRECTEMENT depuis localStorage (pas depuis l'état React
+      // qui peut encore être 'inbox' par défaut à cause de la course entre les deux effects).
+      const rawView  = localStorage.getItem('notes_view');
+      const savedView: ViewFilter = rawView ? JSON.parse(rawView) : 'inbox';
+
+      if (deletedNote && !activeNote) {
+        // Note en corbeille → vue corbeille
+        setView('trash');
+      } else if (activeNote) {
+        // Vérifier si la note est visible dans la vue sauvegardée
+        const isVisible =
+          savedView === 'all' ||
+          (savedView === 'inbox'  && !activeNote.folderId) ||
+          (savedView === 'pinned' && activeNote.pinned) ||
+          (typeof savedView === 'object' && savedView.type === 'folder' && activeNote.folderId === savedView.id) ||
+          (typeof savedView === 'object' && savedView.type === 'tag' && activeNote.tags.includes(savedView.tag));
+        // Appliquer explicitement la vue sauvegardée (évite la race condition React state)
+        setView(isVisible ? savedView : 'all');
+      }
+
+      prevTitle.current   = target.title;
+      prevContent.current = target.content;
+      setSelectedId(target.id);
+      setTitle(target.title);
+      setContent(target.content);
+      editor.commands.setContent(target.content, { emitUpdate: false });
       setMobilePanel('editor');
     } catch { /* ignore — localStorage peut être bloqué */ }
   }, [loading, editor]); // eslint-disable-line react-hooks/exhaustive-deps

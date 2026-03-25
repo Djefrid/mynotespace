@@ -23,7 +23,7 @@
  * ============================================================================
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Note, Folder, SmartFolderFilter } from '@/lib/notes-service';
 import { applySmartFilters, stripHtml } from '@/lib/notes-utils';
 import type { ViewFilter, SortBy } from '@/lib/notes-types';
@@ -51,28 +51,51 @@ export function useNoteFilters({
 }: UseNoteFiltersParams) {
 
   // ── État de navigation ─────────────────────────────────────────────────────
-  /** Vue active — restaurée depuis localStorage au premier rendu */
-  const [view,   setView]   = useState<ViewFilter>('inbox');
-  /** Critère de tri courant */
-  const [sortBy, setSortBy] = useState<SortBy>('dateModified');
+  /** Vue active — interne, setter brut uniquement pour la restauration localStorage */
+  const [view,   _setView]   = useState<ViewFilter>('inbox');
+  /** Critère de tri — interne, setter brut uniquement pour la restauration localStorage */
+  const [sortBy, _setSortBy] = useState<SortBy>('dateModified');
   /** Texte de la barre de recherche */
   const [search, setSearch] = useState('');
 
-  // ── Persistance localStorage ───────────────────────────────────────────────
+  // ── Persistance localStorage — pattern "atomic setter" ────────────────────
+  //
+  // Principe (best practice shadcn/Josh W. Comeau) :
+  //   • L'effet de restauration [] lit localStorage et appelle le setter BRUT
+  //     (_setView/_setSortBy) → aucun write localStorage, zéro race condition.
+  //   • Les wrappers exportés (setView/setSortBy) écrivent état ET localStorage
+  //     de façon atomique → pas d'effet réactif [view], impossible d'écraser
+  //     les valeurs stockées avec les valeurs par défaut au mount.
 
-  /** Restaure la vue depuis localStorage au premier rendu (post-hydration SSR) */
+  /** Restaure la vue depuis localStorage une seule fois au mount (post-hydration SSR) */
   useEffect(() => {
     try {
       const v = localStorage.getItem('notes_view');
-      if (v) setView(JSON.parse(v) as ViewFilter);
+      if (v) _setView(JSON.parse(v) as ViewFilter);
     } catch { /* ignore — localStorage peut être bloqué */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** Sauvegarde la vue à chaque changement */
+  /** Restaure le tri depuis localStorage une seule fois au mount */
   useEffect(() => {
-    try { localStorage.setItem('notes_view', JSON.stringify(view)); }
+    try {
+      const s = localStorage.getItem('notes_sortBy');
+      if (s === 'dateModified' || s === 'dateCreated' || s === 'title') _setSortBy(s);
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Setter public — met à jour l'état ET persiste dans localStorage atomiquement */
+  const setView = useCallback((v: ViewFilter) => {
+    _setView(v);
+    try { localStorage.setItem('notes_view', JSON.stringify(v)); }
     catch { /* ignore */ }
-  }, [view]);
+  }, []);
+
+  /** Setter public — met à jour l'état ET persiste dans localStorage atomiquement */
+  const setSortBy = useCallback((s: SortBy) => {
+    _setSortBy(s);
+    try { localStorage.setItem('notes_sortBy', s); }
+    catch { /* ignore */ }
+  }, []);
 
   // ── Dérivés stables ────────────────────────────────────────────────────────
 

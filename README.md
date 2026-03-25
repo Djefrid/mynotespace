@@ -104,13 +104,25 @@ La table `NoteContent` stocke 3 colonnes complémentaires depuis mars 2026 :
 
 | Colonne | Type | Rôle |
 |---|---|---|
-| `json` | JsonB (nullable) | Arbre ProseMirror natif — source de vérité pour le chargement éditeur |
+| `json` | JsonB (nullable) | Arbre ProseMirror natif — **source de vérité** pour le chargement éditeur |
 | `html` | Text | Dérivé cache — utilisé pour les exports DOCX/PDF/Markdown |
 | `plainText` | Text | Dérivé texte brut — Typesense, preview NoteCard |
 
-- **Chargement** : `setContent(json ?? html)` — les notes sans JSON chargent depuis HTML (rétrocompat)
-- **Autosave** : `editor.getJSON() + editor.getText() + editor.getHTML()` envoyés à chaque frappe
+**Hiérarchie (du plus autoritaire au plus dérivé) :**
+```
+json       ← SOURCE DE VÉRITÉ  (editor.getJSON())
+  ↓
+html       ← CACHE DÉRIVÉ      (editor.getHTML(), pour exports)
+  ↓
+plainText  ← INDEX RECHERCHE   (editor.getText(), pour Typesense + NoteCard)
+```
+
+- **Chargement** : `setContent(json ?? html)` — préfère JSON (zéro re-parse HTML), fallback HTML pour notes sans JSON
+- **Autosave** : `{ html, json, plainText }` envoyés à chaque frappe (`onUpdate`) **et** après chaque insertion (image, fichier, Excalidraw, import DOCX/PDF)
+- **Règle stricte** : tout chemin qui modifie le contenu de l'éditeur doit envoyer `{ html, json, plainText }` à `scheduleAutoSave` — jamais une simple chaîne HTML
 - **Recherche** : `plainText` DB utilisé en priorité dans Typesense, `stripHtml(html)` en fallback
+
+> **Piège historique (corrigé 2026-03-25)** : l'effet de sync multi-appareil comparait `note.content` (plainText liste API) avec `content` (HTML complet). La comparaison était toujours vraie → `setContent(plainText)` écrasait le contenu toutes les 30s → les images disparaissaient. L'effet ne synchronise plus que le titre depuis la liste ; le contenu riche est exclusivement chargé via `GET /api/notes/[id]`.
 
 ### Performance
 - `shouldRerenderOnTransaction: false` dans TipTap — zéro re-render parent à chaque frappe
@@ -469,6 +481,22 @@ Toutes les actions irréversibles utilisent `ConfirmModal` (composant génériqu
 
 La couche 2 bascule automatiquement sur la couche 3 en cas d'erreur (extension manquante, etc.).
 
+### Restauration état au rechargement — atomic setter pattern
+
+Au rechargement manuel (F5), l'app restaure exactement : dossier actif en sidebar, liste de notes correspondante, note ouverte dans l'éditeur.
+
+**Pattern appliqué** (Josh W. Comeau / shadcn best practice) — 3 clés `localStorage` :
+
+| Clé | Valeur | Hook |
+|---|---|---|
+| `notes_view` | JSON (ViewFilter) | `useNoteFilters` |
+| `notes_sortBy` | string | `useNoteFilters` |
+| `notes_selectedId` | string | `useNoteSelection` |
+
+- **`useEffect([], [])` de restauration** : lit localStorage → appelle le setter **interne** (`_setView`) → aucun write.
+- **Setters publics** (`setView`, `setSortBy`, `setSelectedId`) : écrivent état ET localStorage **atomiquement** au même instant.
+- L'approche `useEffect([state])` réactif a été abandonnée — elle causait une race condition : l'effet `[]` de restauration s'exécutait, puis l'effet `[state]` ré-écrasait localStorage avec la valeur par défaut du premier render.
+
 ### Warning `sharp` (non-bloquant)
 `@turbodocx/html-to-docx` requiert `sharp` optionnellement. Le warning n'affecte pas l'export DOCX.
 
@@ -482,3 +510,5 @@ SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` →
 *Migré de Firebase vers PostgreSQL/R2/Auth.js — 2026-03-22*
 *Améliorations TipTap (paste, sécurité, perf, a11y), fix Auth.js prod, page 404 — 2026-03-23*
 *Toggle mot de passe, historique des versions, suppression R2 orphelins, isolation workspace — 2026-03-24*
+*Fix images disparaissant (sync multi-appareil écrasait avec plainText), autosave JSON complet après insertion image/fichier/Excalidraw/import — 2026-03-25*
+*Restauration état complète au rechargement (dossier + note) — atomic setter pattern localStorage — 2026-03-25*

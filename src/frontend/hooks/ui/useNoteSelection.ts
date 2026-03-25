@@ -25,7 +25,7 @@
  * ============================================================================
  */
 
-import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import type { Note, Folder as FolderType, SmartFolderFilter } from '@/lib/notes-service';
 import {
   createNote, updateNote, moveNote,
@@ -66,8 +66,8 @@ export function useNoteSelection({
 }) {
 
   // ── État principal de sélection ─────────────────────────────────────────────
-  /** ID de la note actuellement ouverte dans l'éditeur */
-  const [selectedId,   setSelectedId]   = useState<string | null>(null);
+  /** ID de la note actuellement ouverte dans l'éditeur — setter interne */
+  const [selectedId,   _setSelectedId]   = useState<string | null>(null);
   /** Panneau visible sur mobile (une seule colonne à la fois) */
   const [mobilePanel,  setMobilePanel]  = useState<MobilePanel>('list');
   /** Titre courant de la note ouverte */
@@ -136,14 +136,18 @@ export function useNoteSelection({
     return { name: f.name, filters: f.filters ?? {} };
   }, [editingSmartId, folders]);
 
-  // ── Persistance localStorage — selectedId ──────────────────────────────────
-  /** Sauvegarde l'ID sélectionné pour restauration au rechargement suivant */
-  useEffect(() => {
+  // ── Persistance localStorage — selectedId (pattern atomic setter) ────────
+  // Même pattern que setView/setSortBy : le setter public écrit état ET
+  // localStorage de façon atomique — pas d'effet réactif qui pourrait
+  // supprimer notes_selectedId au mount (selectedId = null au premier render).
+  /** Setter public — met à jour l'état ET persiste dans localStorage atomiquement */
+  const setSelectedId = useCallback((id: string | null) => {
+    _setSelectedId(id);
     try {
-      if (selectedId) localStorage.setItem('notes_selectedId', selectedId);
-      else            localStorage.removeItem('notes_selectedId');
-    } catch { /* ignore — localStorage peut être bloqué */ }
-  }, [selectedId]);
+      if (id) localStorage.setItem('notes_selectedId', id);
+      else    localStorage.removeItem('notes_selectedId');
+    } catch { /* ignore */ }
+  }, []);
 
   // ── Animation fly-to-trash ──────────────────────────────────────────────────
   /**

@@ -29,6 +29,7 @@ import type { MutableRefObject } from 'react';
 import type { Editor } from '@tiptap/core';
 import { uploadNoteImage, uploadNoteFile } from '@/lib/upload-image';
 import imageCompression from 'browser-image-compression';
+import type { NoteContentPayload } from '@/lib/notes-types';
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ export function useImageFile({
   /** Titre courant — passé à scheduleAutoSave après insertion */
   title:            string;
   /** Planifie une sauvegarde différée après modification du contenu */
-  scheduleAutoSave: (t: string, c: string) => void;
+  scheduleAutoSave: (t: string, c: NoteContentPayload | string) => void;
   /** Met à jour l'état React du contenu après l'insertion (sync avec TipTap) */
   setContent:       (html: string) => void;
 }) {
@@ -94,9 +95,11 @@ export function useImageFile({
       }
       const url = await uploadNoteImage(fileToUpload, selectedId, pct => setUploadProgress(pct));
       editor.chain().focus().setImage({ src: url, alt: file.name }).run();
-      const html = editor.getHTML();
+      const html      = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(html);
-      scheduleAutoSave(title, html);
+      scheduleAutoSave(title, { html, json, plainText });
     } catch (err) {
       console.error('Upload image:', err);
     } finally {
@@ -131,9 +134,11 @@ export function useImageFile({
         },
         { type: 'text', text: ' ' },
       ]).run();
-      const html = editor.getHTML();
+      const html      = editor.getHTML();
+      const json      = editor.getJSON() as Record<string, unknown>;
+      const plainText = editor.getText();
       setContent(html);
-      scheduleAutoSave(title, html);
+      scheduleAutoSave(title, { html, json, plainText });
     } catch (err) {
       console.error('Upload fichier:', err);
     } finally {
