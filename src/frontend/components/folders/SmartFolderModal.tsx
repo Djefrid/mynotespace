@@ -207,7 +207,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={createdDays}
                 onChange={e => setCreatedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#1a2030] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#0d1117] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours
@@ -220,7 +220,7 @@ export default function SmartFolderModal({
               <input type="number" min={1} max={365} value={modifiedDays}
                 onChange={e => setModifiedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#1a2030] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#0d1117] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
               />
             )}
             derniers jours

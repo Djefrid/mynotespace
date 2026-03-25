@@ -17,6 +17,7 @@ model User {
   passwordHash  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  sessionsInvalidatedAt DateTime?   // force-logout : tokens émis avant cette date sont invalides
 
   accounts        Account[]
   sessions        Session[]
@@ -65,11 +66,12 @@ model VerificationToken {
 // ─── Workspaces ───────────────────────────────────────────────────────────────
 
 model Workspace {
-  id          String   @id @default(cuid())
-  name        String
-  ownerUserId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  ownerUserId       String
+  sessionMaxAgeDays Int      @default(30)  // durée de session configurable : 1–180 jours
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   owner       User              @relation(fields: [ownerUserId], references: [id])
   members     WorkspaceMember[]
@@ -93,8 +95,10 @@ model WorkspaceMember {
 }
 
 enum MemberRole {
-  OWNER
-  MEMBER
+  OWNER   // Propriétaire — tous les droits, non-rétrogradable
+  ADMIN   // Administration déléguée — invite, gère, sauf delete workspace
+  MEMBER  // Collaborateur — crée, modifie, supprime ses notes
+  VIEWER  // Lecture seule — ne peut que lire
 }
 
 // ─── Folders ──────────────────────────────────────────────────────────────────
@@ -138,6 +142,7 @@ model Note {
   workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
   content     NoteContent?
+  revisions   NoteRevision[]
   tags        NoteTag[]
   attachments Attachment[]
 
@@ -149,13 +154,28 @@ model Note {
 }
 
 model NoteContent {
-  noteId    String   @id
-  html      String   @db.Text
-  json      Json?    @db.JsonB
-  plainText String   @default("") @db.Text
-  updatedAt DateTime @updatedAt
+  noteId         String   @id
+  html           String   @db.Text
+  json           Json?    @db.JsonB
+  plainText      String   @default("") @db.Text
+  wordCount      Int      @default(0)
+  characterCount Int      @default(0)
+  updatedAt      DateTime @updatedAt
 
   note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+}
+
+model NoteRevision {
+  id        String   @id @default(cuid())
+  noteId    String
+  json      Json     @db.JsonB
+  plainText String   @default("") @db.Text
+  wordCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId, createdAt])
 }
 
 // ─── Tags ─────────────────────────────────────────────────────────────────────

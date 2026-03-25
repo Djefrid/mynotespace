@@ -39,9 +39,11 @@ export async function createNote(folderId?: string | null): Promise<string> {
  * html et plainText sont des dérivés stockés en cache.
  */
 type NoteContentPayload = {
-  html:      string;
-  json:      Record<string, unknown>;
-  plainText: string;
+  html:            string;
+  json:            Record<string, unknown>;
+  plainText:       string;
+  wordCount?:      number;
+  characterCount?: number;
 };
 
 /**
@@ -75,7 +77,7 @@ export async function updateNote(
     const c = data.content;
     const body = typeof c === 'string'
       ? { html: c }
-      : { html: c.html, json: c.json, plainText: c.plainText };
+      : { html: c.html, json: c.json, plainText: c.plainText, wordCount: c.wordCount, characterCount: c.characterCount };
     calls.push(apiFetch(`/api/notes/${id}/content`, {
       method: 'PATCH',
       body:   JSON.stringify(body),

@@ -189,23 +189,29 @@ export const PROFILE_ACCOUNT = {
 } as const;
 
 export const PROFILE_SECURITY = {
-  sectionTitle:      'Sécurité',
-  sessionLabel:      'Session active',
-  sessionDetail:     'Ce navigateur',
-  sessionBadge:      'Active',
-  passwordLabel:     'Mot de passe',
-  passwordEditBtn:   'Modifier',
-  currentPwdLabel:   'Mot de passe actuel',
-  newPwdLabel:       'Nouveau',
-  newPwdHint:        '(min.\u00a08 caractères)',
-  confirmPwdLabel:   'Confirmer',
-  pwdPlaceholder:    '••••••••',
-  pwdMismatch:       'Les mots de passe ne correspondent pas.',
-  pwdSaveIdle:       'Changer',
-  pwdSaveLoading:    'Changement\u2026',
-  pwdSuccess:        'Mot de passe modifié avec succès.',
-  errorGeneric:      'Une erreur est survenue.',
-  errorNetwork:      'Erreur réseau.',
+  sectionTitle:        'Sécurité',
+  sessionLabel:        'Session active',
+  sessionDetail:       'Ce navigateur',
+  sessionBadge:        'Active',
+  sessionExpireLabel:  'Expire le',
+  sessionDurationLabel:'Durée de session',
+  sessionDurationHint: 'Les nouvelles connexions utiliseront cette durée.',
+  sessionDurationSaveIdle:    'Appliquer',
+  sessionDurationSaveLoading: 'Enregistrement\u2026',
+  sessionDurationSuccess:     'Durée de session mise à jour.',
+  passwordLabel:       'Mot de passe',
+  passwordEditBtn:     'Modifier',
+  currentPwdLabel:     'Mot de passe actuel',
+  newPwdLabel:         'Nouveau',
+  newPwdHint:          '(min.\u00a08 caractères)',
+  confirmPwdLabel:     'Confirmer',
+  pwdPlaceholder:      '••••••••',
+  pwdMismatch:         'Les mots de passe ne correspondent pas.',
+  pwdSaveIdle:         'Changer',
+  pwdSaveLoading:      'Changement\u2026',
+  pwdSuccess:          'Mot de passe modifié avec succès.',
+  errorGeneric:        'Une erreur est survenue.',
+  errorNetwork:        'Erreur réseau.',
 } as const;
 
 export const PROFILE_WORKSPACE = {
@@ -216,6 +222,22 @@ export const PROFILE_WORKSPACE = {
   statTags:         'Tags',
   statFiles:        'Fichiers',
   statStorage:      'Stockage utilisé',
+} as const;
+
+export const PROFILE_MEMBERS = {
+  sectionTitle:    'Membres du workspace',
+  sectionDesc:     'Gérez les accès et les rôles des membres de votre espace.',
+  you:             '(vous)',
+  roleOwner:       'Propriétaire',
+  roleAdmin:       'Administrateur',
+  roleMember:      'Membre',
+  roleViewer:      'Lecteur',
+  changeRole:      'Changer le rôle',
+  removeLabel:     'Retirer',
+  removeConfirm:   'Retirer ce membre ?',
+  removeMessage:   (name: string) => `${name} n'aura plus accès au workspace.`,
+  removeYes:       'Retirer',
+  errorNetwork:    'Erreur réseau.',
 } as const;
 
 export const PROFILE_DATA = {

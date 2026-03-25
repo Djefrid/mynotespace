@@ -1,17 +1,23 @@
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { restoreNote } from '@/src/backend/services/notes-pg.service';
 import { indexNoteById } from '@/src/backend/services/search.service';
 
 type Params = { params: Promise<{ id: string }> };
 
 // ─── POST /api/notes/[id]/restore ────────────────────────────────────────────
+// Restauration depuis la corbeille : OWNER, ADMIN, MEMBER
 
 export async function POST(_req: Request, { params }: Params) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'notes:restore')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

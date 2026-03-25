@@ -27,7 +27,7 @@ import { memo, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { Pin } from 'lucide-react';
 import type { Note } from '@/lib/notes-service';
-import { stripHtml, fmtDate } from '@/lib/notes-utils';
+import { fmtDate } from '@/lib/notes-utils';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ const NoteCard = memo(forwardRef<HTMLDivElement, NoteCardProps>(
           type="button"
           onClick={() => onSelect(note)}
           className={`w-full text-left px-3 py-2.5 border-b border-gray-100 dark:border-dark-800 transition-colors duration-[120ms] ${
-            selected ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : 'hover:bg-gray-100/80 dark:hover:bg-[#1a2030]/50'
+            selected ? 'bg-yellow-500/10 border-l-2 border-l-yellow-400' : 'hover:bg-gray-100/80 dark:hover:bg-[#111520]/70'
           }`}
         >
           {/* ── Ligne 1 : épingle + titre ──────────────────────────────────── */}
@@ -78,13 +78,13 @@ const NoteCard = memo(forwardRef<HTMLDivElement, NoteCardProps>(
           </div>
 
           {/* ── Ligne 2 : aperçu contenu + date/purge ──────────────────────── */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Aperçu du contenu : HTML retiré, hashtags masqués */}
-            <p className="text-xs text-gray-500 truncate flex-1">
-              {stripHtml(note.content).replace(/#\w+/g, '').trim() || 'Aucun contenu'}
+          <div className="flex items-start justify-between gap-2">
+            {/* Aperçu du contenu : HTML retiré, hashtags masqués, 2 lignes max */}
+            <p className="text-xs text-gray-500/80 dark:text-gray-400/70 line-clamp-2 flex-1 leading-relaxed">
+              {note.content.replace(/#\w+/g, '').trim() || <em className="not-italic opacity-50">—</em>}
             </p>
             {/* Date relative ou jours avant purge (corbeille) */}
-            <span className="text-[10px] text-gray-400 dark:text-gray-600 shrink-0">
+            <span className="text-[10px] text-gray-400/60 dark:text-gray-500/60 shrink-0 mt-0.5 tabular-nums">
               {trashInfo !== undefined
                 ? <span className="text-orange-500">{trashInfo}j</span>
                 : fmtDate(note.updatedAt)
@@ -96,7 +96,7 @@ const NoteCard = memo(forwardRef<HTMLDivElement, NoteCardProps>(
           {note.tags.length > 0 && (
             <div className="flex gap-1 mt-1 flex-wrap">
               {note.tags.slice(0, 3).map(t => (
-                <span key={t} className="text-[10px] text-yellow-600 bg-yellow-500/10 px-1 rounded">
+                <span key={t} className="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-200/80 dark:bg-white/[0.06] px-1 rounded">
                   #{t}
                 </span>
               ))}

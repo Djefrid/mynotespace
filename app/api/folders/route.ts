@@ -1,4 +1,5 @@
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireWorkspaceId, requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { getFoldersForWorkspace, createFolder } from '@/src/backend/services/folders.service';
 import { createFolderSchema } from '@/src/backend/validators/folder.schemas';
 
@@ -19,12 +20,17 @@ export async function GET() {
   }
 }
 
+// POST : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 export async function POST(req: Request) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'folders:manage')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

@@ -5,6 +5,7 @@ import {
   fnRemoveNoteFromIndex,
   fnPurgeTrash,
   fnCleanupAttachments,
+  fnCleanupOrphanedImages,
 } from '@/src/backend/integrations/inngest/functions';
 
 export const { GET, POST, PUT } = serve({
@@ -14,5 +15,6 @@ export const { GET, POST, PUT } = serve({
     fnRemoveNoteFromIndex,
     fnPurgeTrash,
     fnCleanupAttachments,
+    fnCleanupOrphanedImages,
   ],
 });

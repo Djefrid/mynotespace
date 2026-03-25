@@ -480,11 +480,13 @@ export function useNoteEditor({
     /** Met à jour le state React du contenu et planifie l'autosave après chaque frappe.
      *  json = source de vérité · html = cache exports · plainText = search Typesense */
     onUpdate: ({ editor }) => {
-      const html      = editor.getHTML();
-      const json      = editor.getJSON() as Record<string, unknown>;
-      const plainText = editor.getText();
+      const html           = editor.getHTML();
+      const json           = editor.getJSON() as Record<string, unknown>;
+      const plainText      = editor.getText();
+      const wordCount      = editor.storage.characterCount?.words?.()      ?? 0;
+      const characterCount = editor.storage.characterCount?.characters?.() ?? 0;
       setContent(html);
-      scheduleAutoSaveRef.current(titleRef.current?.value ?? '', { html, json, plainText });
+      scheduleAutoSaveRef.current(titleRef.current?.value ?? '', { html, json, plainText, wordCount, characterCount });
       scheduleDetect();
     },
 

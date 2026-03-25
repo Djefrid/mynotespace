@@ -63,11 +63,12 @@
 - **Images** inline via Cloudflare R2 (paste, drag-drop, upload)
   - Compression automatique avant upload (browser-image-compression — max 1 Mo / 1920px)
   - **Re-upload automatique** des images externes au collage — les URLs Firebase ou autres sources externes sont silencieusement ré-uploadées vers R2
+  - **Suppression automatique des images orphelines** — image retirée du contenu = supprimée de R2 (Inngest background job)
 - **Fichiers joints** via Cloudflare R2
 
 ### Profil & Sécurité
 - Modifier le nom sans re-login (JWT update)
-- Changer le mot de passe (bcrypt, rate-limited)
+- Changer le mot de passe (bcrypt, rate-limited) avec **toggle visibilité**
 - Statistiques du workspace (notes, dossiers, tags, fichiers, stockage)
 - Export JSON de toutes les données
 - Suppression de compte avec confirmation (cascade complète)
@@ -95,6 +96,8 @@
 - Toutes les déconnexions (idle timeout, sidebar, profil) redirigent vers `/login`
 - Cascade delete : workspace → notes/dossiers/tags/fichiers → user
 - **Modales de confirmation** sur toutes les actions irréversibles
+- **Isolation workspace renforcée** — toutes les requêtes Prisma filtrent par `workspaceId` (protection IDOR)
+- **Toggle visibilité mot de passe** sur les pages login et inscription (Eye/EyeOff, aria-label dynamique)
 
 ### Stockage du contenu — JSON TipTap comme source de vérité
 La table `NoteContent` stocke 3 colonnes complémentaires depuis mars 2026 :
@@ -143,7 +146,7 @@ La table `NoteContent` stocke 3 colonnes complémentaires depuis mars 2026 :
 | Stockage fichiers | Cloudflare R2 (`assets.djefrid.ca`) |
 | Recherche | Typesense + PostgreSQL FTS (tsvector + GIN + unaccent) |
 | Rate limiting | Upstash Redis (fail-open) |
-| Jobs async | Inngest v4 |
+| Jobs async | Inngest v4 (5 fonctions) |
 | Éditeur | TipTap 3 (26 extensions) |
 | Tests | Vitest + Testing Library |
 | Déploiement | Vercel |
@@ -478,3 +481,4 @@ SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` →
 
 *Migré de Firebase vers PostgreSQL/R2/Auth.js — 2026-03-22*
 *Améliorations TipTap (paste, sécurité, perf, a11y), fix Auth.js prod, page 404 — 2026-03-23*
+*Toggle mot de passe, historique des versions, suppression R2 orphelins, isolation workspace — 2026-03-24*

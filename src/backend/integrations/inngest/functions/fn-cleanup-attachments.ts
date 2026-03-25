@@ -12,8 +12,10 @@
  * (nécessite DeleteObjectsCommand + listing par préfixe).
  */
 
+import { DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { inngest, noteDeleted } from '../client';
 import { prisma } from '@/src/backend/db/prisma';
+import { r2, R2_BUCKET } from '@/src/backend/integrations/r2/client';
 
 export const fnCleanupAttachments = inngest.createFunction(
   {
@@ -22,13 +24,14 @@ export const fnCleanupAttachments = inngest.createFunction(
     retries:  3,
     triggers: noteDeleted,
   },
-  async ({ event, step }: { event: { data: { noteId: string } }; step: any }) => {
-    const { noteId } = event.data;
+  async ({ event, step }: { event: { data: { noteId: string; workspaceId: string } }; step: any }) => {
+    const { noteId, workspaceId } = event.data;
 
     // Récupère les clés R2 avant suppression (pour logging)
+    // workspaceId inclus : isolation garantie même sur un noteId recyclé
     const attachments: { id: string; key: string }[] = await step.run('fetch-attachments', () =>
       prisma.attachment.findMany({
-        where:  { noteId },
+        where:  { noteId, workspaceId },
         select: { id: true, key: true },
       })
     );
@@ -37,13 +40,22 @@ export const fnCleanupAttachments = inngest.createFunction(
       return { cleaned: 0 };
     }
 
-    // TODO (itération suivante) : supprimer les objets dans R2 via DeleteObjectsCommand
-    // const r2Keys = attachments.map(a => ({ Key: a.key }));
-    // await r2.send(new DeleteObjectsCommand({ Bucket: R2_BUCKET, Delete: { Objects: r2Keys } }));
+    // Supprime les objets R2 par batches de 1000 (limite S3/R2)
+    const r2Keys = attachments.map((a) => ({ Key: a.key }));
+    const BATCH  = 1000;
+    for (let i = 0; i < r2Keys.length; i += BATCH) {
+      const batch = r2Keys.slice(i, i + BATCH);
+      await step.run(`delete-r2-batch-${i}`, () =>
+        r2.send(new DeleteObjectsCommand({
+          Bucket: R2_BUCKET,
+          Delete: { Objects: batch, Quiet: true }, // Quiet: true = ne retourne que les erreurs
+        }))
+      );
+    }
 
     // Supprime les enregistrements Attachment en DB
     await step.run('delete-attachment-records', () =>
-      prisma.attachment.deleteMany({ where: { noteId } })
+      prisma.attachment.deleteMany({ where: { noteId, workspaceId } })
     );
 
     return {

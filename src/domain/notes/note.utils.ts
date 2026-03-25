@@ -51,12 +51,24 @@ export function stripHtml(html: string): string {
  * @returns Chaîne formatée
  */
 export function fmtDate(d: Date): string {
-  const diff = Date.now() - d.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days === 0) return 'Auj.';
-  if (days === 1) return 'Hier';
-  if (days < 7)   return `${days}j`;
-  return d.toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' });
+  const diffMs   = Date.now() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHrs  = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 2)  return 'À l\'instant';
+  if (diffHrs < 1)   return `Il y a ${diffMins} min`;
+  if (diffHrs < 24)  return `Il y a ${diffHrs}h`;
+  if (diffDays === 1) return 'Hier';
+  if (diffDays < 7)   return `Il y a ${diffDays}j`;
+
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString('fr-CA', {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  });
 }
 
 /**

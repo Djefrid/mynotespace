@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
+import { Eye, EyeOff } from 'lucide-react';
 import { GLOBAL, REGISTER, AUTH_NAV } from '@/src/frontend/content/copy';
 import ThemeToggle from '@/src/frontend/components/common/ThemeToggle';
 
@@ -23,6 +24,8 @@ export default function RegisterPage() {
   const [email, setEmail]             = useState('');
   const [password, setPassword]       = useState('');
   const [confirmPassword, setConfirm] = useState('');
+  const [showPassword, setShowPwd]    = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError]             = useState('');
   const [isLoading, setIsLoading]     = useState(false);
 
@@ -114,26 +117,46 @@ export default function RegisterPage() {
               {REGISTER.passwordLabel}
               <span className="text-gray-400 dark:text-slate-500 ml-1 text-xs">{REGISTER.passwordHint}</span>
             </label>
-            <input
-              id="password" name="password" type="password" value={password}
-              onChange={e => setPassword(e.target.value)}
-              required minLength={8} maxLength={128} autoComplete="new-password"
-              placeholder={REGISTER.passwordPlaceholder}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
+            <div className="relative">
+              <input
+                id="password" name="password" type={showPassword ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)}
+                required minLength={8} maxLength={128} autoComplete="new-password"
+                placeholder={REGISTER.passwordPlaceholder}
+                className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(v => !v)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+              >
+                {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm text-gray-700 dark:text-slate-300 mb-1">
               {REGISTER.confirmPasswordLabel}
             </label>
-            <input
-              id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword}
-              onChange={e => setConfirm(e.target.value)}
-              required maxLength={128} autoComplete="new-password"
-              placeholder={REGISTER.confirmPlaceholder}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword" name="confirmPassword" type={showConfirm ? 'text' : 'password'} value={confirmPassword}
+                onChange={e => setConfirm(e.target.value)}
+                required maxLength={128} autoComplete="new-password"
+                placeholder={REGISTER.confirmPlaceholder}
+                className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(v => !v)}
+                aria-label={showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+              >
+                {showConfirm ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
 
           {error && (

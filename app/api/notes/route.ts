@@ -1,5 +1,6 @@
 import { NoteStatus } from '@prisma/client';
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireWorkspaceId, requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { createNote, getNotesForWorkspace } from '@/src/backend/services/notes-pg.service';
 import { createNoteSchema, listNotesSchema } from '@/src/backend/validators/note.schemas';
 import { inngest, noteWritten } from '@/src/backend/integrations/inngest/client';
@@ -46,13 +47,18 @@ export async function GET(req: Request) {
 }
 
 // ─── POST /api/notes ──────────────────────────────────────────────────────────
+// Création : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 
 export async function POST(req: Request) {
-  let workspaceId: string;
+  let userId: string, workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ userId, workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'notes:create')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const limit = await checkRateLimit('create', workspaceId);
@@ -65,11 +71,6 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-
-    // userId extrait de la session pour updatedByUserId
-    const { auth } = await import('@/src/backend/auth/auth');
-    const session  = await auth();
-    const userId   = session!.user.id;
 
     const note = await createNote({ workspaceId, userId, ...parsed.data });
 

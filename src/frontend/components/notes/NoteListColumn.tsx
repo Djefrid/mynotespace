@@ -44,6 +44,7 @@ import {
   Plus, Search, StickyNote, ArrowLeft, X, ArrowUpDown, Trash2, Zap,
 } from 'lucide-react';
 import { permanentlyDeleteNote } from '@/src/frontend/services/notes-mutations-api';
+import { usePermissions } from '@/src/frontend/hooks/usePermissions';
 import type { Note, Folder } from '@/lib/notes-service';
 import type { ViewFilter, SortBy, MobilePanel } from '@/lib/notes-types';
 import { viewLabel } from '@/lib/notes-types';
@@ -132,6 +133,7 @@ export default function NoteListColumn({
   loading,
 }: NoteListColumnProps) {
   const [showEmptyTrashConfirm, setShowEmptyTrashConfirm] = useState(false);
+  const { can } = usePermissions();
 
   return (
     /* ══ NOTE LIST ══════════════════════════════════════════════════════════ */
@@ -168,7 +170,7 @@ export default function NoteListColumn({
                   type="button"
                   title="Trier"
                   onClick={e => { e.stopPropagation(); setShowSortMenu(prev => !prev); }}
-                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors"
+                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors"
                 >
                   <ArrowUpDown size={12} />
                 </button>
@@ -192,7 +194,7 @@ export default function NoteListColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           sortBy === val
                             ? 'text-yellow-400 bg-yellow-500/10'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
                         }`}
                       >
                         {label}
@@ -203,8 +205,8 @@ export default function NoteListColumn({
               </div>
             )}
 
-            {/* Bouton nouvelle note (masqué en corbeille) */}
-            {!isTrash && (
+            {/* Bouton nouvelle note (masqué en corbeille + pour les VIEWER) */}
+            {!isTrash && can('notes:create') && (
               <button
                 type="button"
                 onClick={onNewNote}
@@ -215,8 +217,8 @@ export default function NoteListColumn({
               </button>
             )}
 
-            {/* Bouton "Vider la corbeille" — corbeille non vide uniquement */}
-            {isTrash && deletedNotes.length > 0 && (
+            {/* Bouton "Vider la corbeille" — OWNER/ADMIN uniquement */}
+            {isTrash && deletedNotes.length > 0 && can('notes:purge') && (
               <button
                 type="button"
                 title="Vider la corbeille"
@@ -287,8 +289,8 @@ export default function NoteListColumn({
           <div className="px-2 py-2 space-y-1.5" aria-busy="true" aria-label="Chargement des notes…">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-[#111520] animate-pulse">
-                <div className="h-3 w-3/4 bg-gray-300 dark:bg-[#252d3d] rounded mb-2" />
-                <div className="h-2 w-1/2 bg-gray-200 dark:bg-[#1a2030] rounded" />
+                <div className="h-3 w-3/4 bg-gray-300 dark:bg-white/[0.07] rounded mb-2" />
+                <div className="h-2 w-1/2 bg-gray-200 dark:bg-white/[0.04] rounded" />
               </div>
             ))}
           </div>

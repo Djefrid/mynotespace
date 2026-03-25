@@ -1,4 +1,5 @@
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireWorkspaceId, requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import {
   getNoteByIdForWorkspace,
   updateNote,
@@ -11,6 +12,7 @@ import { updateNoteSchema } from '@/src/backend/validators/note.schemas';
 type Params = { params: Promise<{ id: string }> };
 
 // ─── GET /api/notes/[id] ──────────────────────────────────────────────────────
+// Lecture autorisée à tous les membres (y compris VIEWER)
 
 export async function GET(_req: Request, { params }: Params) {
   let workspaceId: string;
@@ -32,27 +34,28 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 // ─── PATCH /api/notes/[id] ────────────────────────────────────────────────────
+// Modification : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 
 export async function PATCH(req: Request, { params }: Params) {
-  let workspaceId: string;
+  let userId: string, workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ userId, workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!can(role, 'notes:update')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    const { id }   = await params;
-    const body     = await req.json().catch(() => ({}));
+    const { id } = await params;
+    const body   = await req.json().catch(() => ({}));
 
     const parsed = updateNoteSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-
-    const { auth } = await import('@/src/backend/auth/auth');
-    const session  = await auth();
-    const userId   = session!.user.id;
 
     const note = await updateNote(id, workspaceId, { userId, ...parsed.data });
     if (!note) return Response.json({ error: 'Not found' }, { status: 404 });
@@ -67,18 +70,26 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 // ─── DELETE /api/notes/[id] ───────────────────────────────────────────────────
+// Soft delete : OWNER, ADMIN, MEMBER
+// Permanent   : OWNER, ADMIN seulement (?permanent=true)
 
 export async function DELETE(req: Request, { params }: Params) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { id }  = await params;
+    const { id }    = await params;
     const permanent = new URL(req.url).searchParams.get('permanent') === 'true';
+
+    const permission = permanent ? 'notes:purge' : 'notes:delete';
+    if (!can(role, permission)) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     if (permanent) {
       await deleteNotePermanently(id, workspaceId);
       inngest.send(noteDeleted.create({ noteId: id, workspaceId })).catch(() => {});

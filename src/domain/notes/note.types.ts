@@ -52,9 +52,11 @@ export type MobilePanel = 'sidebar' | 'list' | 'editor';
  * plainText = dérivé search (Typesense, préview NoteCard)
  */
 export type NoteContentPayload = {
-  html:      string;
-  json:      Record<string, unknown>;
-  plainText: string;
+  html:            string;
+  json:            Record<string, unknown>;
+  plainText:       string;
+  wordCount?:      number;
+  characterCount?: number;
 };
 
 // ── Helpers purs ──────────────────────────────────────────────────────────────

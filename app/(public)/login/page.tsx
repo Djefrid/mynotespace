@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
+import { Eye, EyeOff } from 'lucide-react';
 import { GLOBAL, LOGIN, AUTH_NAV } from '@/src/frontend/content/copy';
 import ThemeToggle from '@/src/frontend/components/common/ThemeToggle';
 
@@ -20,10 +21,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [email, setEmail]         = useState('');
-  const [password, setPassword]   = useState('');
-  const [error, setError]         = useState('');
-  const [isLogging, setIsLogging] = useState(false);
+  const [email, setEmail]           = useState('');
+  const [password, setPassword]     = useState('');
+  const [showPassword, setShowPwd]  = useState(false);
+  const [error, setError]           = useState('');
+  const [isLogging, setIsLogging]   = useState(false);
 
   useEffect(() => {
     if (status === 'authenticated' && session) router.replace('/notes');
@@ -91,13 +93,23 @@ export default function LoginPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm text-gray-700 dark:text-slate-300 mb-1">{LOGIN.passwordLabel}</label>
-            <input
-              id="password" type="password" value={password}
-              onChange={e => setPassword(e.target.value)}
-              required autoComplete="current-password"
-              placeholder={LOGIN.passwordPlaceholder}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
+            <div className="relative">
+              <input
+                id="password" name="password" type={showPassword ? 'text' : 'password'} value={password}
+                onChange={e => setPassword(e.target.value)}
+                required autoComplete="current-password"
+                placeholder={LOGIN.passwordPlaceholder}
+                className="w-full px-3 py-2 pr-10 bg-gray-50 dark:bg-[#1a2030] border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(v => !v)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+              >
+                {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
 
           {error && (

@@ -13,7 +13,8 @@ type ApiNoteItem = {
   trashedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  tags: { tag: { id: string; name: string } }[];
+  tags:      { tag: { id: string; name: string } }[];
+  content?:  { plainText?: string | null } | null;
 };
 
 /** Convertit un NoteListItem PG en Note Firebase-compatible pour l'UI existante. */
@@ -21,7 +22,7 @@ function mapApiNote(item: ApiNoteItem): Note {
   return {
     id:        item.id,
     title:     item.title,
-    content:   '',                                           // contenu chargé séparément à l'ouverture
+    content:   item.content?.plainText ?? '',                // extrait pour la liste ; HTML complet chargé à l'ouverture
     pinned:    item.isPinned,
     folderId:  item.folderId ?? null,
     tags:      item.tags.map(t => t.tag.name),

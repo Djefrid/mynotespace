@@ -36,22 +36,22 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/core';
 import type { RefObject } from 'react';
 import {
   Plus, Pin, Trash2, StickyNote, FolderOpen, ArrowLeft,
-  X, RotateCcw, Code2, Link as LinkIcon, Bold, Italic, Hash,
+  X, RotateCcw, Code2, Hash, History, SearchX, MousePointerClick,
 } from 'lucide-react';
+import { NoteRevisionsModal } from '@/src/frontend/components/editor/NoteRevisionsModal';
 import { daysUntilPurge } from '@/lib/notes-utils';
 import { SLASH_CMDS, LANGUAGES } from '@/lib/notes-types';
 import type { MobilePanel } from '@/lib/notes-types';
 import type { Note, Folder } from '@/lib/notes-service';
 import EditorToolbar from '@/components/notes/EditorToolbar';
-import BubbleLinkPopup from '@/components/notes/BubbleLinkPopup';
-import { normalizeUrl } from '@/src/shared/utils/strings';
+import FloatingBubbleMenu from '@/src/frontend/components/editor/FloatingBubbleMenu';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -70,6 +70,10 @@ interface NoteEditorColumnProps {
   isReadOnly: boolean;
   /** Vrai si la vue courante est la corbeille */
   isTrash: boolean;
+  /** Raison de l'état vide : aucune sélection / vue vide / aucun résultat recherche */
+  emptyReason?: 'no-selection' | 'empty-view' | 'no-results';
+  /** Texte de la recherche active (pour le message "Aucun résultat pour…") */
+  searchQuery?: string;
   /** Liste complète des dossiers */
   folders: Folder[];
   /** Libellé du statut de sauvegarde ("Enregistré", "Enregistrement…", etc.) */
@@ -249,7 +253,11 @@ export default function NoteEditorColumn({
   setBubbleLinkOpen,
   bubbleLinkVal,
   setBubbleLinkVal,
+  emptyReason = 'no-selection',
+  searchQuery = '',
 }: NoteEditorColumnProps) {
+  const [showRevisions, setShowRevisions] = useState(false);
+
   return (
     /* ══ EDITOR ═══════════════════════════════════════════════════════════ */
     <div
@@ -260,19 +268,60 @@ export default function NoteEditorColumn({
     >
       {/* ── État vide : aucune note sélectionnée ──────────────────────────── */}
       {!selectedNote ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-gray-600 gap-3">
-          <StickyNote size={48} className="opacity-20" />
-          <p className="text-sm">
-            {isTrash ? 'Sélectionne une note à récupérer' : 'Sélectionne une note ou'}
-          </p>
-          {!isTrash && (
-            <button
-              type="button"
-              onClick={handleNewNote}
-              className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 rounded-lg text-sm transition-colors"
-            >
-              <Plus size={14} /> Nouvelle note
-            </button>
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+          {/* Variante corbeille */}
+          {isTrash ? (
+            <>
+              <Trash2 size={40} className="text-gray-300 dark:text-gray-700" />
+              <p className="text-sm text-gray-500">Sélectionnez une note à récupérer</p>
+            </>
+          ) : emptyReason === 'no-results' ? (
+            /* Variante aucun résultat de recherche */
+            <>
+              <SearchX size={40} className="text-gray-300 dark:text-gray-700" />
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Aucun résultat{searchQuery ? ` pour « ${searchQuery} »` : ''}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Essayez d'autres mots-clés</p>
+              </div>
+            </>
+          ) : emptyReason === 'empty-view' ? (
+            /* Variante dossier/vue vide */
+            <>
+              <FolderOpen size={40} className="text-gray-300 dark:text-gray-700" />
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Ce dossier est vide</p>
+                <p className="text-xs text-gray-400 mt-1">Créez votre première note ici</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleNewNote}
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 rounded-lg text-sm transition-colors"
+              >
+                <Plus size={14} /> Nouvelle note
+              </button>
+              <p className="text-[10px] text-gray-400/60">ou <kbd className="font-mono bg-gray-100 dark:bg-[#111520] px-1 rounded text-[10px]">Ctrl+N</kbd></p>
+            </>
+          ) : (
+            /* Variante par défaut — aucune note sélectionnée */
+            <>
+              <MousePointerClick size={40} className="text-gray-300 dark:text-gray-700" />
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Sélectionnez une note pour commencer
+                </p>
+                <p className="text-xs text-gray-400 mt-1">ou créez-en une nouvelle</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleNewNote}
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 rounded-lg text-sm transition-colors"
+              >
+                <Plus size={14} /> Nouvelle note
+              </button>
+              <p className="text-[10px] text-gray-400/60">raccourci <kbd className="font-mono bg-gray-100 dark:bg-[#111520] px-1 rounded text-[10px]">Ctrl+N</kbd></p>
+            </>
           )}
         </div>
       ) : (
@@ -322,7 +371,7 @@ export default function NoteEditorColumn({
                     className={`p-1.5 rounded transition-colors ${
                       confirmDel
                         ? 'bg-red-500/20 text-red-400'
-                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                     }`}
                   >
                     <Trash2 size={14} />
@@ -350,7 +399,7 @@ export default function NoteEditorColumn({
                     type="button"
                     onClick={e => { e.stopPropagation(); setShowMoveMenu(prev => !prev); }}
                     title="Déplacer vers"
-                    className="p-1.5 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors"
+                    className="p-1.5 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors"
                   >
                     <FolderOpen size={14} />
                   </button>
@@ -370,7 +419,7 @@ export default function NoteEditorColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           !selectedNote.folderId
                             ? 'text-yellow-400 bg-yellow-500/10'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
                         }`}
                       >
                         Toutes mes notes
@@ -384,7 +433,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                             selectedNote.folderId === f.id
                               ? 'text-yellow-400 bg-yellow-500/10'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
                           }`}
                         >
                           {f.name}
@@ -398,7 +447,7 @@ export default function NoteEditorColumn({
                             setShowMoveMenu(false);
                             await handleCreateRegularFolder();
                           }}
-                          className="w-full px-3 py-1.5 text-sm text-left text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] flex items-center gap-2"
+                          className="w-full px-3 py-1.5 text-sm text-left text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] flex items-center gap-2"
                         >
                           <Plus size={12} /> Nouveau dossier
                         </button>
@@ -415,10 +464,20 @@ export default function NoteEditorColumn({
                   className={`p-1.5 rounded transition-colors ${
                     selectedNote.pinned
                       ? 'text-yellow-400 bg-yellow-500/15'
-                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
                   }`}
                 >
                   <Pin size={14} />
+                </button>
+
+                {/* Bouton historique des versions */}
+                <button
+                  type="button"
+                  onClick={() => setShowRevisions(true)}
+                  title="Historique des versions"
+                  className="p-1.5 rounded transition-colors text-gray-500 hover:text-blue-500 hover:bg-gray-200 dark:hover:bg-[#111520]"
+                >
+                  <History size={14} />
                 </button>
 
                 {/* Bouton suppression (corbeille) — double clic requis */}
@@ -430,7 +489,7 @@ export default function NoteEditorColumn({
                     className={`p-1.5 rounded transition-colors ${
                       confirmDel
                         ? 'bg-red-500/20 text-red-400'
-                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                        : 'text-gray-500 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                     }`}
                   >
                     <Trash2 size={14} />
@@ -475,7 +534,6 @@ export default function NoteEditorColumn({
               onClick={focusMode ? () => editor?.commands.focus('end') : undefined}
             >
               <div className={focusMode ? 'max-w-[1080px] mx-auto w-full py-8' : 'flex-1 flex flex-col min-h-0'}>
-
                 {/* ── Champ titre + autocomplétion tags ───────────────────── */}
                 <div className="relative">
                   <input
@@ -511,7 +569,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-1.5 text-sm text-left transition-colors truncate flex items-center gap-2 ${
                             i === titleSuggIdx
                               ? 'bg-yellow-500/20 text-yellow-300'
-                              : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                              : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                           }`}
                         >
                           <Hash size={11} />#{t}
@@ -605,7 +663,7 @@ export default function NoteEditorColumn({
                       ))}
                     </select>
 
-                    <div className="w-px h-3 bg-gray-200 dark:bg-[#1a2030]" />
+                    <div className="w-px h-3 bg-gray-200 dark:bg-[#111520]" />
 
                     {/* Bouton copier le contenu du bloc de code */}
                     <button
@@ -654,53 +712,53 @@ export default function NoteEditorColumn({
                     {/* Gestion des lignes */}
                     <button type="button" title="Ajouter une ligne au-dessus"
                       onClick={() => editor.chain().focus().addRowBefore().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ↑ Ligne
                     </button>
                     <button type="button" title="Ajouter une ligne en-dessous"
                       onClick={() => editor.chain().focus().addRowAfter().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ↓ Ligne
                     </button>
                     <button type="button" title="Supprimer la ligne"
                       onClick={() => editor.chain().focus().deleteRow().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ✕ Ligne
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />
 
                     {/* Gestion des colonnes */}
                     <button type="button" title="Ajouter une colonne à gauche"
                       onClick={() => editor.chain().focus().addColumnBefore().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ← Col.
                     </button>
                     <button type="button" title="Ajouter une colonne à droite"
                       onClick={() => editor.chain().focus().addColumnAfter().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       → Col.
                     </button>
                     <button type="button" title="Supprimer la colonne"
                       onClick={() => editor.chain().focus().deleteColumn().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ✕ Col.
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />
 
                     {/* Fusion / Scission de cellules */}
                     <button type="button" title="Fusionner les cellules sélectionnées"
                       onClick={() => editor.chain().focus().mergeCells().run()}
                       disabled={!editor.can().mergeCells()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
                       Fusionner
                     </button>
                     <button type="button" title="Scinder la cellule"
                       onClick={() => editor.chain().focus().splitCell().run()}
                       disabled={!editor.can().splitCell()}
-                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap">
                       Scinder
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />
 
                     {/* Bascule en-tête de ligne */}
                     <button type="button" title="Basculer la ligne en en-tête"
@@ -708,92 +766,30 @@ export default function NoteEditorColumn({
                       className={`text-xs px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${
                         editor.isActive('tableHeader')
                           ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
                       }`}>
                       En-tête
                     </button>
-                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5 shrink-0" />
+                    <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />
 
                     {/* Suppression du tableau entier */}
                     <button type="button" title="Supprimer le tableau"
                       onClick={() => editor.chain().focus().deleteTable().run()}
-                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#1a2030] transition-colors whitespace-nowrap">
+                      className="text-xs px-1.5 py-0.5 rounded text-red-400/70 hover:text-red-400 hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors whitespace-nowrap">
                       ✕ Tableau
                     </button>
                   </BubbleMenu>
                 )}
 
-                {/* ── BubbleMenu formatage rapide ──────────────────────────── */}
-                {/* Apparaît sous le texte sélectionné : gras, italique, lien */}
+                {/* ── BubbleMenu formatage riche ───────────────────────────── */}
                 {editor && !isReadOnly && (
-                  <BubbleMenu
+                  <FloatingBubbleMenu
                     editor={editor}
-                    options={{ placement: 'bottom' }}
-                    className="flex items-center gap-0.5 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg p-1 shadow-2xl z-50"
-                  >
-                    {/* Gras */}
-                    <button type="button" title="Gras (Ctrl+B)"
-                      onClick={() => editor.chain().focus().toggleBold().run()}
-                      className={`p-1.5 rounded transition-colors ${
-                        editor.isActive('bold')
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
-                      }`}>
-                      <Bold size={12} />
-                    </button>
-
-                    {/* Italique */}
-                    <button type="button" title="Italique (Ctrl+I)"
-                      onClick={() => editor.chain().focus().toggleItalic().run()}
-                      className={`p-1.5 rounded transition-colors ${
-                        editor.isActive('italic')
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
-                      }`}>
-                      <Italic size={12} />
-                    </button>
-
-                    <div className="w-px h-4 bg-gray-200 dark:bg-[#1a2030] mx-0.5" />
-
-                    {/* Lien hypertexte — bascule popup d'insertion */}
-                    <div className="relative">
-                      <button type="button" title="Lien hypertexte"
-                        onClick={() => {
-                          if (editor.isActive('link')) {
-                            editor.chain().focus().unsetLink().run();
-                            setBubbleLinkOpen(false);
-                          } else {
-                            setBubbleLinkVal(editor.getAttributes('link').href || '');
-                            setBubbleLinkOpen(o => !o);
-                          }
-                        }}
-                        className={`p-1.5 rounded transition-colors ${
-                          editor.isActive('link')
-                            ? 'bg-yellow-500/20 text-yellow-400'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#1a2030]'
-                        }`}>
-                        <LinkIcon size={12} />
-                      </button>
-
-                      {/* Popup d'insertion/modification de lien */}
-                      <BubbleLinkPopup
-                        open={bubbleLinkOpen}
-                        value={bubbleLinkVal}
-                        onChange={setBubbleLinkVal}
-                        onConfirm={() => {
-                          const href = normalizeUrl(bubbleLinkVal);
-                          if (!href) editor.chain().focus().unsetLink().run();
-                          else editor.chain().focus().setLink({ href }).run();
-                          setBubbleLinkOpen(false);
-                          setBubbleLinkVal('');
-                        }}
-                        onClose={() => {
-                          setBubbleLinkOpen(false);
-                          setBubbleLinkVal('');
-                        }}
-                      />
-                    </div>
-                  </BubbleMenu>
+                    bubbleLinkOpen={bubbleLinkOpen}
+                    setBubbleLinkOpen={setBubbleLinkOpen}
+                    bubbleLinkVal={bubbleLinkVal}
+                    setBubbleLinkVal={setBubbleLinkVal}
+                  />
                 )}
 
                 {/* ── Zone d'édition TipTap ────────────────────────────────── */}
@@ -826,7 +822,7 @@ export default function NoteEditorColumn({
                           className={`w-full px-3 py-2 text-sm text-left flex items-center gap-3 transition-colors ${
                             i === slashIdx
                               ? 'bg-yellow-500/15 text-yellow-300'
-                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
                           }`}
                         >
                           <span className="font-medium text-sm w-24 shrink-0">{c.label}</span>
@@ -856,7 +852,7 @@ export default function NoteEditorColumn({
                         className={`w-full px-3 py-1.5 text-sm text-left flex items-center gap-2 transition-colors ${
                           i === suggestionIdx
                             ? 'bg-yellow-500/20 text-yellow-300'
-                            : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#1a2030]'
+                            : 'text-yellow-400 hover:bg-gray-200 dark:hover:bg-[#111520]'
                         }`}
                       >
                         <Hash size={11} />#{item}
@@ -897,6 +893,18 @@ export default function NoteEditorColumn({
               </div>{/* fin page-centered (max-w-[1080px]) */}
             </div>{/* fin scroll-wrapper */}
           </div>
+
+          {/* ── Modal historique des versions ──────────────────────────────── */}
+          {showRevisions && selectedNote && (
+            <NoteRevisionsModal
+              noteId={selectedNote.id}
+              onClose={() => setShowRevisions(false)}
+              onRestore={(json) => {
+                editor?.commands.setContent(json, { emitUpdate: true });
+                setShowRevisions(false);
+              }}
+            />
+          )}
         </>
       )}
     </div>

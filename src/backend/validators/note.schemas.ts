@@ -22,9 +22,11 @@ export const updateNoteSchema = z.object({
  *  plainText = dérivé recherche (Typesense)
  */
 export const saveContentSchema = z.object({
-  html:      z.string(),
-  json:      z.record(z.string(), z.unknown()).optional(),
-  plainText: z.string().optional(),
+  html:            z.string(),
+  json:            z.record(z.string(), z.unknown()).optional(),
+  plainText:       z.string().optional(),
+  wordCount:       z.number().int().min(0).optional(),
+  characterCount:  z.number().int().min(0).optional(),
 });
 
 /** Paramètres de recherche Typesense */

@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { prisma } from '@/src/backend/db/prisma';
 import { r2, R2_BUCKET, R2_PUBLIC_URL } from '@/src/backend/integrations/r2/client';
 import { presignSchema } from '@/src/backend/validators/upload.schemas';
@@ -12,12 +13,17 @@ const PRESIGN_TTL_SECONDS = 300; // 5 minutes
 
 // ─── POST /api/upload/presign ─────────────────────────────────────────────────
 
+// POST : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 export async function POST(req: Request) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'uploads:create')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const limit = await checkRateLimit('presign', workspaceId);

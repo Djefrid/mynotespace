@@ -17,7 +17,15 @@ export async function provisionPersonalWorkspace(userId: string): Promise<string
     select: { id: true },
   });
 
-  if (existing) return existing.id;
+  if (existing) {
+    // Garantit que le membre OWNER existe même si le workspace préexistait (migration)
+    await prisma.workspaceMember.upsert({
+      where:  { workspaceId_userId: { workspaceId: existing.id, userId } },
+      create: { workspaceId: existing.id, userId, role: MemberRole.OWNER },
+      update: {},
+    });
+    return existing.id;
+  }
 
   const workspace = await prisma.$transaction(async (tx) => {
     const ws = await tx.workspace.create({

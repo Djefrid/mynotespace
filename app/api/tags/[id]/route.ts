@@ -1,12 +1,18 @@
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { deleteTag } from '@/src/backend/services/tags.service';
 
+// DELETE : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'tags:manage')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

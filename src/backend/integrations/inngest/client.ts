@@ -25,6 +25,10 @@ export const noteDeleted = eventType('note/deleted', {
   schema: staticSchema<{ noteId: string; workspaceId: string }>(),
 });
 
+export const noteImagesOrphaned = eventType('note/images-orphaned', {
+  schema: staticSchema<{ noteId: string; workspaceId: string; keys: string[] }>(),
+});
+
 // ── Singleton client ──────────────────────────────────────────────────────────
 
 export const inngest = new Inngest({ id: 'mynotespace' });

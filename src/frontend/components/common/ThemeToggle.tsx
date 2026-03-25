@@ -76,7 +76,7 @@ export default function ThemeToggle({ variant = 'icon', className = '' }: ThemeT
             onClick={() => setTheme(value)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               active
-                ? 'bg-white dark:bg-[#1a2030] text-blue-600 dark:text-blue-400 shadow-sm'
+                ? 'bg-white dark:bg-[#111520] text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >

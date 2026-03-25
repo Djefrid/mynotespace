@@ -24,6 +24,10 @@ declare module 'next-auth' {
     user: {
       id: string;
       workspaceId: string;
+      /** Rôle dans le workspace — mis en cache dans le JWT au moment du login */
+      workspaceRole: string;
+      /** Timestamp Unix (secondes) d'expiry absolue de la session */
+      sessionExpiresAt: number;
     } & DefaultSession['user'];
   }
 }
@@ -71,20 +75,63 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
       return baseUrl;
     },
     async jwt({ token, user, trigger, session }) {
-      // `user` est présent uniquement lors du premier appel post-login
+      // ── 1. Premier appel post-login ────────────────────────────────────────
       if (user?.id) {
         token.id = user.id;
-        token.workspaceId = await provisionPersonalWorkspace(user.id);
+        const workspaceId = await provisionPersonalWorkspace(user.id);
+        token.workspaceId = workspaceId;
+
+        // Charge le rôle depuis la DB
+        const member = await prisma.workspaceMember.findUnique({
+          where: { workspaceId_userId: { workspaceId, userId: user.id } },
+          select: { role: true },
+        });
+        token.workspaceRole = member?.role ?? 'OWNER';
+
+        // Expiry absolue : durée configurable par workspace (1–180 jours)
+        const workspace = await prisma.workspace.findUnique({
+          where:  { id: workspaceId },
+          select: { sessionMaxAgeDays: true },
+        });
+        const maxAgeDays = workspace?.sessionMaxAgeDays ?? 30;
+        token.sessionExpiresAt = Math.floor(Date.now() / 1000) + maxAgeDays * 86_400;
       }
-      // Mise à jour du nom sans re-login (appellé via useSession().update())
+
+      // ── 2. Appels suivants (rafraîchissement du cookie) ────────────────────
+      if (!user?.id) {
+        // Vérifier force-logout : si sessionsInvalidatedAt > token.iat → session révoquée
+        const dbUser = await prisma.user.findUnique({
+          where:  { id: token.id as string },
+          select: { sessionsInvalidatedAt: true },
+        });
+        if (
+          dbUser?.sessionsInvalidatedAt &&
+          dbUser.sessionsInvalidatedAt.getTime() / 1000 > (token.iat as number)
+        ) {
+          return null; // Détruit la session côté serveur
+        }
+
+        // Vérifier expiry absolue
+        if (
+          token.sessionExpiresAt &&
+          Date.now() / 1000 > (token.sessionExpiresAt as number)
+        ) {
+          return null;
+        }
+      }
+
+      // ── 3. Mise à jour du nom (useSession().update()) ──────────────────────
       if (trigger === 'update' && session?.name !== undefined) {
         token.name = session.name;
       }
+
       return token;
     },
     async session({ session, token }) {
-      if (token.id)          session.user.id          = token.id as string;
-      if (token.workspaceId) session.user.workspaceId = token.workspaceId as string;
+      if (token.id)               session.user.id               = token.id as string;
+      if (token.workspaceId)      session.user.workspaceId      = token.workspaceId as string;
+      if (token.workspaceRole)    session.user.workspaceRole    = token.workspaceRole as string;
+      if (token.sessionExpiresAt) session.user.sessionExpiresAt = token.sessionExpiresAt as number;
       return session;
     },
   },

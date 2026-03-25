@@ -108,10 +108,11 @@ import {
 } from 'react';
 import {
   FolderPlus, ChevronRight, Zap,
-  LogOut, User as UserIcon, Settings,
+  LogOut, User as UserIcon, Settings, Search as SearchIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { usePermissions } from '@/src/frontend/hooks/usePermissions';
 import { useRouter } from 'next/navigation';
 import type { Editor } from '@tiptap/core';
 import { useNotes } from '@/src/frontend/hooks/data/useNotes';
@@ -145,7 +146,7 @@ import { useImageFile }            from '@/hooks/notes/useImageFile';
 import { useImportExport }         from '@/hooks/notes/useImportExport';
 import { useTitleAutocomplete }    from '@/hooks/notes/useTitleAutocomplete';
 import { useNoteEditor }           from '@/hooks/notes/useNoteEditor';
-import { useIdleTimeout }          from '@/src/frontend/hooks/ui/useIdleTimeout';
+import CommandPalette             from '@/src/frontend/components/common/CommandPalette';
 
 // ── Types, constantes et helpers — importés depuis lib/notes-types.ts ────────
 // ViewFilter, SortBy, SaveStatus, MobilePanel, viewEq, viewLabel,
@@ -158,6 +159,7 @@ export default function NotesEditor() {
   const { notes, deletedNotes, folders, manualTags, loading, refreshNotes, refreshMeta } = useNotes();
   // ── Authentification — pour le profil utilisateur + déconnexion ───────────
   const { data: session } = useSession();
+  const { can } = usePermissions();
   const router = useRouter();
   /**
    * Déconnexion robuste : redirect:false évite qu'Auth.js utilise AUTH_URL
@@ -238,6 +240,9 @@ export default function NotesEditor() {
     handleDeleteTag,
   } = useNoteSelection({ notes, deletedNotes, folders, currentFolder, setView, refreshNotes, refreshMeta });
 
+  // VIEWER ne peut pas modifier — l'éditeur est en lecture seule même hors corbeille
+  const effectiveReadOnly = isReadOnly || !can('notes:update');
+
   // ── Autosave + Background Sync ──────────────────────────────────────────────
   const {
     saveStatus, setSaveStatus,
@@ -245,7 +250,7 @@ export default function NotesEditor() {
     saveTimer,
     scheduleAutoSave, saveImmediately, registerBackgroundSync,
     saveLabel, saveColor,
-  } = useAutosave({ selectedId, isReadOnly, prevTitle, prevContent });
+  } = useAutosave({ selectedId, isReadOnly: effectiveReadOnly, prevTitle, prevContent });
 
   // ── Autocomplétion contenu (tags + slash commands) ───────────────────────────
   const {
@@ -309,7 +314,7 @@ export default function NotesEditor() {
   } = useNoteEditor({
     editorRef,
     selectedId,
-    isReadOnly,
+    isReadOnly: effectiveReadOnly,
     title,
     slashFilter,
     setContent,
@@ -461,24 +466,28 @@ export default function NotesEditor() {
     } catch { /* ignore — localStorage peut être bloqué */ }
   }, [loading, editor]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Ctrl+S (sauvegarde immédiate) + Ctrl+N (nouvelle note) ───────────────────
+  // ── Ctrl+S / Ctrl+N / Ctrl+K ──────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (e.key === 's') {
         e.preventDefault();
-        if (!selectedId || isReadOnly) return;
+        if (!selectedId || effectiveReadOnly) return;
         saveImmediately(title, content);
       }
       if (e.key === 'n') {
         e.preventDefault();
         handleNewNote();
       }
+      if (e.key === 'k') {
+        e.preventDefault();
+        setCmdPaletteOpen(o => !o);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, isReadOnly, title, content]);
+  }, [selectedId, effectiveReadOnly, title, content]);
 
   // ── Ctrl+F / Cmd+F → focus barre de recherche ───────────────────────────────
   useEffect(() => {
@@ -493,16 +502,10 @@ export default function NotesEditor() {
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
 
-  // ── Déconnexion automatique après inactivité (3 min) ─────────────────────────
-  const [showIdleWarning, setShowIdleWarning] = useState(false);
-
-  useIdleTimeout({
-    warningAfterMs: 2.5 * 60 * 1000, // avertissement à 2min30
-    logoutAfterMs:  3   * 60 * 1000, // déconnexion à 3min
-    onWarning: () => setShowIdleWarning(true),
-    onLogout:  handleSignOut,
-    onReset:   () => setShowIdleWarning(false),
-  });
+  // ── Command palette (Ctrl+K) ──────────────────────────────────────────────────
+  const [cmdPaletteOpen,  setCmdPaletteOpen]  = useState(false);
+  const [avatarPopover,   setAvatarPopover]   = useState(false);
+  const avatarBtnRef = useRef<HTMLButtonElement>(null);
 
   // ── Recherche backend (full-text via /api/search) ─────────────────────────────
   const { results: searchApiResults, isSearching } = useSearch(search);
@@ -544,55 +547,33 @@ export default function NotesEditor() {
         />
       )}
 
+      {/* ── Command Palette (Ctrl+K) ─────────────────────────────────────────── */}
+      {cmdPaletteOpen && (
+        <CommandPalette
+          notes={notes}
+          folders={folders}
+          onClose={() => setCmdPaletteOpen(false)}
+          onSelectNote={(note) => { handleSelectNote(note); setCmdPaletteOpen(false); }}
+          onSelectView={(v) => { setView(v); setMobilePanel('list'); setCmdPaletteOpen(false); }}
+          onNewNote={() => { handleNewNote(); setCmdPaletteOpen(false); }}
+        />
+      )}
+
       {/* ── Overlay fantôme "fly to trash" ──────────────────────────────────── */}
       <FlyToTrash flyItem={flyItem} />
-
-      {/* ── Modal inactivité ─────────────────────────────────────────────────── */}
-      {showIdleWarning && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="idle-modal-title"
-        >
-          <div className="bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
-            <h2 id="idle-modal-title" className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-              Toujours là ?
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Tu seras déconnecté automatiquement dans <span className="text-yellow-500 dark:text-yellow-400 font-medium">30 secondes</span> pour des raisons de sécurité.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] transition-colors"
-              >
-                Se déconnecter
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowIdleWarning(false)}
-                className="px-4 py-2 text-sm rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-medium transition-colors"
-              >
-                Rester connecté
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div
         className="flex h-screen overflow-hidden rounded-xl"
         onClick={() => {
           setShowMoveMenu(false); setShowSortMenu(false);
           setSuggestions([]); setShowNewFolderMenu(false);
+          setAvatarPopover(false);
         }}
       >
         {/* ══ SIDEBAR ══════════════════════════════════════════════════════════ */}
         <div className={`
           ${mobilePanel === 'sidebar' ? 'flex' : 'hidden'} md:flex
-          w-full md:w-52 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700
+          w-full md:w-12 lg:w-52 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 overflow-x-hidden
         `}>
           <div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-dark-700">
             {/* Header mobile — logo + nom app */}
@@ -627,14 +608,14 @@ export default function NotesEditor() {
                   <button
                     type="button"
                     onClick={() => { handleCreateRegularFolder(); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
                   >
                     <FolderPlus size={13} /> Nouveau dossier
                   </button>
                   <button
                     type="button"
                     onClick={() => { setEditingSmartId(null); setShowSmartModal(true); setShowNewFolderMenu(false); }}
-                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a2030] flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] flex items-center gap-2"
                   >
                     <Zap size={13} className="text-yellow-400" /> Dossier intelligent
                   </button>
@@ -659,49 +640,60 @@ export default function NotesEditor() {
             onCreateSubfolder={handleCreateSubfolder}
           />
 
-          {/* ── Profil utilisateur + déconnexion ─────────────────────────────
-              Affiché en bas de la sidebar. Photo Google ou icône initiales,
-              nom/email tronqué, bouton de déconnexion rouge au hover.       */}
-          <div className="mt-auto border-t border-gray-200 dark:border-dark-700/60 p-3">
-            <div className="flex items-center gap-2.5">
-              {/* Avatar : photo Google si disponible, sinon icône initiale */}
+          {/* ── Profil utilisateur — bouton avatar compact avec popover ────── */}
+          <div className="mt-auto border-t border-gray-200 dark:border-dark-700/60 p-2 relative">
+            <button
+              ref={avatarBtnRef}
+              type="button"
+              onClick={e => { e.stopPropagation(); setAvatarPopover(o => !o); }}
+              title={session?.user?.name ?? 'Profil'}
+              className="w-full flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors text-left"
+            >
               {session?.user?.image ? (
-                <img
-                  src={session.user.image}
-                  alt="Avatar"
-                  className="w-7 h-7 rounded-full shrink-0 ring-1 ring-gray-300 dark:ring-dark-600"
-                  referrerPolicy="no-referrer"
-                />
+                <img src={session.user.image} alt="Avatar" referrerPolicy="no-referrer"
+                  className="w-6 h-6 rounded-full shrink-0 ring-1 ring-gray-300 dark:ring-dark-600" />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
-                  <UserIcon size={13} className="text-yellow-400" />
+                <div className="w-6 h-6 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
+                  <span className="text-[10px] font-semibold text-yellow-500 uppercase leading-none">
+                    {(session?.user?.name ?? session?.user?.email ?? 'U').charAt(0)}
+                  </span>
                 </div>
               )}
-              {/* Nom + email */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                  {session?.user?.name || session?.user?.email?.split('@')[0] || 'Utilisateur'}
-                </p>
-                <p className="text-[10px] text-gray-600 truncate">{session?.user?.email}</p>
+              <span className="flex-1 min-w-0 text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                {session?.user?.name || session?.user?.email?.split('@')[0] || 'Utilisateur'}
+              </span>
+            </button>
+
+            {/* Popover avatar */}
+            {avatarPopover && (
+              <div
+                className="absolute bottom-full left-2 right-2 mb-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden z-50"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* En-tête identité */}
+                <div className="px-3 py-2.5 border-b border-gray-100 dark:border-dark-700">
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                    {session?.user?.name || 'Utilisateur'}
+                  </p>
+                  <p className="text-[10px] text-gray-500 truncate">{session?.user?.email}</p>
+                </div>
+                {/* Actions */}
+                <Link
+                  href="/profile"
+                  onClick={() => setAvatarPopover(false)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+                >
+                  <Settings size={12} /> Paramètres
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => { setAvatarPopover(false); handleSignOut(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut size={12} /> Se déconnecter
+                </button>
               </div>
-              {/* Bouton paramètres */}
-              <Link
-                href="/profile"
-                title="Paramètres"
-                className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors p-1 rounded"
-              >
-                <Settings size={13} />
-              </Link>
-              {/* Bouton déconnexion */}
-              <button
-                type="button"
-                onClick={handleSignOut}
-                title="Se déconnecter"
-                className="text-gray-500 hover:text-red-400 transition-colors duration-[120ms] p-1 rounded"
-              >
-                <LogOut size={13} />
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
@@ -738,7 +730,7 @@ export default function NotesEditor() {
           focusMode={focusMode}
           setFocusMode={setFocusMode}
           selectedNote={selectedNote ?? undefined}
-          isReadOnly={isReadOnly}
+          isReadOnly={effectiveReadOnly}
           isTrash={isTrash}
           folders={folders}
           saveLabel={saveLabel}
@@ -790,6 +782,16 @@ export default function NotesEditor() {
           suggestions={suggestions}
           suggestionIdx={suggestionIdx}
           applySuggestion={applySuggestion}
+          emptyReason={
+            !selectedNote
+              ? search.trim() && displayedNotes.length === 0
+                ? 'no-results'
+                : displayedNotes.length === 0
+                  ? 'empty-view'
+                  : 'no-selection'
+              : undefined
+          }
+          searchQuery={search}
           bubbleLinkOpen={bubbleLinkOpen}
           setBubbleLinkOpen={setBubbleLinkOpen}
           bubbleLinkVal={bubbleLinkVal}

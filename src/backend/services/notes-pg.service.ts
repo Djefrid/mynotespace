@@ -32,7 +32,7 @@ export type UpdateNoteInput = {
 
 // ─── Select partagés ──────────────────────────────────────────────────────────
 
-/** Métadonnées + tags — utilisé pour les listes (sans contenu). */
+/** Métadonnées + tags + extrait texte — utilisé pour les listes. */
 const noteListSelect = {
   id: true,
   title: true,
@@ -48,6 +48,7 @@ const noteListSelect = {
       tag: { select: { id: true, name: true } },
     },
   },
+  content: { select: { plainText: true } },
 } satisfies Prisma.NoteSelect;
 
 /** Note complète avec contenu — utilisé pour la vue détail. */
@@ -177,11 +178,20 @@ export async function updateNote(
  * N'incrémente pas version — c'est de l'édition continue, pas un changement structurel.
  * Touche Note.updatedAt via updatedByUserId pour que les listes restent triées.
  */
+/** Délai minimum entre deux révisions d'une même note (5 minutes). */
+const REVISION_THROTTLE_MS = 5 * 60 * 1000;
+
 export async function saveNoteContent(
   id: string,
   workspaceId: string,
   userId: string,
-  data: { html: string; json?: Record<string, unknown>; plainText?: string }
+  data: {
+    html:            string;
+    json?:           Record<string, unknown>;
+    plainText?:      string;
+    wordCount?:      number;
+    characterCount?: number;
+  }
 ): Promise<boolean> {
   const exists = await prisma.note.findFirst({
     where: { id, workspaceId },
@@ -190,8 +200,10 @@ export async function saveNoteContent(
   if (!exists) return false;
 
   const contentData = {
-    html:      data.html,
-    plainText: data.plainText ?? '',
+    html:           data.html,
+    plainText:      data.plainText ?? '',
+    wordCount:      data.wordCount ?? 0,
+    characterCount: data.characterCount ?? 0,
     ...(data.json !== undefined && { json: data.json as Prisma.InputJsonValue }),
   };
 
@@ -201,12 +213,47 @@ export async function saveNoteContent(
       create: { noteId: id, ...contentData },
       update: contentData,
     }),
-    // Touche Note.updatedAt pour que la liste reste triée par dernière modif
     prisma.note.update({
       where: { id },
       data:  { updatedByUserId: userId },
     }),
   ]);
+
+  // ── Révision automatique (throttle 5 min) ──────────────────────────────────
+  // Crée un snapshot JSON uniquement si data.json est présent et si la dernière
+  // révision date de plus de REVISION_THROTTLE_MS.
+  if (data.json) {
+    const lastRevision = await prisma.noteRevision.findFirst({
+      where:   { noteId: id },
+      orderBy: { createdAt: 'desc' },
+      select:  { createdAt: true },
+    });
+    const shouldRevise =
+      !lastRevision ||
+      Date.now() - lastRevision.createdAt.getTime() > REVISION_THROTTLE_MS;
+
+    if (shouldRevise) {
+      await prisma.noteRevision.create({
+        data: {
+          noteId:    id,
+          json:      data.json as Prisma.InputJsonValue,
+          plainText: data.plainText ?? '',
+          wordCount: data.wordCount ?? 0,
+        },
+      });
+
+      // Purge : garde les 50 révisions les plus récentes, supprime le reste
+      const all = await prisma.noteRevision.findMany({
+        where:   { noteId: id },
+        orderBy: { createdAt: 'asc' },
+        select:  { id: true },
+      });
+      if (all.length > 50) {
+        const toDelete = all.slice(0, all.length - 50).map(r => r.id);
+        await prisma.noteRevision.deleteMany({ where: { id: { in: toDelete } } });
+      }
+    }
+  }
 
   return true;
 }
@@ -258,6 +305,8 @@ export async function deleteNotePermanently(
 
 /**
  * Purge les notes en corbeille depuis plus de `retentionDays` jours.
+ * Opération globale intentionnelle — pas de filtre workspaceId.
+ * Appelée uniquement par le cron Inngest `fnPurgeTrash` (pas par les routes API).
  * Retourne les ids supprimés (pour permettre le nettoyage R2 + Typesense en aval).
  */
 export async function purgeOldTrashedNotes(

@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import {
   User as UserIcon, Shield, FolderOpen, ArrowLeft,
   LogOut, Trash2, Download, FileText,
-  AlertTriangle, X, Pencil, Check, AlertCircle,
+  AlertTriangle, X, Pencil, Check, AlertCircle, Users,
 } from 'lucide-react';
 import {
   PROFILE_NAV,
   PROFILE_ACCOUNT,
   PROFILE_SECURITY,
   PROFILE_WORKSPACE,
+  PROFILE_MEMBERS,
   PROFILE_DATA,
   PROFILE_DANGER,
   PROFILE_APPEARANCE,
@@ -21,6 +22,14 @@ import ThemeToggle from '@/src/frontend/components/common/ThemeToggle';
 import { Palette } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface WorkspaceMember {
+  userId:   string;
+  name:     string | null;
+  email:    string | null;
+  role:     'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+  joinedAt: string;
+}
 
 interface ProfileStats {
   createdAt:     string | null;
@@ -39,12 +48,13 @@ type FeedbackState = { type: 'success' | 'error'; message: string } | null;
 // ─── Navigation latérale ──────────────────────────────────────────────────────
 
 const NAV_SECTIONS = [
-  { id: 'compte',    label: PROFILE_NAV.compte,      icon: UserIcon      },
-  { id: 'securite',  label: PROFILE_NAV.securite,    icon: Shield        },
-  { id: 'apparence', label: PROFILE_APPEARANCE.sectionTitle, icon: Palette },
-  { id: 'espace',    label: PROFILE_NAV.espace,      icon: FolderOpen    },
-  { id: 'donnees',   label: PROFILE_NAV.donnees,     icon: FileText      },
-  { id: 'danger',    label: PROFILE_NAV.danger,      icon: AlertTriangle },
+  { id: 'compte',    label: PROFILE_NAV.compte,               icon: UserIcon      },
+  { id: 'securite',  label: PROFILE_NAV.securite,             icon: Shield        },
+  { id: 'apparence', label: PROFILE_APPEARANCE.sectionTitle,  icon: Palette       },
+  { id: 'espace',    label: PROFILE_NAV.espace,               icon: FolderOpen    },
+  { id: 'membres',   label: PROFILE_MEMBERS.sectionTitle,     icon: Users         },
+  { id: 'donnees',   label: PROFILE_NAV.donnees,              icon: FileText      },
+  { id: 'danger',    label: PROFILE_NAV.danger,               icon: AlertTriangle },
 ] as const;
 
 function Sidebar({ active }: { active: string }) {
@@ -230,14 +240,30 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  const { data: session, update }         = useSession();
-  const router                            = useRouter();
-  const [stats, setStats]                 = useState<ProfileStats | null>(null);
-  const [statsLoading, setStatsLoading]   = useState(true);
-  const [showDelete, setShowDelete]       = useState(false);
-  const [showLogout, setShowLogout]       = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState('compte');
+  const { data: session, update }           = useSession();
+  const router                              = useRouter();
+  const [stats, setStats]                   = useState<ProfileStats | null>(null);
+  const [statsLoading, setStatsLoading]     = useState(true);
+  const [showDelete, setShowDelete]         = useState(false);
+  const [showLogout, setShowLogout]         = useState(false);
+  const [exportLoading, setExportLoading]   = useState(false);
+  const [activeSection, setActiveSection]   = useState('compte');
+
+  // ── Membres du workspace ──────────────────────────────────────────────────
+  const [members, setMembers]               = useState<WorkspaceMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [removingId, setRemovingId]         = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove]   = useState<WorkspaceMember | null>(null);
+  const [changingRole, setChangingRole]     = useState<string | null>(null);
+
+  // ── Durée de session (OWNER uniquement) ───────────────────────────────────
+  const [sessionDays, setSessionDays]             = useState(30);
+  const [savingSession, setSavingSession]         = useState(false);
+  const [sessionFeedback, setSessionFeedback]     = useState<FeedbackState>(null);
+
+  const currentUserId = (session?.user as { id?: string })?.id ?? '';
+  const currentRole   = (session?.user as { workspaceRole?: string })?.workspaceRole ?? 'VIEWER';
+  const isOwner       = currentRole === 'OWNER';
 
   // ── Édition nom ───────────────────────────────────────────────────────────
   const [editingName, setEditingName]   = useState(false);
@@ -264,6 +290,22 @@ export default function ProfilePage() {
       .catch(() => {})
       .finally(() => setStatsLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetch('/api/workspace/members')
+      .then((r) => r.json())
+      .then((json) => setMembers(json.data ?? []))
+      .catch(() => {})
+      .finally(() => setMembersLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isOwner) return;
+    fetch('/api/workspace/session')
+      .then((r) => r.json())
+      .then((json) => { if (json.data?.sessionMaxAgeDays) setSessionDays(json.data.sessionMaxAgeDays); })
+      .catch(() => {});
+  }, [isOwner]);
 
   // Suivi section visible
   useEffect(() => {
@@ -325,6 +367,43 @@ export default function ProfilePage() {
     } catch { /* silencieux */ } finally { setExportLoading(false); }
   }
 
+  async function handleSaveSessionDays(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingSession(true); setSessionFeedback(null);
+    try {
+      const res = await fetch('/api/workspace/session', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionMaxAgeDays: sessionDays }),
+      });
+      if (!res.ok) { setSessionFeedback({ type: 'error', message: PROFILE_SECURITY.errorGeneric }); return; }
+      setSessionFeedback({ type: 'success', message: PROFILE_SECURITY.sessionDurationSuccess });
+    } catch { setSessionFeedback({ type: 'error', message: PROFILE_SECURITY.errorNetwork }); }
+    finally { setSavingSession(false); }
+  }
+
+  async function handleChangeRole(targetId: string, newRole: WorkspaceMember['role']) {
+    setChangingRole(targetId);
+    try {
+      const res = await fetch(`/api/workspace/members/${targetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) return;
+      setMembers(prev => prev.map(m => m.userId === targetId ? { ...m, role: newRole } : m));
+    } catch { /* silencieux */ }
+    finally { setChangingRole(null); }
+  }
+
+  async function handleRemoveMember(targetId: string) {
+    setRemovingId(targetId);
+    try {
+      await fetch(`/api/workspace/members/${targetId}`, { method: 'DELETE' });
+      setMembers(prev => prev.filter(m => m.userId !== targetId));
+    } catch { /* silencieux */ }
+    finally { setRemovingId(null); setConfirmRemove(null); }
+  }
+
   async function handleDeleteAccount() {
     const res = await fetch('/api/auth/account', { method: 'DELETE' });
     if (!res.ok) throw new Error(PROFILE_DANGER.deleteErrorServer);
@@ -346,6 +425,16 @@ export default function ProfilePage() {
       )}
       {showDelete && (
         <DeleteAccountModal onClose={() => setShowDelete(false)} onConfirm={handleDeleteAccount} />
+      )}
+      {confirmRemove && (
+        <ConfirmModal
+          title={PROFILE_MEMBERS.removeConfirm}
+          message={PROFILE_MEMBERS.removeMessage(confirmRemove.name ?? confirmRemove.email ?? '?')}
+          confirmLabel={PROFILE_MEMBERS.removeYes}
+          danger
+          onClose={() => setConfirmRemove(null)}
+          onConfirm={() => handleRemoveMember(confirmRemove.userId)}
+        />
       )}
 
       <main id="main-content" className="min-h-screen bg-white dark:bg-[#080c14] text-gray-900 dark:text-white">
@@ -434,11 +523,50 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm text-gray-900 dark:text-white">{PROFILE_SECURITY.sessionLabel}</p>
                     <p className="text-xs text-gray-500">{PROFILE_SECURITY.sessionDetail}</p>
+                    {(session?.user as { sessionExpiresAt?: number })?.sessionExpiresAt && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        {PROFILE_SECURITY.sessionExpireLabel}{' '}
+                        {new Date(
+                          ((session?.user as { sessionExpiresAt?: number }).sessionExpiresAt ?? 0) * 1000
+                        ).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    )}
                   </div>
                   <span className="text-xs text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-md">
                     {PROFILE_SECURITY.sessionBadge}
                   </span>
                 </div>
+
+                {isOwner && (
+                  <div className="py-3 border-b border-gray-200 dark:border-dark-700">
+                    <form onSubmit={handleSaveSessionDays} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-900 dark:text-white">{PROFILE_SECURITY.sessionDurationLabel}</p>
+                          <p className="text-xs text-gray-500">{PROFILE_SECURITY.sessionDurationHint}</p>
+                        </div>
+                        <select
+                          id="session-days" name="sessionDays"
+                          aria-label={PROFILE_SECURITY.sessionDurationLabel}
+                          value={sessionDays}
+                          onChange={(e) => { setSessionDays(Number(e.target.value)); setSessionFeedback(null); }}
+                          className="bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg px-2 py-1 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+                        >
+                          {[7, 14, 30, 60, 90, 180].map(d => (
+                            <option key={d} value={d}>{d} jours</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button type="submit" disabled={savingSession}
+                          className="px-4 py-1.5 text-sm bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 rounded-lg hover:bg-yellow-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                          {savingSession ? PROFILE_SECURITY.sessionDurationSaveLoading : PROFILE_SECURITY.sessionDurationSaveIdle}
+                        </button>
+                        <Feedback state={sessionFeedback} />
+                      </div>
+                    </form>
+                  </div>
+                )}
 
                 <div className="py-3">
                   <div className="flex items-center justify-between">
@@ -538,6 +666,102 @@ export default function ProfilePage() {
                   value={stats ? formatBytes(stats.storageBytes) : '—'} />
               </section>
 
+              {/* ── Membres du workspace ────────────────────────────────── */}
+              <section id="membres" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                    <Users size={12} /> {PROFILE_MEMBERS.sectionTitle}
+                  </h2>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">{PROFILE_MEMBERS.sectionDesc}</p>
+
+                {membersLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map(i => (
+                      <div key={i} className="flex items-center gap-3 py-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-[#1a2030] animate-pulse shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 w-32 bg-gray-200 dark:bg-[#1a2030] rounded animate-pulse" />
+                          <div className="h-2.5 w-48 bg-gray-100 dark:bg-[#111520] rounded animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {members.map(m => {
+                      const isMe = m.userId === currentUserId;
+                      const roleLabels: Record<WorkspaceMember['role'], string> = {
+                        OWNER:  PROFILE_MEMBERS.roleOwner,
+                        ADMIN:  PROFILE_MEMBERS.roleAdmin,
+                        MEMBER: PROFILE_MEMBERS.roleMember,
+                        VIEWER: PROFILE_MEMBERS.roleViewer,
+                      };
+                      const roleColors: Record<WorkspaceMember['role'], string> = {
+                        OWNER:  'text-yellow-500 bg-yellow-500/10',
+                        ADMIN:  'text-blue-500 bg-blue-500/10',
+                        MEMBER: 'text-green-600 bg-green-500/10 dark:text-green-400',
+                        VIEWER: 'text-gray-500 bg-gray-200/60 dark:bg-gray-700/40',
+                      };
+                      const initials = (m.name ?? m.email ?? '?')
+                        .split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+                      return (
+                        <li key={m.userId} className="flex items-center gap-3 py-2.5 border-b border-gray-100 dark:border-dark-800 last:border-0">
+                          {/* Avatar initiales */}
+                          <div className="w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500 flex items-center justify-center text-xs font-semibold shrink-0 select-none">
+                            {initials}
+                          </div>
+
+                          {/* Nom + email */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 dark:text-white truncate">
+                              {m.name ?? m.email}
+                              {isMe && <span className="ml-1.5 text-[10px] text-gray-400">{PROFILE_MEMBERS.you}</span>}
+                            </p>
+                            {m.name && m.email && (
+                              <p className="text-xs text-gray-500 truncate">{m.email}</p>
+                            )}
+                          </div>
+
+                          {/* Badge rôle ou dropdown pour OWNER sur les autres */}
+                          {isOwner && !isMe ? (
+                            <select
+                              value={m.role}
+                              disabled={changingRole === m.userId}
+                              onChange={e => handleChangeRole(m.userId, e.target.value as WorkspaceMember['role'])}
+                              aria-label={PROFILE_MEMBERS.changeRole}
+                              className="text-xs bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg px-2 py-1 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-yellow-500/50 disabled:opacity-40 cursor-pointer"
+                            >
+                              <option value="ADMIN">{PROFILE_MEMBERS.roleAdmin}</option>
+                              <option value="MEMBER">{PROFILE_MEMBERS.roleMember}</option>
+                              <option value="VIEWER">{PROFILE_MEMBERS.roleViewer}</option>
+                            </select>
+                          ) : (
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${roleColors[m.role]}`}>
+                              {roleLabels[m.role]}
+                            </span>
+                          )}
+
+                          {/* Bouton retirer (OWNER sur les autres membres) */}
+                          {isOwner && !isMe && (
+                            <button
+                              type="button"
+                              title={PROFILE_MEMBERS.removeLabel}
+                              onClick={() => setConfirmRemove(m)}
+                              disabled={removingId === m.userId}
+                              className="p-1 text-gray-400 hover:text-red-400 transition-colors rounded disabled:opacity-40"
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+
               {/* ── Données & confidentialité ───────────────────────────── */}
               <section id="donnees" className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-dark-700 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -554,7 +778,7 @@ export default function ProfilePage() {
               </section>
 
               {/* ── Zone de danger ──────────────────────────────────────── */}
-              <section id="danger" className="bg-white dark:bg-[#0d1117] border border-red-500/20 rounded-xl p-5 scroll-mt-6">
+              <section id="danger" className="bg-white dark:bg-[#0d1117] border border-red-500/20 border-l-4 border-l-red-500/70 rounded-xl p-5 scroll-mt-6">
                 <h2 className="text-xs font-semibold text-red-500/70 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <AlertTriangle size={12} /> {PROFILE_DANGER.sectionTitle}
                 </h2>

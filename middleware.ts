@@ -17,9 +17,14 @@
  */
 
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/src/backend/auth/auth.config';
+
+// ── Routes protégées (pages authentifiées) ────────────────────────────────────
+const PROTECTED_PATHS = ['/notes', '/profile'];
+const { auth } = NextAuth(authConfig);
 
 // ── Rate-limit login : 10 tentatives / 15 min par IP ──────────────────────────
 // Instancié une seule fois au niveau module (edge singleton par invocation froide).
@@ -35,7 +40,15 @@ function getLoginRatelimit(): Ratelimit | null {
   });
 }
 
-export async function middleware(request: NextRequest) {
+export default auth(async function middleware(request) {
+  const { pathname } = request.nextUrl;
+
+  // ── Protection SSR des routes authentifiées ───────────────────────────
+  // Redirige vers /login avant tout rendu si le JWT est absent ou expiré.
+  if (PROTECTED_PATHS.some(p => pathname.startsWith(p)) && !request.auth) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // ── Rate-limit brute-force sur le login ───────────────────────────────
   if (request.method === 'POST' && request.nextUrl.pathname === '/api/auth/signin') {
     try {
@@ -123,7 +136,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set('content-security-policy', csp);
 
   return response;
-}
+});
 
 /** Applique le middleware à toutes les routes sauf assets statiques */
 export const config = {

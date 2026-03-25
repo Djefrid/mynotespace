@@ -1,13 +1,20 @@
-import { requireWorkspaceId } from '@/src/backend/auth/session';
+import { requireRole } from '@/src/backend/auth/session';
+import { can } from '@/src/backend/policies/permissions';
 import { updateFolder, deleteFolder } from '@/src/backend/services/folders.service';
 import { updateFolderSchema } from '@/src/backend/validators/folder.schemas';
 
+// PATCH/DELETE : OWNER, ADMIN, MEMBER — interdit aux VIEWER
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'folders:manage')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -30,11 +37,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  let workspaceId: string;
+  let workspaceId: string, role: import('@prisma/client').MemberRole;
   try {
-    workspaceId = await requireWorkspaceId();
+    ({ workspaceId, role } = await requireRole());
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!can(role, 'folders:manage')) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
