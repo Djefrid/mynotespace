@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 interface ConfirmModalProps {
   /** Titre affiché en haut de la modale */
@@ -30,7 +30,7 @@ export default function ConfirmModal({
   const btnClass =
     variant === 'danger'
       ? 'bg-red-600 hover:bg-red-500 text-white'
-      : 'bg-yellow-600 hover:bg-yellow-500 text-white';
+      : 'bg-primary-600 hover:bg-primary-500 text-white';
 
   return (
     <div
@@ -39,7 +39,7 @@ export default function ConfirmModal({
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
     >
-      <div className="bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+      <div className="bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
         <h2
           id="confirm-modal-title"
           className="text-base font-semibold text-gray-900 dark:text-white mb-2"
@@ -52,7 +52,7 @@ export default function ConfirmModal({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+            className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-dark-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-650 transition-colors"
           >
             Annuler
           </button>

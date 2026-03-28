@@ -7,7 +7,7 @@
  * Affichée sur les partages réseaux sociaux (Twitter, LinkedIn, Slack…).
  *
  * Dimensions standard OG : 1200×630 px.
- * Design : fond sombre (#0d0d0d), carré jaune accent, titre + sous-titre.
+ * Design : fond sombre (#0d0d0d), accent primary bleu, titre + sous-titre.
  *
  * Next.js sert automatiquement cette image à /opengraph-image.png.
  * Elle est référencée dans les métadonnées openGraph.images via la convention
@@ -51,7 +51,7 @@ export default function OGImage() {
             justifyContent:  'center',
             width:           120,
             height:          120,
-            backgroundColor: '#eab308',
+            backgroundColor: '#3b82f6',
             borderRadius:    20,
           }}
         >
@@ -106,7 +106,7 @@ export default function OGImage() {
             left:            0,
             right:           0,
             height:          8,
-            backgroundColor: '#eab308',
+            backgroundColor: '#3b82f6',
           }}
         />
       </div>

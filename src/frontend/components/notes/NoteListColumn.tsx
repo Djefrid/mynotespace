@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * COLONNE LISTE DES NOTES — components/notes/NoteListColumn.tsx
  * ============================================================================
@@ -149,12 +149,12 @@ export default function NoteListColumn({
     /* ══ NOTE LIST ══════════════════════════════════════════════════════════ */
     <div className={`
       ${mobilePanel === 'list' ? 'flex' : 'hidden'} md:flex
-      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700
+      w-full md:w-72 shrink-0 flex-col bg-gray-50 dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600
       transition-[width,min-width] duration-[280ms] ease-in-out overflow-hidden
       ${isCollapsed ? '!w-0 !min-w-0' : ''}
     `}>
       {/* ── Header : titre de la vue, tri, nouvelle note ─────────────────── */}
-      <div className="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-dark-700">
+      <div className="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-dark-600">
         {/* Bouton retour mobile (sidebar → liste) */}
         <div className="md:hidden flex items-center gap-2 mb-2">
           <button
@@ -170,7 +170,7 @@ export default function NoteListColumn({
         <div className="flex items-center justify-between mb-2">
           <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white truncate">
             {/* Icône éclair pour les dossiers intelligents */}
-            {currentFolder?.isSmart && <Zap size={12} className="text-yellow-400 shrink-0" />}
+            {currentFolder?.isSmart && <Zap size={12} className="text-primary-400 shrink-0" />}
             {viewLabel(view, folders)}
           </span>
 
@@ -182,7 +182,7 @@ export default function NoteListColumn({
                   type="button"
                   title="Trier"
                   onClick={e => { e.stopPropagation(); setShowSortMenu(prev => !prev); }}
-                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors"
+                  className="p-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-650 transition-colors"
                 >
                   <ArrowUpDown size={12} />
                 </button>
@@ -190,7 +190,7 @@ export default function NoteListColumn({
                 {/* Menu déroulant de tri */}
                 {showSortMenu && (
                   <div
-                    className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
+                    className="absolute right-0 top-full z-50 mt-1 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden w-44"
                     onClick={e => e.stopPropagation()}
                   >
                     <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Trier par</p>
@@ -205,8 +205,8 @@ export default function NoteListColumn({
                         onClick={() => { setSortBy(val); setShowSortMenu(false); }}
                         className={`w-full px-3 py-1.5 text-sm text-left transition-colors ${
                           sortBy === val
-                            ? 'text-yellow-400 bg-yellow-500/10'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
+                            ? 'text-primary-400 bg-primary-500/10'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'
                         }`}
                       >
                         {label}
@@ -223,7 +223,7 @@ export default function NoteListColumn({
                 type="button"
                 onClick={onNewNote}
                 title="Nouvelle note"
-                className="p-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+                className="p-1.5 rounded-lg bg-primary-500/20 text-primary-400 hover:bg-primary-500/30 transition-colors"
               >
                 <Plus size={14} />
               </button>
@@ -258,7 +258,7 @@ export default function NoteListColumn({
               type="button"
               title="Masquer la liste (Ctrl+Shift+\)"
               onClick={onToggle}
-              className="hidden md:flex p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors"
+              className="hidden md:flex p-1 rounded text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-650 transition-colors"
             >
               <ChevronsLeft size={14} />
             </button>
@@ -281,7 +281,7 @@ export default function NoteListColumn({
                 searchRef.current?.blur();
               }
             }}
-            className="w-full pl-7 pr-7 py-1.5 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+            className="w-full pl-7 pr-7 py-1.5 bg-gray-100 dark:bg-dark-725 border border-gray-200 dark:border-dark-600 rounded-lg text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
           />
           {/* Bouton effacer recherche */}
           {search && (
@@ -310,7 +310,7 @@ export default function NoteListColumn({
           /* Skeleton loading — 4 cartes factices pendant le chargement Firestore */
           <div className="px-2 py-2 space-y-1.5" aria-busy="true" aria-label="Chargement des notes…">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-[#111520] animate-pulse">
+              <div key={i} className="px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-dark-650 animate-pulse">
                 <div className="h-3 w-3/4 bg-gray-300 dark:bg-white/[0.07] rounded mb-2" />
                 <div className="h-2 w-1/2 bg-gray-200 dark:bg-white/[0.04] rounded" />
               </div>
@@ -331,7 +331,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="pinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#080c14] sticky top-0 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-dark-710 sticky top-0 z-10"
               >
                 Épinglées
               </div>
@@ -349,7 +349,7 @@ export default function NoteListColumn({
             {hasPinnedSection && (
               <div
                 key="unpinned-header"
-                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-[#080c14] sticky top-6 z-10"
+                className="px-3 py-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest bg-gray-50 dark:bg-dark-710 sticky top-6 z-10"
               >
                 Notes
               </div>

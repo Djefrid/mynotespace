@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * ÉDITEUR DE NOTES — components/admin/NotesEditor.tsx
  * ============================================================================
@@ -114,7 +114,6 @@ import {
   LogOut, Settings, Search as SearchIcon,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { usePermissions } from '@/src/frontend/hooks/usePermissions';
 import { useRouter } from 'next/navigation';
@@ -151,6 +150,7 @@ import { useImportExport }         from '@/hooks/notes/useImportExport';
 import { useTitleAutocomplete }    from '@/hooks/notes/useTitleAutocomplete';
 import { useNoteEditor }           from '@/hooks/notes/useNoteEditor';
 import CommandPalette             from '@/src/frontend/components/common/CommandPalette';
+import SettingsModal              from '@/src/frontend/components/settings/SettingsModal';
 import { usePanelCollapse }       from '@/src/frontend/hooks/ui/usePanelCollapse';
 
 // ── Types, constantes et helpers — importés depuis lib/notes-types.ts ────────
@@ -641,6 +641,7 @@ export default function NotesEditor() {
 
   // ── Command palette (Ctrl+K) ──────────────────────────────────────────────────
   const [cmdPaletteOpen,  setCmdPaletteOpen]  = useState(false);
+  const [showSettings,    setShowSettings]    = useState(false);
   const [avatarPopover,   setAvatarPopover]   = useState(false);
   const avatarBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -680,25 +681,25 @@ export default function NotesEditor() {
     return (
       <div className="flex h-screen overflow-hidden rounded-xl animate-pulse">
         {/* Sidebar skeleton */}
-        <div className="hidden md:flex w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 p-3 gap-2">
-          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-700 mb-2" />
+        <div className="hidden md:flex w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600 p-3 gap-2">
+          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-650 mb-2" />
           {(['w-[70%]','w-[80%]','w-[90%]','w-[70%]','w-[80%]','w-[90%]'] as const).map((w, i) => (
-            <div key={i} className={`h-6 rounded bg-gray-200 dark:bg-dark-700 ${w}`} />
+            <div key={i} className={`h-6 rounded bg-gray-200 dark:bg-dark-650 ${w}`} />
           ))}
         </div>
         {/* Liste skeleton */}
-        <div className="hidden md:flex w-64 shrink-0 flex-col bg-white dark:bg-[#0d1117] border-r border-gray-200 dark:border-dark-700 p-3 gap-2">
-          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-700 mb-2" />
+        <div className="hidden md:flex w-64 shrink-0 flex-col bg-white dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600 p-3 gap-2">
+          <div className="h-8 rounded-md bg-gray-200 dark:bg-dark-650 mb-2" />
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-dark-800" />
+            <div key={i} className="h-16 rounded-lg bg-gray-100 dark:bg-dark-650" />
           ))}
         </div>
         {/* Éditeur skeleton */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-[#0d1117] p-6 gap-3">
-          <div className="h-8 w-2/3 rounded bg-gray-200 dark:bg-dark-700" />
-          <div className="h-4 w-full rounded bg-gray-100 dark:bg-dark-800" />
-          <div className="h-4 w-5/6 rounded bg-gray-100 dark:bg-dark-800" />
-          <div className="h-4 w-4/6 rounded bg-gray-100 dark:bg-dark-800" />
+        <div className="flex-1 flex flex-col bg-white dark:bg-dark-710 p-6 gap-3">
+          <div className="h-8 w-2/3 rounded bg-gray-200 dark:bg-dark-650" />
+          <div className="h-4 w-full rounded bg-gray-100 dark:bg-dark-650" />
+          <div className="h-4 w-5/6 rounded bg-gray-100 dark:bg-dark-650" />
+          <div className="h-4 w-4/6 rounded bg-gray-100 dark:bg-dark-650" />
         </div>
       </div>
     );
@@ -724,8 +725,12 @@ export default function NotesEditor() {
           onSelectNote={(note) => { handleSelectNote(note); setCmdPaletteOpen(false); }}
           onSelectView={(v) => { setView(v); setMobilePanel('list'); setCmdPaletteOpen(false); }}
           onNewNote={() => { handleNewNote(); setCmdPaletteOpen(false); }}
+          onOpenSettings={() => { setCmdPaletteOpen(false); setShowSettings(true); }}
         />
       )}
+
+      {/* ── Modal paramètres ─────────────────────────────────────────────────── */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 
       {/* ── Overlay fantôme "fly to trash" ──────────────────────────────────── */}
       <FlyToTrash flyItem={flyItem} />
@@ -742,13 +747,13 @@ export default function NotesEditor() {
         <div
           className={`
             ${mobilePanel === 'sidebar' ? 'flex' : 'hidden'} md:flex
-            w-full md:w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 overflow-hidden
+            w-full md:w-14 lg:w-60 shrink-0 flex-col bg-gray-50 dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600 overflow-hidden
             transition-[width,min-width] duration-[280ms] ease-in-out
             ${!sidebarOpen ? '!w-0 !min-w-0' : ''}
           `}
         >
           {/* ── Workspace header — style Notion, une seule ligne ── */}
-          <div className="relative border-b border-gray-200 dark:border-dark-700">
+          <div className="relative border-b border-gray-200 dark:border-dark-600">
             <div className="flex items-center gap-1 px-2 py-3">
 
               {/* Bouton workspace — avatar + label + chevron ▾ */}
@@ -757,14 +762,14 @@ export default function NotesEditor() {
                 type="button"
                 onClick={e => { e.stopPropagation(); setAvatarPopover(o => !o); }}
                 title="Espace de travail"
-                className="flex-1 min-w-0 flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors text-left"
+                className="flex-1 min-w-0 flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-dark-650 transition-colors text-left"
               >
                 {session?.user?.image ? (
                   <img src={session.user.image} alt="Avatar" referrerPolicy="no-referrer"
                     className="w-5 h-5 rounded-full shrink-0 ring-1 ring-gray-300 dark:ring-dark-600" />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ring-1 ring-yellow-500/30">
-                    <span className="text-[9px] font-bold text-yellow-500 uppercase leading-none">
+                  <div className="w-5 h-5 rounded-full bg-primary-500/15 flex items-center justify-center shrink-0 ring-1 ring-primary-500/30">
+                    <span className="text-[9px] font-bold text-primary-500 uppercase leading-none">
                       {(session?.user?.name ?? session?.user?.email ?? 'U').charAt(0)}
                     </span>
                   </div>
@@ -798,22 +803,22 @@ export default function NotesEditor() {
             {/* Popover — s'ouvre vers le bas */}
             {avatarPopover && (
               <div
-                className="absolute top-full left-2 right-2 mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden z-50"
+                className="absolute top-full left-2 right-2 mt-1 bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden z-50"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="px-3 py-2.5 border-b border-gray-100 dark:border-dark-700">
+                <div className="px-3 py-2.5 border-b border-gray-100 dark:border-dark-600">
                   <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
                     {session?.user?.name || 'Utilisateur'}
                   </p>
                   <p className="text-[10px] text-gray-500 truncate">{session?.user?.email}</p>
                 </div>
-                <Link
-                  href="/profile"
-                  onClick={() => setAvatarPopover(false)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+                <button
+                  type="button"
+                  onClick={() => { setAvatarPopover(false); setShowSettings(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-650 transition-colors"
                 >
                   <Settings size={12} /> Paramètres
-                </Link>
+                </button>
                 <button
                   type="button"
                   onClick={() => { setAvatarPopover(false); handleSignOut(); }}
@@ -852,7 +857,7 @@ export default function NotesEditor() {
             type="button"
             title="Afficher la barre latérale (Ctrl+\)"
             onClick={() => setSidebarOpen(true)}
-            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 text-gray-400 hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600 text-gray-400 hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-dark-650 transition-colors"
           >
             <ChevronsRight size={12} />
           </button>
@@ -893,7 +898,7 @@ export default function NotesEditor() {
             type="button"
             title="Afficher la liste (Ctrl+Shift+\)"
             onClick={() => setNoteListOpen(true)}
-            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-[#080c14] border-r border-gray-200 dark:border-dark-700 text-gray-400 hover:text-yellow-400 hover:bg-gray-100 dark:hover:bg-[#111520] transition-colors"
+            className="hidden md:flex shrink-0 flex-col items-center justify-start pt-3 w-5 bg-gray-50 dark:bg-dark-710 border-r border-gray-200 dark:border-dark-600 text-gray-400 hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-dark-650 transition-colors"
           >
             <ChevronsRight size={12} />
           </button>

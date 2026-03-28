@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { History, X, RotateCcw, Clock } from 'lucide-react';
@@ -65,11 +65,11 @@ export function NoteRevisionsModal({ noteId, onClose, onRestore }: NoteRevisions
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white dark:bg-[#111520] rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-dark-650 rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-dark-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-dark-600">
           <div className="flex items-center gap-2">
-            <History size={16} className="text-blue-500" aria-hidden="true" />
+            <History size={16} className="text-primary-500" aria-hidden="true" />
             <h2 id="revisions-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">
               Historique des versions
             </h2>
@@ -109,8 +109,8 @@ export function NoteRevisionsModal({ noteId, onClose, onRestore }: NoteRevisions
                   key={rev.id}
                   className={`group flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 cursor-pointer transition-colors ${
                     preview?.id === rev.id
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                      : 'hover:bg-gray-50 dark:hover:bg-[#111520]'
+                      ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
+                      : 'hover:bg-gray-50 dark:hover:bg-dark-650'
                   }`}
                   onClick={() => setPreview(preview?.id === rev.id ? null : rev)}
                 >
@@ -120,7 +120,7 @@ export function NoteRevisionsModal({ noteId, onClose, onRestore }: NoteRevisions
                         {formatDate(rev.createdAt)}
                       </span>
                       {i === 0 && (
-                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium">
+                        <span className="text-[10px] bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300 px-1.5 py-0.5 rounded-full font-medium">
                           Plus récente
                         </span>
                       )}
@@ -139,7 +139,7 @@ export function NoteRevisionsModal({ noteId, onClose, onRestore }: NoteRevisions
                     onClick={e => { e.stopPropagation(); handleRestore(rev.id); }}
                     disabled={restoring === rev.id}
                     aria-label={`Restaurer la version du ${formatDate(rev.createdAt)}`}
-                    className="flex-shrink-0 flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 disabled:opacity-50 transition-colors px-2 py-1 rounded border border-transparent hover:border-blue-200 dark:hover:border-blue-700"
+                    className="flex-shrink-0 flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 disabled:opacity-50 transition-colors px-2 py-1 rounded border border-transparent hover:border-primary-200 dark:hover:border-primary-700"
                   >
                     <RotateCcw size={12} aria-hidden="true" />
                     {restoring === rev.id ? 'Restauration…' : 'Restaurer'}
@@ -151,7 +151,7 @@ export function NoteRevisionsModal({ noteId, onClose, onRestore }: NoteRevisions
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-gray-200 dark:border-dark-700">
+        <div className="px-5 py-3 border-t border-gray-200 dark:border-dark-600">
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Les 50 dernières versions sont conservées · Générées automatiquement toutes les 5 min
           </p>

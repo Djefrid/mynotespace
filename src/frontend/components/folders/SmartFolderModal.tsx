@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * SMART FOLDER MODAL — components/notes/SmartFolderModal.tsx
  * ============================================================================
@@ -131,13 +131,13 @@ export default function SmartFolderModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="smart-folder-modal-title"
-        className="bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl w-full max-w-md mx-4 shadow-2xl"
+        className="bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-xl w-full max-w-md mx-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
         onKeyDown={handleDialogKeyDown}
       >
-        <div className="px-5 py-4 border-b border-gray-200 dark:border-dark-700 flex items-center gap-2">
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-dark-600 flex items-center gap-2">
           {/* Icône décorative — masquée aux lecteurs d'écran */}
-          <Zap size={15} className="text-yellow-500 dark:text-yellow-400" aria-hidden="true" />
+          <Zap size={15} className="text-primary-500 dark:text-primary-400" aria-hidden="true" />
           <h2 id="smart-folder-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">
             {initial ? 'Modifier le dossier intelligent' : 'Nouveau dossier intelligent'}
           </h2>
@@ -155,7 +155,7 @@ export default function SmartFolderModal({
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
               maxLength={80}
-              className="w-full px-3 py-2 bg-gray-50 dark:bg-[#111520] border border-gray-300 dark:border-dark-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50"
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-dark-725 border border-gray-300 dark:border-dark-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50"
               autoFocus
             />
           </div>
@@ -163,7 +163,7 @@ export default function SmartFolderModal({
           {/* Filtre par tags */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-              <input type="checkbox" checked={useTags} onChange={e => setUseTags(e.target.checked)} className="accent-yellow-500 w-3.5 h-3.5" />
+              <input type="checkbox" checked={useTags} onChange={e => setUseTags(e.target.checked)} className="accent-primary-500 w-3.5 h-3.5" />
               Par tags
             </label>
             {useTags && (
@@ -176,8 +176,8 @@ export default function SmartFolderModal({
                       <button key={t} type="button" onClick={() => toggleTag(t)}
                         className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
                           selectedTags.includes(t)
-                            ? 'bg-yellow-500/25 text-yellow-600 dark:text-yellow-300 border-yellow-500/50'
-                            : 'bg-gray-100 dark:bg-[#111520] text-gray-500 dark:text-gray-400 border-gray-300 dark:border-dark-600 hover:border-yellow-500/30 hover:text-gray-700 dark:hover:text-gray-300'
+                            ? 'bg-primary-500/25 text-primary-600 dark:text-primary-300 border-primary-500/50'
+                            : 'bg-gray-100 dark:bg-dark-650 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-dark-600 hover:border-primary-500/30 hover:text-gray-700 dark:hover:text-gray-300'
                         }`}
                       >#{t}</button>
                     ))}
@@ -185,10 +185,10 @@ export default function SmartFolderModal({
                 )}
                 <div className="flex gap-4 mt-1">
                   <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
-                    <input type="radio" name="tagLogic" checked={tagLogic === 'or'}  onChange={() => setTagLogic('or')}  className="accent-yellow-500" />Au moins un
+                    <input type="radio" name="tagLogic" checked={tagLogic === 'or'}  onChange={() => setTagLogic('or')}  className="accent-primary-500" />Au moins un
                   </label>
                   <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
-                    <input type="radio" name="tagLogic" checked={tagLogic === 'and'} onChange={() => setTagLogic('and')} className="accent-yellow-500" />Tous les tags
+                    <input type="radio" name="tagLogic" checked={tagLogic === 'and'} onChange={() => setTagLogic('and')} className="accent-primary-500" />Tous les tags
                   </label>
                 </div>
               </div>
@@ -196,40 +196,40 @@ export default function SmartFolderModal({
           </div>
           {/* Filtre épinglées */}
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-            <input type="checkbox" checked={usePinned} onChange={e => setUsePinned(e.target.checked)} className="accent-yellow-500 w-3.5 h-3.5" />
+            <input type="checkbox" checked={usePinned} onChange={e => setUsePinned(e.target.checked)} className="accent-primary-500 w-3.5 h-3.5" />
             Épinglées uniquement
           </label>
           {/* Filtre date de création */}
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none flex-wrap">
-            <input type="checkbox" checked={useCreatedDays} onChange={e => setUseCreatedDays(e.target.checked)} className="accent-yellow-500 w-3.5 h-3.5" />
+            <input type="checkbox" checked={useCreatedDays} onChange={e => setUseCreatedDays(e.target.checked)} className="accent-primary-500 w-3.5 h-3.5" />
             Créées dans les
             {useCreatedDays && (
               <input type="number" min={1} max={365} value={createdDays}
                 onChange={e => setCreatedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#080c14] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-dark-725 border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 text-center"
               />
             )}
             derniers jours
           </label>
           {/* Filtre date de modification */}
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none flex-wrap">
-            <input type="checkbox" checked={useModifiedDays} onChange={e => setUseModifiedDays(e.target.checked)} className="accent-yellow-500 w-3.5 h-3.5" />
+            <input type="checkbox" checked={useModifiedDays} onChange={e => setUseModifiedDays(e.target.checked)} className="accent-primary-500 w-3.5 h-3.5" />
             Modifiées dans les
             {useModifiedDays && (
               <input type="number" min={1} max={365} value={modifiedDays}
                 onChange={e => setModifiedDays(Math.max(1, Number(e.target.value)))}
                 onClick={e => e.stopPropagation()}
-                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-[#080c14] border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500/50 text-center"
+                className="w-14 px-2 py-0.5 bg-gray-100 dark:bg-dark-725 border border-gray-300 dark:border-dark-600 rounded text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 text-center"
               />
             )}
             derniers jours
           </label>
         </div>
         {/* Boutons Annuler / Créer */}
-        <div className="px-5 py-3 border-t border-gray-200 dark:border-dark-700 flex justify-end gap-2">
+        <div className="px-5 py-3 border-t border-gray-200 dark:border-dark-600 flex justify-end gap-2">
           <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-white transition-colors">Annuler</button>
-          <button type="button" onClick={handleSubmit} className="px-4 py-1.5 text-sm bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30 rounded-lg transition-colors flex items-center gap-1.5">
+          <button type="button" onClick={handleSubmit} className="px-4 py-1.5 text-sm bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-500/30 rounded-lg transition-colors flex items-center gap-1.5">
             <Zap size={12} />{initial ? 'Enregistrer' : 'Créer'}
           </button>
         </div>

@@ -37,7 +37,7 @@ export default async function Icon() {
           {/* Page SVG avec coin replié jaune */}
           <svg width="22" height="26" viewBox="0 0 22 26" fill="none">
             <path d="M 0 0 L 14 0 L 22 8 L 22 26 L 0 26 Z" fill="#e8e8e8" />
-            <path d="M 14 0 L 22 8 L 14 8 Z" fill="#eab308" />
+            <path d="M 14 0 L 22 8 L 14 8 Z" fill="#3b82f6" />
           </svg>
           {/* "MNS" centré — design simplifié pour 32px (pas de lignes, trop petites) */}
           <div style={{ position: 'absolute', top: '0', left: '0', width: '22px', height: '26px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '7px', fontWeight: 700, fontFamily: fontData ? 'Playfair' : 'serif', color: '#2563eb', letterSpacing: '-0.3px', transform: 'skewX(-12deg)' }}>

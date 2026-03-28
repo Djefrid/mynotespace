@@ -3,9 +3,9 @@
  * CONFIGURATION TAILWIND CSS — tailwind.config.ts
  * ============================================================================
  *
- * Identique au portfolio — couleurs custom dark-* et primary-* requises
- * par le composant NotesEditor (bg-dark-950, bg-dark-900, text-gray-300, etc.)
- * Sans ces couleurs, les classes Tailwind du NotesEditor ne génèrent aucun CSS.
+ * dark-* : palette slate + rampes 650 / 710 / 725 pour surfaces (évite les hex en dur).
+ * primary-* : bleu marque, aligné avec les variables CSS shadcn `--primary` dans globals.css.
+ * success / warning : états sémantiques — utiliser text-success, bg-success-muted, etc.
  * ============================================================================
  */
 
@@ -54,7 +54,8 @@ const config: Config = {
           DEFAULT:    'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
-        // Palette dark (slate) — fonds sombres du NotesEditor
+        // Palette dark (slate) — fonds sombres + rampes UX (évite les hex éparpillés)
+        // 650 = surfaces surélevées / hovers · 710 = zone éditeur · 725 = champs / puits
         dark: {
           '50':  '#f8fafc',
           '100': '#f1f5f9',
@@ -63,10 +64,24 @@ const config: Config = {
           '400': '#94a3b8',
           '500': '#64748b',
           '600': '#475569',
-          '700': '#334155',
-          '800': '#1e293b',
-          '900': '#0f172a',
+          '650': '#2a3442',
+          '700': '#202935',
+          '710': '#1b2430',
+          '725': '#161e29',
+          '800': '#121923',
+          '900': '#0d131b',
           '950': '#020617',
+        },
+        // États sémantiques — synchronisés avec `globals.css` (--success / --warning)
+        success: {
+          DEFAULT:    'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+          muted:      'rgba(34, 197, 94, 0.14)',
+        },
+        warning: {
+          DEFAULT:    'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+          muted:      'rgba(245, 158, 11, 0.16)',
         },
         // Variables CSS shadcn/ui
         background:  'hsl(var(--background))',

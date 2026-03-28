@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * ============================================================================
@@ -74,8 +74,8 @@ function Btn({
       onMouseDown={e => { e.preventDefault(); onClick(); }}
       className={`p-1.5 rounded transition-colors ${
         active
-          ? 'bg-yellow-500/20 text-yellow-400'
-          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
+          ? 'bg-primary-500/20 text-primary-400'
+          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-650'
       }`}
     >
       {children}
@@ -84,7 +84,7 @@ function Btn({
 }
 
 function Sep() {
-  return <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />;
+  return <div className="w-px h-4 bg-gray-200 dark:bg-dark-650 mx-0.5 shrink-0" />;
 }
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export default function FloatingBubbleMenu({
         if (e.isActive('tableCell') || e.isActive('tableHeader')) return false;
         return true;
       }}
-      className="flex items-center gap-0.5 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg px-1.5 py-1 shadow-2xl z-50"
+      className="flex items-center gap-0.5 bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-lg px-1.5 py-1 shadow-2xl z-50"
     >
       {/* ── Pinceau de format ─────────────────────────────────────── */}
       <button
@@ -139,8 +139,8 @@ export default function FloatingBubbleMenu({
         onMouseDown={e => { e.preventDefault(); if (e.detail === 2) onFormatPainterDoubleClick(); else onFormatPainterClick(); }}
         className={`p-1.5 rounded transition-colors ${
           formatPainterMode !== 'off'
-            ? 'bg-yellow-500/20 text-yellow-400'
-            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-[#111520]'
+            ? 'bg-primary-500/20 text-primary-400'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-dark-650'
         }`}
       >
         <Paintbrush size={12} />
@@ -221,7 +221,7 @@ export default function FloatingBubbleMenu({
 
         {overflowOpen && (
           <div
-            className="absolute right-0 top-full mt-1 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg shadow-2xl overflow-hidden z-50 w-56"
+            className="absolute right-0 top-full mt-1 bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-lg shadow-2xl overflow-hidden z-50 w-56"
             onMouseDown={e => e.stopPropagation()}
           >
             {[
@@ -236,8 +236,8 @@ export default function FloatingBubbleMenu({
                 onMouseDown={e => { e.preventDefault(); item.action(); setOverflowOpen(false); }}
                 className={`w-full px-3 py-1.5 text-xs text-left flex items-center gap-2 transition-colors ${
                   item.active
-                    ? 'text-yellow-400 bg-yellow-500/10'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520]'
+                    ? 'text-primary-400 bg-primary-500/10'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-650'
                 }`}
               >
                 <span className="text-gray-400">{item.icon}</span>
@@ -246,7 +246,7 @@ export default function FloatingBubbleMenu({
             ))}
 
             {/* ── Couleur du texte — grille 6×10 style Word ─────────────── */}
-            <div className="px-3 py-2 border-t border-gray-200 dark:border-dark-700">
+            <div className="px-3 py-2 border-t border-gray-200 dark:border-dark-600">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Couleur du texte</p>
               <div className="flex flex-col gap-0.5">
                 {TEXT_COLOR_GRID.map((row, ri) => (

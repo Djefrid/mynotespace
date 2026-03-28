@@ -52,7 +52,7 @@ describe('cn() — fusion de classes Tailwind', () => {
 
   it('fusionne classes normales et conditionnelles imbriquées', () => {
     const isActive = true;
-    expect(cn('btn', isActive ? 'bg-yellow-500' : 'bg-gray-700', 'text-white'))
-      .toBe('btn bg-yellow-500 text-white');
+    expect(cn('btn', isActive ? 'bg-primary-500' : 'bg-gray-700', 'text-white'))
+      .toBe('btn bg-primary-500 text-white');
   });
 });

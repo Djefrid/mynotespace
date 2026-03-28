@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * ============================================================================
@@ -18,12 +18,11 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  StickyNote, FolderOpen, Plus, ArrowRight,
+  StickyNote, FolderOpen, Plus,
   User as UserIcon, Search, Folder, X,
 } from 'lucide-react';
 import type { Note, Folder as FolderType } from '@/lib/notes-service';
 import type { ViewFilter } from '@/lib/notes-types';
-import Link from 'next/link';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,16 +32,16 @@ interface PaletteItem {
   subtitle?: string;
   icon:     React.ReactNode;
   action:   () => void;
-  isLink?:  string;   // si défini → rendu comme <Link> plutôt que <button>
 }
 
 interface CommandPaletteProps {
-  notes:         Note[];
-  folders:       FolderType[];
-  onClose:       () => void;
-  onSelectNote:  (note: Note) => void;
-  onSelectView:  (v: ViewFilter) => void;
-  onNewNote:     () => void;
+  notes:           Note[];
+  folders:         FolderType[];
+  onClose:         () => void;
+  onSelectNote:    (note: Note) => void;
+  onSelectView:    (v: ViewFilter) => void;
+  onNewNote:       () => void;
+  onOpenSettings?: () => void;
 }
 
 // ── Fuzzy match léger ──────────────────────────────────────────────────────────
@@ -63,7 +62,7 @@ function fuzzy(query: string, target: string): boolean {
 // ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function CommandPalette({
-  notes, folders, onClose, onSelectNote, onSelectView, onNewNote,
+  notes, folders, onClose, onSelectNote, onSelectView, onNewNote, onOpenSettings,
 }: CommandPaletteProps) {
   const [query,     setQuery]     = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
@@ -104,8 +103,7 @@ export default function CommandPalette({
         id:     'profile',
         label:  'Profil & paramètres',
         icon:   <UserIcon size={14} />,
-        action: () => {},
-        isLink: '/profile',
+        action: () => { onOpenSettings?.(); onClose(); },
       },
     ].filter(a => !q || fuzzy(q, a.label));
 
@@ -161,7 +159,7 @@ export default function CommandPalette({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       flatItems[activeIdx]?.action();
-      if (!flatItems[activeIdx]?.isLink) onClose();
+      onClose();
     }
   }
 
@@ -176,7 +174,7 @@ export default function CommandPalette({
     >
       {/* Modal */}
       <div
-        className="w-full max-w-lg bg-white dark:bg-[#080c14] border border-gray-200 dark:border-dark-700 rounded-xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Input de recherche */}
@@ -194,7 +192,7 @@ export default function CommandPalette({
             className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none"
           />
           {query && (
-            <button type="button" onClick={() => setQuery('')}
+            <button type="button" onClick={() => setQuery('')} aria-label="Effacer la recherche"
               className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
               <X size={14} />
             </button>
@@ -220,30 +218,9 @@ export default function CommandPalette({
                   const isActive = idx === activeIdx;
                   const sharedCls = `w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-yellow-500/15 text-yellow-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#111520]'
+                      ? 'bg-primary-500/15 text-primary-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-650'
                   }`;
-
-                  if (item.isLink) {
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.isLink}
-                        data-idx={idx}
-                        onClick={onClose}
-                        className={sharedCls}
-                      >
-                        <span className={`shrink-0 ${isActive ? 'text-yellow-400' : 'text-gray-400'}`}>
-                          {item.icon}
-                        </span>
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {item.subtitle && (
-                          <span className="text-xs text-gray-400 ml-auto shrink-0">{item.subtitle}</span>
-                        )}
-                        <ArrowRight size={12} className="shrink-0 text-gray-400 opacity-50" />
-                      </Link>
-                    );
-                  }
 
                   return (
                     <button
@@ -254,7 +231,7 @@ export default function CommandPalette({
                       onMouseEnter={() => setActiveIdx(idx)}
                       className={sharedCls}
                     >
-                      <span className={`shrink-0 ${isActive ? 'text-yellow-400' : 'text-gray-400'}`}>
+                      <span className={`shrink-0 ${isActive ? 'text-primary-400' : 'text-gray-400'}`}>
                         {item.icon}
                       </span>
                       <span className="flex-1 truncate">{item.label}</span>

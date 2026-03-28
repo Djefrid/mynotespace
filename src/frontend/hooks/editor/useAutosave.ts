@@ -208,7 +208,7 @@ export function useAutosave({
   /** Classe Tailwind de couleur selon le statut de sauvegarde */
   const saveColor =
     saveStatus === 'error'   ? 'text-red-400' :
-    saveStatus === 'unsaved' ? 'text-yellow-400' :
+    saveStatus === 'unsaved' ? 'text-primary-400' :
     saveStatus === 'saving'  ? 'text-gray-400' : 'text-gray-500';
 
   // ── Retour ─────────────────────────────────────────────────────────────────

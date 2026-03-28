@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * EDITOR TOOLBAR — components/notes/EditorToolbar.tsx
  * ============================================================================
@@ -219,7 +219,7 @@ export default function EditorToolbar({
     <button
       type="button" title={title} aria-label={title} onClick={onClick} disabled={disabled}
       className={`p-1.5 rounded transition-colors ${
-        active ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
+        active ? 'bg-primary-500/20 text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'
       } disabled:opacity-30 disabled:cursor-not-allowed`}
     >
       {/* Icône décorative — le bouton a déjà aria-label, l'icône est masquée aux lecteurs d'écran */}
@@ -228,7 +228,7 @@ export default function EditorToolbar({
   );
 
   // ── Séparateur vertical ────────────────────────────────────────────────────
-  const SEP = () => <div className="w-px h-4 bg-gray-200 dark:bg-[#111520] mx-0.5 shrink-0" />;
+  const SEP = () => <div className="w-px h-4 bg-gray-200 dark:bg-dark-650 mx-0.5 shrink-0" />;
 
   // ── Fermeture dropdowns au clic extérieur ──────────────────────────────────
   useEffect(() => {
@@ -341,7 +341,7 @@ export default function EditorToolbar({
   const tabCls = (tab: RibbonTab) =>
     `px-3 py-1.5 text-[11px] font-medium transition-colors border-b-2 -mb-px ${
       activeTab === tab
-        ? 'text-yellow-400 border-yellow-500'
+        ? 'text-primary-400 border-primary-500'
         : 'text-gray-500 border-transparent hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-dark-600'
     }`;
 
@@ -359,8 +359,8 @@ export default function EditorToolbar({
         {/* Barre de progression upload — toujours visible à droite des onglets */}
         {uploadProgress !== null && (
           <div className="flex items-center gap-1.5 text-xs text-gray-500 ml-3">
-            <div className="w-16 h-1 bg-gray-200 dark:bg-[#111520] rounded-full overflow-hidden">
-              <div className="h-full bg-yellow-500 transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+            <div className="w-16 h-1 bg-gray-200 dark:bg-dark-650 rounded-full overflow-hidden">
+              <div className="h-full bg-primary-500 transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
             </div>
             <span>{uploadProgress}%</span>
           </div>
@@ -400,8 +400,8 @@ export default function EditorToolbar({
             }}
             className={`p-1.5 rounded transition-colors ${
               formatPainterMode !== 'off'
-                ? 'bg-yellow-500/20 text-yellow-400'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'
+                ? 'bg-primary-500/20 text-primary-400'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'
             }`}
           >
             <span aria-hidden="true"><Paintbrush size={14} /></span>
@@ -416,7 +416,7 @@ export default function EditorToolbar({
               if (!e.target.value) editor.chain().focus().unsetFontFamily().run();
               else editor.chain().focus().setFontFamily(e.target.value).run();
             }}
-            className="text-[11px] bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px]"
+            className="text-[11px] bg-gray-100 dark:bg-dark-650 border border-gray-200 dark:border-dark-600 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px]"
             style={{ fontFamily: editorState.fontFamily || 'inherit' }}
           >
             {FONT_FAMILIES.map(f => (
@@ -432,7 +432,7 @@ export default function EditorToolbar({
               if (!e.target.value) editor.chain().focus().unsetFontSize().run();
               else editor.chain().focus().setFontSize(`${e.target.value}pt`).run();
             }}
-            className="text-[11px] bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 rounded px-1 py-1 focus:outline-none cursor-pointer w-[52px]"
+            className="text-[11px] bg-gray-100 dark:bg-dark-650 border border-gray-200 dark:border-dark-600 text-gray-600 dark:text-gray-400 rounded px-1 py-1 focus:outline-none cursor-pointer w-[52px]"
           >
             <option value="">—</option>
             {FONT_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -449,7 +449,7 @@ export default function EditorToolbar({
               if (v === 0) editor.chain().focus().setParagraph().run();
               else editor.chain().focus().toggleHeading({ level: v as 1|2|3 }).run();
             }}
-            className="text-[11px] bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer"
+            className="text-[11px] bg-gray-100 dark:bg-dark-650 border border-gray-200 dark:border-dark-600 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer"
           >
             <option value="0">Normal</option>
             <option value="1">Titre 1</option>
@@ -483,12 +483,12 @@ export default function EditorToolbar({
           <div className="relative shrink-0" ref={caseRef}>
             <button type="button" title="Changer la casse"
               onClick={() => setCaseOpen(o => !o)}
-              className={`p-1.5 rounded transition-colors flex items-center gap-0.5 ${caseOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'}`}>
+              className={`p-1.5 rounded transition-colors flex items-center gap-0.5 ${caseOpen ? 'bg-primary-500/20 text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'}`}>
               <CaseSensitive size={14} />
               <ChevronDown size={12} />
             </button>
             {caseOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-1 min-w-[160px]"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-1 min-w-[160px]"
                 onMouseDown={e => e.stopPropagation()}>
                 {[
                   { mode: 'upper'    as const, label: 'MAJUSCULES' },
@@ -497,7 +497,7 @@ export default function EditorToolbar({
                   { mode: 'sentence' as const, label: 'Première lettre' },
                 ].map(({ mode, label }) => (
                   <button key={mode} type="button" onClick={() => changeCase(mode)}
-                    className="w-full text-left text-[11px] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520] px-3 py-1.5 rounded transition-colors">
+                    className="w-full text-left text-[11px] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650 px-3 py-1.5 rounded transition-colors">
                     {label}
                   </button>
                 ))}
@@ -510,12 +510,12 @@ export default function EditorToolbar({
           <div className="relative shrink-0" ref={highlightRef}>
             <button type="button" title="Surbrillance"
               onClick={() => { setHighlightOpen(o => !o); setTextColorOpen(false); }}
-              className="flex flex-col items-center p-1 rounded hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors">
+              className="flex flex-col items-center p-1 rounded hover:bg-gray-200 dark:hover:bg-dark-650 transition-colors">
               <Highlighter size={12} className="text-gray-600 dark:text-gray-300" />
               <div className="w-3.5 h-[3px] rounded-full mt-0.5 border border-gray-200 dark:border-dark-600" style={{ background: lastHighlight }} />
             </button>
             {highlightOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5 min-w-max"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5 min-w-max"
                 onMouseDown={e => e.stopPropagation()}>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Surbrillance</p>
                 <div className="grid grid-cols-4 gap-1">
@@ -529,7 +529,7 @@ export default function EditorToolbar({
                 </div>
                 <button type="button"
                   onClick={() => { editor.chain().focus().unsetHighlight().run(); setHighlightOpen(false); }}
-                  className="mt-2 w-full text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-1 border-t border-gray-200 dark:border-dark-700 hover:bg-gray-200 dark:hover:bg-[#111520] rounded transition-colors">
+                  className="mt-2 w-full text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-1 border-t border-gray-200 dark:border-dark-600 hover:bg-gray-200 dark:hover:bg-dark-650 rounded transition-colors">
                   ✕ Aucune surbrillance
                 </button>
               </div>
@@ -540,12 +540,12 @@ export default function EditorToolbar({
           <div className="relative shrink-0" ref={textColorRef}>
             <button type="button" title="Couleur du texte"
               onClick={() => { setTextColorOpen(o => !o); setHighlightOpen(false); }}
-              className="flex flex-col items-center p-1 rounded hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors">
+              className="flex flex-col items-center p-1 rounded hover:bg-gray-200 dark:hover:bg-dark-650 transition-colors">
               <span className="text-[13px] font-bold text-gray-600 dark:text-gray-300 leading-none">A</span>
               <div className="w-3.5 h-[3px] rounded-full mt-0.5 border border-gray-200 dark:border-dark-600" style={{ background: lastTextColor }} />
             </button>
             {textColorOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5 min-w-max"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5 min-w-max"
                 onMouseDown={e => e.stopPropagation()}>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Couleur du texte</p>
                 <div className="grid grid-cols-10 gap-0.5">
@@ -559,7 +559,7 @@ export default function EditorToolbar({
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-gray-200 dark:border-dark-700">
                   <label className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
-                    <div className="w-5 h-5 rounded-sm border border-gray-400 dark:border-dark-500 bg-gradient-to-br from-red-400 via-yellow-400 to-blue-400 relative overflow-hidden shrink-0">
+                    <div className="w-5 h-5 rounded-sm border border-gray-400 dark:border-dark-500 bg-gradient-to-br from-red-400 via-primary-400 to-primary-400 relative overflow-hidden shrink-0">
                       <input type="color" name="text-color-custom" aria-label="Couleur personnalisée du texte"
                         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
                         onChange={e => { editor.chain().focus().setColor(e.target.value).run(); setLastTextColor(e.target.value); }} />
@@ -568,7 +568,7 @@ export default function EditorToolbar({
                   </label>
                   <button type="button"
                     onClick={() => { editor.chain().focus().unsetColor().run(); setTextColorOpen(false); }}
-                    className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-1.5 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-[#111520] transition-colors">
+                    className="text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-1.5 py-0.5 rounded hover:bg-gray-200 dark:hover:bg-dark-650 transition-colors">
                     ✕ Réinitialiser
                   </button>
                 </div>
@@ -583,11 +583,11 @@ export default function EditorToolbar({
           <div className="relative" ref={tableRef}>
             <button type="button" title="Insérer un tableau"
               onClick={() => setTableOpen(o => !o)}
-              className={`p-1.5 rounded transition-colors ${tableOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'}`}>
+              className={`p-1.5 rounded transition-colors ${tableOpen ? 'bg-primary-500/20 text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'}`}>
               <TableIcon size={14} />
             </button>
             {tableOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 rounded-lg p-2.5 shadow-2xl select-none"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-lg p-2.5 shadow-2xl select-none"
                 onMouseLeave={() => setTableHover({ r: 0, c: 0 })}>
                 <div className="flex flex-col gap-0.5 mb-2">
                   {Array.from({ length: 8 }).map((_, ri) => (
@@ -596,8 +596,8 @@ export default function EditorToolbar({
                         <div key={ci}
                           className={`w-5 h-5 border rounded-sm cursor-pointer transition-colors ${
                             ri < tableHover.r && ci < tableHover.c
-                              ? 'bg-yellow-500/30 border-yellow-500/60'
-                              : 'bg-gray-200 dark:bg-[#111520] border-gray-300 dark:border-dark-600 hover:bg-gray-300 dark:hover:bg-[#111520]'
+                              ? 'bg-primary-500/30 border-primary-500/60'
+                              : 'bg-gray-200 dark:bg-dark-650 border-gray-300 dark:border-dark-600 hover:bg-gray-300 dark:hover:bg-dark-650'
                           }`}
                           onMouseEnter={() => setTableHover({ r: ri + 1, c: ci + 1 })}
                           onClick={() => {
@@ -625,15 +625,15 @@ export default function EditorToolbar({
               else { setLinkVal(editor.getAttributes('link').href || ''); setLinkOpen(o => !o); }
             }, <LinkIcon size={14} />)}
             {linkOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[210px]"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[210px]"
                 onMouseDown={e => e.stopPropagation()}>
                 <input name="editor-link-url" autoFocus value={linkVal} onChange={e => setLinkVal(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSetLink(); if (e.key === 'Escape') setLinkOpen(false); }}
                   placeholder="https://..."
-                  className="flex-1 text-xs bg-gray-200 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded px-2 py-1 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-yellow-500/50"
+                  className="flex-1 text-xs bg-gray-200 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded px-2 py-1 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-primary-500/50"
                 />
                 <button type="button" onClick={handleSetLink}
-                  className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded hover:bg-yellow-500/30">OK</button>
+                  className="text-xs bg-primary-500/20 text-primary-400 px-2 py-1 rounded hover:bg-primary-500/30">OK</button>
               </div>
             )}
           </div>
@@ -657,11 +657,11 @@ export default function EditorToolbar({
           <div className="relative shrink-0" ref={symbolsRef}>
             <button type="button" title="Symboles spéciaux"
               onClick={() => setSymbolsOpen(o => !o)}
-              className={`p-1.5 rounded transition-colors ${symbolsOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#111520]'}`}>
+              className={`p-1.5 rounded transition-colors ${symbolsOpen ? 'bg-primary-500/20 text-primary-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-650'}`}>
               <span className="text-[12px] font-semibold leading-none">Ω</span>
             </button>
             {symbolsOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-2.5"
                 style={{ width: '272px' }}
                 onMouseDown={e => e.stopPropagation()}>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Symboles spéciaux</p>
@@ -669,7 +669,7 @@ export default function EditorToolbar({
                   {SPECIAL_SYMBOLS.map(sym => (
                     <button key={sym} type="button" title={sym}
                       onClick={() => { editor.chain().focus().insertContent(sym).run(); setSymbolsOpen(false); }}
-                      className="w-6 h-6 text-sm text-gray-600 dark:text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-300 rounded transition-colors flex items-center justify-center">
+                      className="w-6 h-6 text-sm text-gray-600 dark:text-gray-300 hover:bg-primary-500/20 hover:text-primary-300 rounded transition-colors flex items-center justify-center">
                       {sym}
                     </button>
                   ))}
@@ -698,7 +698,7 @@ export default function EditorToolbar({
             title="Interligne"
             value={lineSpacing}
             onChange={e => applyLineSpacing(e.target.value)}
-            className="text-[11px] bg-gray-100 dark:bg-[#111520] border border-gray-200 dark:border-dark-700 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer w-[60px]"
+            className="text-[11px] bg-gray-100 dark:bg-dark-650 border border-gray-200 dark:border-dark-600 text-gray-600 dark:text-gray-400 rounded px-1.5 py-1 focus:outline-none cursor-pointer w-[60px]"
           >
             {LINE_SPACINGS.map(ls => (
               <option key={ls.value} value={ls.value}>{ls.label}</option>
@@ -724,32 +724,32 @@ export default function EditorToolbar({
           <div className="relative shrink-0">
             {TB(findOpen, 'Rechercher & Remplacer (Ctrl+H)', () => setFindOpen(o => !o), <SearchCode size={14} />)}
             {findOpen && (
-              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-3 min-w-[260px]"
+              <div className="absolute top-full left-0 mt-1 z-50 bg-gray-100 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded-lg shadow-2xl p-3 min-w-[260px]"
                 onMouseDown={e => e.stopPropagation()}>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Rechercher & Remplacer</p>
                 <div className="flex gap-1.5 mb-1.5">
                   <input name="find-text" value={findVal} onChange={e => setFindVal(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && doFind()}
                     placeholder="Rechercher…"
-                    className="flex-1 text-xs bg-gray-200 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded px-2 py-1.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-yellow-500/50"
+                    className="flex-1 text-xs bg-gray-200 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded px-2 py-1.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-primary-500/50"
                   />
                   <button type="button" onClick={doFind}
-                    className="text-xs bg-gray-200 dark:bg-[#111520] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 rounded hover:bg-gray-300 dark:hover:bg-[#111520] transition-colors">
+                    className="text-xs bg-gray-200 dark:bg-dark-650 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 rounded hover:bg-gray-300 dark:hover:bg-dark-650 transition-colors">
                     Trouver
                   </button>
                 </div>
                 <div className="flex gap-1.5">
                   <input name="replace-text" value={replaceVal} onChange={e => setReplaceVal(e.target.value)}
                     placeholder="Remplacer par…"
-                    className="flex-1 text-xs bg-gray-200 dark:bg-[#111520] border border-gray-300 dark:border-dark-600 rounded px-2 py-1.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-yellow-500/50"
+                    className="flex-1 text-xs bg-gray-200 dark:bg-dark-650 border border-gray-300 dark:border-dark-600 rounded px-2 py-1.5 text-gray-600 dark:text-gray-300 focus:outline-none focus:border-primary-500/50"
                   />
                   <div className="flex flex-col gap-1">
                     <button type="button" title="Remplacer" onClick={doReplace}
-                      className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded hover:bg-yellow-500/30 whitespace-nowrap">
+                      className="text-[10px] bg-primary-500/20 text-primary-400 px-2 py-1 rounded hover:bg-primary-500/30 whitespace-nowrap">
                       <Replace size={12} />
                     </button>
                     <button type="button" onClick={doReplaceAll}
-                      className="text-[10px] bg-yellow-500/10 text-yellow-500/70 px-2 py-1 rounded hover:bg-yellow-500/20 whitespace-nowrap">
+                      className="text-[10px] bg-primary-500/10 text-primary-500/70 px-2 py-1 rounded hover:bg-primary-500/20 whitespace-nowrap">
                       Tout
                     </button>
                   </div>

@@ -168,6 +168,10 @@ export const PROFILE_NAV = {
   danger:   'Zone danger',
   backTitle: 'Retour aux notes',
   pageTitle:  'Profil',
+  /** Titre du panneau modal (style application type Notion) */
+  modalTitle: 'Paramètres',
+  searchPlaceholder: 'Rechercher dans les réglages\u2026',
+  searchNoResults: 'Aucune section ne correspond.',
 } as const;
 
 export const PROFILE_ACCOUNT = {

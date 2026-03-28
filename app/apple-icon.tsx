@@ -31,7 +31,7 @@ export default async function AppleIcon() {
         <div style={{ position: 'relative', width: '110px', height: '130px', display: 'flex' }}>
           <svg width="110" height="130" viewBox="0 0 22 26" fill="none">
             <path d="M 0 0 L 14 0 L 22 8 L 22 26 L 0 26 Z" fill="#e8e8e8" />
-            <path d="M 14 0 L 22 8 L 14 8 Z" fill="#eab308" />
+            <path d="M 14 0 L 22 8 L 14 8 Z" fill="#3b82f6" />
           </svg>
           {/* Overlay colonne : lignes + MNS + lignes */}
           <div style={{ position: 'absolute', top: '0', left: '0', width: '110px', height: '130px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>

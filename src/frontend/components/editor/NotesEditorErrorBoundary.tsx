@@ -97,7 +97,7 @@ export class NotesEditorErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={this.handleReload}
-            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg text-sm transition-colors"
+            className="px-4 py-2 bg-primary-500 hover:bg-primary-400 text-black font-medium rounded-lg text-sm transition-colors"
           >
             Recharger l&apos;éditeur
           </button>

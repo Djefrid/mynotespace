@@ -30,10 +30,31 @@ const nextConfig = {
 
   webpack(config, { isServer }) {
     if (!isServer) {
-      // 'sharp' est un module natif Node.js — il ne peut pas être bundlé pour le browser.
-      // @turbodocx/html-to-docx l'importe conditionnellement mais webpack essaie quand même
-      // de le résoudre côté client. On le déclare externe (false = module vide).
-      config.resolve.fallback = { ...config.resolve.fallback, sharp: false };
+      // 'sharp' et ses dépendances Node natives ne peuvent pas être bundlés pour le browser.
+      // html-to-docx n'en a pas besoin pour l'usage client de base, on les remplace donc par
+      // des modules vides pour éviter que webpack tente de suivre ces imports.
+      config.resolve.alias = {
+        ...(config.resolve.alias || {}),
+        sharp: false,
+        'detect-libc': false,
+        'node:child_process': false,
+        'node:crypto': false,
+        'node:events': false,
+      };
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        sharp: false,
+        'detect-libc': false,
+        child_process: false,
+        crypto: false,
+        events: false,
+        fs: false,
+        os: false,
+        path: false,
+        stream: false,
+        util: false,
+        zlib: false,
+      };
     }
     return config;
   },

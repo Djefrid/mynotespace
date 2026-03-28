@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * POPUP LIEN BUBBLE MENU — components/notes/BubbleLinkPopup.tsx
  * ============================================================================
@@ -36,7 +36,7 @@ export default function BubbleLinkPopup({
 
   return (
     <div
-      className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white dark:bg-[#111520] border border-gray-200 dark:border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[200px]"
+      className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 rounded-lg p-2 shadow-xl flex gap-1.5 min-w-[200px]"
       onMouseDown={e => e.stopPropagation()}
     >
       {/* Champ URL */}
@@ -50,7 +50,7 @@ export default function BubbleLinkPopup({
           if (e.key === 'Escape') { onClose(); }
         }}
         placeholder="https://..."
-        className="flex-1 text-xs bg-gray-100 dark:bg-[#080c14] text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded px-2 py-1 focus:outline-none border border-gray-300 dark:border-dark-600 focus:border-yellow-500/50"
+        className="flex-1 text-xs bg-gray-100 dark:bg-dark-725 text-gray-800 dark:text-gray-200 placeholder-gray-400 rounded px-2 py-1 focus:outline-none border border-gray-300 dark:border-dark-600 focus:border-primary-500/50"
       />
       {/* Bouton OK */}
       <button
@@ -59,7 +59,7 @@ export default function BubbleLinkPopup({
           e.preventDefault();
           onConfirm();
         }}
-        className="text-xs px-2 py-1 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/30 rounded transition-colors"
+        className="text-xs px-2 py-1 bg-primary-500/20 text-primary-600 dark:text-primary-400 hover:bg-primary-500/30 rounded transition-colors"
       >
         OK
       </button>

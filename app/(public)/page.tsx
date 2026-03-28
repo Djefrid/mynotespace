@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -87,7 +87,7 @@ export default function LandingPage() {
 
   return (
     <LazyMotion features={domAnimation} strict>
-    <div className="min-h-screen bg-white dark:bg-[#080c14] text-gray-900 dark:text-white antialiased transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-dark-700 text-gray-900 dark:text-white antialiased transition-colors duration-300">
 
       {/* ── Navbar ──────────────────────────────────────────────────────────── */}
       <m.header
@@ -96,8 +96,8 @@ export default function LandingPage() {
         transition={{ duration: 0.45, ease: 'easeOut' }}
         className={`fixed top-0 inset-x-0 z-50 border-b transition-all duration-300 ${
           scrolled
-            ? 'border-gray-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#080c14]/95 backdrop-blur-lg shadow-sm dark:shadow-none'
-            : 'border-gray-100 dark:border-white/[0.04] bg-white/80 dark:bg-[#080c14]/70 backdrop-blur-md'
+            ? 'border-gray-200 dark:border-white/[0.08] bg-white/95 dark:bg-dark-700/95 backdrop-blur-lg shadow-sm dark:shadow-none'
+            : 'border-gray-100 dark:border-white/[0.04] bg-white/80 dark:bg-dark-700/70 backdrop-blur-md'
         }`}
       >
         <nav
@@ -110,7 +110,7 @@ export default function LandingPage() {
               <rect width="28" height="28" rx="7" fill="#3b82f6"/>
               <path d="M8 9h12M8 14h8M8 19h10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
             </svg>
-            <span className="font-semibold text-[15px] tracking-tight text-gray-900 dark:text-white/90 group-hover:text-blue-600 dark:group-hover:text-white transition-colors">
+            <span className="font-semibold text-[15px] tracking-tight text-gray-900 dark:text-white/90 group-hover:text-primary-600 dark:group-hover:text-white transition-colors">
               {GLOBAL.brand}
             </span>
           </Link>
@@ -125,7 +125,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/register"
-              className="px-4 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+              className="px-4 py-1.5 text-sm font-medium bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition-colors"
             >
               {LANDING_NAV.registerLabel}
             </Link>
@@ -148,9 +148,9 @@ export default function LandingPage() {
           <m.div
             variants={fadeUp}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 dark:border-primary-500/30 bg-primary-50 dark:bg-primary-500/10 px-4 py-1.5 text-xs font-medium text-primary-600 dark:text-primary-400"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" aria-hidden="true" />
+            <span className="h-1.5 w-1.5 rounded-full bg-primary-500 dark:bg-primary-400 animate-pulse" aria-hidden="true" />
             {LANDING_HERO.badge}
           </m.div>
 
@@ -183,7 +183,7 @@ export default function LandingPage() {
           >
             <Link
               href="/register"
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0"
+              className="px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-primary-600/20 hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0"
             >
               {LANDING_HERO.ctaPrimary}
             </Link>
@@ -210,17 +210,23 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.1, duration: 0.6, ease: 'easeOut' }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 text-gray-300 dark:text-white/20"
-          aria-hidden="true"
+          className="absolute inset-x-0 bottom-10 flex justify-center text-gray-300 dark:text-white/20"
         >
-          <span className="text-[10px] tracking-widest uppercase">{LANDING_HERO.scrollLabel}</span>
-          <m.svg
-            width="14" height="14" viewBox="0 0 14 14" fill="none"
-            animate={{ y: [0, 5, 0] }}
-            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+          <Link
+            href="#features"
+            className="flex w-24 flex-col items-center gap-1.5 text-center transition-colors hover:text-gray-400 dark:hover:text-white/35 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 rounded-lg"
+            aria-label={LANDING_HERO.scrollLabel}
           >
-            <path d="M2 5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </m.svg>
+            <span className="block w-full text-[10px] leading-none tracking-widest uppercase">{LANDING_HERO.scrollLabel}</span>
+            <m.svg
+              width="14" height="14" viewBox="0 0 14 14" fill="none"
+              animate={{ y: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+              className="block"
+            >
+              <path d="M2 5l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </m.svg>
+          </Link>
         </m.div>
       </section>
 
@@ -237,7 +243,7 @@ export default function LandingPage() {
           <m.p
             variants={fadeUp}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400/80 mb-3"
+            className="text-xs font-semibold uppercase tracking-widest text-primary-600 dark:text-primary-400/80 mb-3"
           >
             {LANDING_FEATURES_SECTION.eyebrow}
           </m.p>
@@ -274,7 +280,7 @@ export default function LandingPage() {
               whileHover={{ y: -4, transition: { duration: 0.2, ease: 'easeOut' } }}
               className="group relative rounded-2xl border border-gray-100 dark:border-white/[0.07] bg-gray-50 dark:bg-white/[0.03] hover:bg-gray-100/80 dark:hover:bg-white/[0.05] p-6 cursor-default transition-colors hover:border-gray-200 dark:hover:border-white/[0.12]"
             >
-              <div className="mb-4 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/15 transition-colors">
+              <div className="mb-4 inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-500/15 transition-colors">
                 {FEATURE_ICONS[feature.key]}
               </div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white/90 mb-2">{feature.title}</h3>
@@ -292,7 +298,7 @@ export default function LandingPage() {
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-6xl px-6 pb-28"
       >
-        <div className="landing-cta-bg relative rounded-3xl overflow-hidden border border-blue-100 dark:border-white/[0.08] bg-blue-50/50 dark:bg-transparent p-10 sm:p-16 text-center">
+        <div className="landing-cta-bg relative rounded-3xl overflow-hidden border border-primary-100 dark:border-white/[0.08] bg-primary-50/50 dark:bg-transparent p-10 sm:p-16 text-center">
           <m.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -319,7 +325,7 @@ export default function LandingPage() {
           >
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-xl shadow-blue-600/25 hover:shadow-blue-500/35 hover:-translate-y-0.5 active:translate-y-0"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold rounded-xl transition-all shadow-xl shadow-primary-600/25 hover:shadow-primary-500/35 hover:-translate-y-0.5 active:translate-y-0"
             >
               {LANDING_FINAL_CTA.button}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
