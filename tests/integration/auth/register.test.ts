@@ -29,6 +29,10 @@ vi.mock('@/src/backend/lib/rate-limit', () => ({
   rateLimitResponse: vi.fn(),
 }));
 
+vi.mock('@/src/backend/lib/password', () => ({
+  hashPassword: vi.fn().mockResolvedValue('$argon2id$mock-hash'),
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn().mockResolvedValue(new Map()),
 }));

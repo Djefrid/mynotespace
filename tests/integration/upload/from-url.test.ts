@@ -21,6 +21,16 @@ vi.mock('file-type', () => ({
   fileTypeFromBuffer: vi.fn().mockResolvedValue({ mime: 'image/png', ext: 'png' }),
 }));
 
+// Mock sharp : fail-open simulé — retourne le buffer original sans compression
+vi.mock('sharp', () => ({
+  default: vi.fn().mockReturnValue({
+    resize:       vi.fn().mockReturnThis(),
+    webp:         vi.fn().mockReturnThis(),
+    withMetadata: vi.fn().mockReturnThis(),
+    toBuffer:     vi.fn().mockRejectedValue(new Error('sharp mock — not a real image')),
+  }),
+}));
+
 vi.mock('@/src/backend/db/prisma', () => ({
   prisma: {
     note: { findFirst: vi.fn() },
@@ -237,5 +247,31 @@ describe('POST /api/upload/from-url', () => {
 
     expect(json.data.publicUrl).toContain('ws-123');
     expect(json.data.publicUrl).toContain('note-abc');
+  });
+
+  it('200 — compression Sharp : GIF conservé tel quel (pas de conversion WebP)', async () => {
+    vi.stubGlobal('fetch', makeFakeImageFetch({ contentType: 'image/gif' }));
+    mockFileTypeFromBuffer.mockResolvedValue({ mime: 'image/gif', ext: 'gif' });
+
+    const res  = await POST(makePost('http://localhost/api/upload/from-url', {
+      noteId: 'note-abc',
+      url:    'https://example.com/anim.gif',
+    }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    // GIF préservé → clé se termine par .gif
+    expect(json.data.publicUrl).toMatch(/\.gif$/);
+  });
+
+  it('200 — compression Sharp fail-open : upload réussi même si Sharp échoue', async () => {
+    // Sharp est mocké pour échouer (voir vi.mock('sharp') en haut)
+    const res  = await POST(makePost('http://localhost/api/upload/from-url', {
+      noteId: 'note-abc',
+      url:    'https://example.com/image.png',
+    }));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toHaveProperty('publicUrl');
   });
 });

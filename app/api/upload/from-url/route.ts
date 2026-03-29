@@ -15,6 +15,7 @@
 
 import { randomUUID } from 'crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 import { requireRole } from '@/src/backend/auth/session';
 import { can } from '@/src/backend/policies/permissions';
 import { prisma } from '@/src/backend/db/prisma';
@@ -27,6 +28,33 @@ const MAX_BYTES = 10 * 1024 * 1024; // 10 Mo
 const ALLOWED_MIME = new Set([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
 ]);
+
+/**
+ * Compresse une image côté serveur avec Sharp.
+ * - Raster (JPEG/PNG/WebP) → converti en WebP qualité 82, max 1920px, EXIF supprimé
+ * - SVG → conservé tel quel (XML, non traitable par Sharp)
+ * - GIF → conservé tel quel (préserve les animations)
+ * Fail-open : retourne le buffer original en cas d'erreur Sharp.
+ */
+async function compressImage(
+  buf: Buffer,
+  mimeType: string,
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  if (mimeType === 'image/svg+xml' || mimeType === 'image/gif') {
+    return { buffer: buf, mimeType };
+  }
+  try {
+    const compressed = await sharp(buf)
+      .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .withMetadata({ exif: {} }) // supprime les métadonnées EXIF (GPS, appareil, etc.)
+      .toBuffer();
+    return { buffer: compressed, mimeType: 'image/webp' };
+  } catch {
+    // Fail-open : si Sharp échoue (format inhabituel), on garde l'original
+    return { buffer: buf, mimeType };
+  }
+}
 
 /**
  * Valide le type réel du fichier via les magic bytes (signature binaire).
@@ -140,6 +168,9 @@ export async function POST(req: Request) {
     console.error('[from-url] fetch échoué:', url, msg);
     return Response.json({ error: 'Impossible de récupérer l\'image' }, { status: 422 });
   }
+
+  // ── Compression Sharp : WebP + suppression EXIF ──────────────────────────────
+  ({ buffer: imageBuffer, mimeType } = await compressImage(imageBuffer, mimeType));
 
   // ── Upload vers R2 ────────────────────────────────────────────────────────────
   try {

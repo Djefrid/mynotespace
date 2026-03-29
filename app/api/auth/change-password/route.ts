@@ -1,8 +1,8 @@
-import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/backend/db/prisma';
 import { requireSession } from '@/src/backend/auth/session';
 import { changePasswordSchema } from '@/src/backend/validators/auth.schemas';
 import { checkRateLimit, rateLimitResponse } from '@/src/backend/lib/rate-limit';
+import { verifyPassword, hashPassword } from '@/src/backend/lib/password';
 
 // ─── POST /api/auth/change-password ──────────────────────────────────────────
 
@@ -35,12 +35,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const { valid } = await verifyPassword(currentPassword, user.passwordHash);
     if (!valid) {
       return Response.json({ error: 'Mot de passe actuel incorrect.' }, { status: 400 });
     }
 
-    const newHash = await bcrypt.hash(newPassword, 12);
+    const newHash = await hashPassword(newPassword);
     await prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
 
     return Response.json({ data: { success: true } });

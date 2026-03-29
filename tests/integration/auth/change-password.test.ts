@@ -28,16 +28,19 @@ vi.mock('@/src/backend/lib/rate-limit', () => ({
   rateLimitResponse: vi.fn(),
 }));
 
+vi.mock('@/src/backend/lib/password', () => ({
+  verifyPassword: vi.fn(),
+  hashPassword:   vi.fn().mockResolvedValue('$argon2id$mock-hash'),
+}));
+
 import { prisma } from '@/src/backend/db/prisma';
 import { POST } from '@/app/api/auth/change-password/route';
-import bcrypt from 'bcryptjs';
+import { verifyPassword, hashPassword } from '@/src/backend/lib/password';
 
-const mockPrisma = prisma as {
-  user: {
-    findUnique: ReturnType<typeof vi.fn>;
-    update:     ReturnType<typeof vi.fn>;
-  };
-};
+const mockPrisma        = prisma as { user: { findUnique: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> } };
+const mockVerifyPassword = verifyPassword as ReturnType<typeof vi.fn>;
+// hashPassword imported to silence unused-import lint — it's mocked above
+void hashPassword;
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +48,7 @@ describe('POST /api/auth/change-password', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPrisma.user.update.mockResolvedValue({});
+    mockVerifyPassword.mockResolvedValue({ valid: true, needsRehash: false });
   });
 
   it('401 — non authentifié', async () => {
@@ -62,9 +66,8 @@ describe('POST /api/auth/change-password', () => {
 
   it('400 — mot de passe actuel incorrect', async () => {
     mockRequireSession.mockResolvedValue({ userId: 'user-123' });
-
-    const hash = await bcrypt.hash('bon-mot-de-passe', 10);
-    mockPrisma.user.findUnique.mockResolvedValue({ passwordHash: hash });
+    mockPrisma.user.findUnique.mockResolvedValue({ passwordHash: '$argon2id$some-hash' });
+    mockVerifyPassword.mockResolvedValue({ valid: false, needsRehash: false });
 
     const req = makePost('http://localhost/api/auth/change-password', {
       currentPassword: 'mauvais-mot-de-passe',
@@ -94,9 +97,7 @@ describe('POST /api/auth/change-password', () => {
 
   it('200 — changement de mot de passe réussi', async () => {
     mockRequireSession.mockResolvedValue({ userId: 'user-123' });
-
-    const hash = await bcrypt.hash('ancien-correct', 10);
-    mockPrisma.user.findUnique.mockResolvedValue({ passwordHash: hash });
+    mockPrisma.user.findUnique.mockResolvedValue({ passwordHash: '$argon2id$some-hash' });
 
     const req = makePost('http://localhost/api/auth/change-password', {
       currentPassword: 'ancien-correct',

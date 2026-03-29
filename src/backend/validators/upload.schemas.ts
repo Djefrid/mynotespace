@@ -69,3 +69,36 @@ export const registerAttachmentSchema = z.object({
   mimeType: z.string(),
   size:     z.number().int().positive(),
 });
+
+// ── Multipart upload ─────────────────────────────────────────────────────────
+
+/** Taille minimale d'un chunk multipart (5 MiB — exigence R2/S3) */
+export const MULTIPART_MIN_PART_BYTES = 5 * 1024 * 1024;
+
+/** Taille maximale d'un fichier en multipart (5 Go — limite R2) */
+export const MULTIPART_MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
+
+/** Schéma pour POST /api/upload/multipart/start */
+export const multipartStartSchema = z.object({
+  noteId:    z.string().min(1),
+  filename:  z.string().min(1).max(255),
+  mimeType:  z.string().refine(
+    (v) => ALLOWED_MIME_TYPES.has(v),
+    { message: 'Type de fichier non autorisé' }
+  ),
+  totalSize: z.number().int().positive().max(
+    MULTIPART_MAX_FILE_BYTES,
+    { message: 'Taille maximale : 5 Go' }
+  ),
+  partCount: z.number().int().min(1).max(10_000),
+});
+
+/** Schéma pour POST /api/upload/multipart/complete */
+export const multipartCompleteSchema = z.object({
+  key:      z.string().min(1),
+  uploadId: z.string().min(1),
+  parts:    z.array(z.object({
+    partNumber: z.number().int().min(1).max(10_000),
+    etag:       z.string().min(1),
+  })).min(1),
+});

@@ -1,9 +1,9 @@
-import bcrypt from 'bcryptjs';
 import { headers } from 'next/headers';
 import { prisma } from '@/src/backend/db/prisma';
 import { registerSchema } from '@/src/backend/validators/auth.schemas';
 import { checkRateLimit, rateLimitResponse } from '@/src/backend/lib/rate-limit';
 import { provisionPersonalWorkspace } from '@/src/backend/services/user-bootstrap.service';
+import { hashPassword } from '@/src/backend/lib/password';
 
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await hashPassword(password);
 
     const user = await prisma.user.create({
       data: {

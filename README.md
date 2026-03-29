@@ -62,14 +62,16 @@
 - **Excalidraw** : dessin intégré inline
 - **Images** inline via Cloudflare R2 (paste, drag-drop, upload)
   - Compression automatique avant upload (browser-image-compression — max 1 Mo / 1920px)
+  - **Compression Sharp server-side** sur `/api/upload/from-url` — conversion WebP 82%, max 1920px, strip EXIF ; SVG/GIF conservés tels quels ; fail-open (l'upload réussit même si Sharp échoue)
   - **Re-upload automatique** des images externes au collage — les URLs Firebase ou autres sources externes sont silencieusement ré-uploadées vers R2
   - **Suppression automatique des images orphelines** — image retirée du contenu = supprimée de R2 (Inngest background job)
+  - **Upload multipart R2** pour les fichiers >= 10 Mo (chunks de 10 MiB, URLs présignées, assemblage côté R2)
 - **Fichiers joints** via Cloudflare R2
 
 ### Réglages in-app (modal)
 - **Modal tabbée** — s'ouvre sur la même page, 7 sections : Compte, Sécurité, Apparence, Espace de travail, Membres, Données, Danger
 - Modifier le nom sans re-login (JWT update)
-- Changer le mot de passe (bcrypt, rate-limited) avec **toggle visibilité**
+- Changer le mot de passe (Argon2id, rate-limited) avec **toggle visibilité**
 - Statistiques du workspace (notes, dossiers, tags, fichiers, stockage)
 - Gestion des membres (rôles, suppression) — OWNER uniquement
 - Configuration durée de session + déconnexion forcée de tous les membres
@@ -86,6 +88,7 @@
 ### Sécurité
 - **CSP nonce-based** par requête dans `middleware.ts`
 - **`import 'server-only'`** sur tous les modules backend — empêche les imports accidentels côté client
+- **Argon2id (OWASP 2025)** pour tous les nouveaux mots de passe (`@node-rs/argon2` — binaire Rust natif, 19 MiB memory cost) — migration progressive silencieuse depuis bcrypt au login
 - **Rate limiting** brute-force sur login (10 req/15min par IP via Upstash Redis)
 - **Rate limiting** sur 8 routes distinctes — auth (5/15min), create (30/min), autosave (180/min), list (120/min), search (60/min), presign (20/min), from-url (60/min), read (120/min)
 - **Headers 429 standard** : `Retry-After` + `X-RateLimit-Remaining` sur toutes les réponses rate-limited
@@ -165,6 +168,8 @@ plainText  ← INDEX RECHERCHE   (editor.getText(), pour Typesense + NoteCard)
 | Rate limiting | Upstash Redis (fail-open) |
 | Jobs async | Inngest v4 (5 fonctions) |
 | Éditeur | TipTap 3 (26 extensions) |
+| Hachage MDP | @node-rs/argon2 (Argon2id) + bcryptjs (legacy) |
+| Compression images | Sharp (server-side WebP) + browser-image-compression (client) |
 | Tests | Vitest + Testing Library |
 | Déploiement | Vercel |
 
@@ -192,7 +197,10 @@ mynotespace/
 │       ├── search/                   — recherche Typesense
 │       ├── upload/
 │       │   ├── presign/              — URL présignée R2 (rate limit: 20/min)
-│       │   └── from-url/             — re-upload image externe → R2 (rate limit: 60/min)
+│       │   ├── from-url/             — re-upload image externe → R2 + compression Sharp (rate limit: 60/min)
+│       │   └── multipart/
+│       │       ├── start/            — initie upload multipart R2 (CreateMultipartUpload + URLs présignées)
+│       │       └── complete/         — finalise upload multipart (CompleteMultipartUpload)
 │       ├── attachments/              — pièces jointes
 │       ├── auth/
 │       │   ├── [...nextauth]/        — Auth.js handlers
@@ -221,7 +229,8 @@ mynotespace/
 │   │   ├── repositories/             — accès DB bas niveau
 │   │   ├── mappers/                  — DB entity → domain type
 │   │   └── lib/
-│   │       └── rate-limit.ts         — checkRateLimit() par route
+│   │       ├── rate-limit.ts         — checkRateLimit() par route
+│   │       └── password.ts           — hashPassword() + verifyPassword() — Argon2id + migration bcrypt
 │   │
 │   ├── frontend/
 │   │   ├── components/
@@ -256,6 +265,7 @@ mynotespace/
 │   │   └── lib/
 │   │       ├── api-client/           — fetch wrapper typé
 │   │       ├── auth-client/          — helpers côté client
+│   │       ├── multipart-upload.ts   — uploadMultipart() — flux chunked pour fichiers >= 10 Mo
 │   │       └── utils/                — docx-utils, pdf-utils, tiptap-extensions
 │   │
 │   ├── domain/
@@ -422,10 +432,12 @@ Tests unitaires dans `tests/unit/` :
 Tests d'intégration dans `tests/integration/` :
 - `notes/notes-crud.test.ts` — GET & POST /api/notes (auth, pagination, rate limit, Zod)
 - `upload/presign.test.ts` — POST /api/upload/presign (auth, MIME, taille, R2)
-- `upload/from-url.test.ts` — POST /api/upload/from-url (SSRF, auth, rate limit, MIME, magic bytes)
+- `upload/from-url.test.ts` — POST /api/upload/from-url (SSRF, auth, rate limit, MIME, magic bytes, Sharp fail-open)
 - `auth/account.test.ts` — DELETE /api/auth/account (auth, confirmation, cascade)
+- `auth/change-password.test.ts` — POST /api/auth/change-password (Argon2id mock)
+- `auth/register.test.ts` — POST /api/auth/register (Argon2id mock)
 
-**140 tests passent** — `npm run build` sans erreur.
+**142 tests passent** — `npm run build` sans erreur.
 
 ---
 
@@ -445,6 +457,36 @@ Au collage de contenu contenant des images externes (ex : notes copiées depuis 
 4. Upload direct vers R2 via `PutObjectCommand`, retourne l'URL publique
 5. Sur 429 (rate limit) ou 413 (trop grande) : l'URL d'origine est conservée
 6. Sur erreur de source inaccessible : l'image est retirée du contenu collé
+
+### Argon2id — migration progressive depuis bcrypt
+
+`src/backend/lib/password.ts` centralise toute la logique de hachage :
+
+- **Nouveaux comptes** → hash Argon2id immédiatement (`hashPassword()`)
+- **Comptes existants (bcrypt)** → vérifiés normalement au login, puis re-hashés silencieusement en Argon2id si le mot de passe est correct (`verifyPassword()` retourne `{ valid, needsRehash }`)
+- **Paramètres OWASP 2025** : memoryCost 19 456 (19 MiB), timeCost 2, parallelism 1
+- **Zéro downtime** — aucune migration forcée, aucune déconnexion des utilisateurs existants
+- `@node-rs/argon2` (binaire Rust natif) déclaré dans `serverComponentsExternalPackages` — webpack ne tente pas de bundler le `.node`
+
+### Compression Sharp — re-uploads d'images
+
+Sur `POST /api/upload/from-url`, avant l'upload vers R2 :
+1. SVG/GIF → conservés tels quels (SVG = XML, GIF = animation potentielle)
+2. JPEG/PNG/WebP → conversion WebP 82% qualité, max 1920px (dimension longue), strip EXIF
+3. Sharp échoue → fail-open : l'image originale est uploadée sans compression (l'upload n'échoue jamais à cause de Sharp)
+
+### Upload multipart R2 — fichiers >= 10 Mo
+
+Flux pour les fichiers volumineux :
+
+1. `POST /api/upload/multipart/start` — `CreateMultipartUploadCommand` + génération des URLs présignées par chunk (`UploadPartCommand`, expiry 1h)
+2. Client upload chaque chunk via PUT direct vers R2 (pas de transit serveur), collecte les `ETag`
+3. `POST /api/upload/multipart/complete` — `CompleteMultipartUploadCommand` avec parts triés par `partNumber`
+4. En cas d'erreur sur `/complete` → `AbortMultipartUploadCommand` fire-and-forget (évite les frais R2 pour les chunks incomplets)
+
+Sécurité : la clé R2 doit commencer par `workspaces/{workspaceId}/` — vérifiée dans `/complete` pour prévenir les completions inter-workspace.
+
+Taille chunk : 10 MiB (minimum R2/S3 = 5 MiB sauf dernier chunk). Seuil d'activation côté client : `MULTIPART_THRESHOLD = 10 MiB` (`src/frontend/lib/multipart-upload.ts`).
 
 ### Rate limits
 
@@ -526,3 +568,4 @@ SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` →
 *Fix images disparaissant (sync multi-appareil écrasait avec plainText), autosave JSON complet après insertion image/fichier/Excalidraw/import — 2026-03-25*
 *Restauration état complète au rechargement (dossier + note) — atomic setter pattern localStorage — 2026-03-25*
 *Modal Réglages in-app (remplace /profile), palette dark #334155, scrollbar Notion-style, SWR auto-refresh global, rate limiting étendu, validation magic bytes uploads, optimisations Prisma — 2026-03-29*
+*Argon2id (migration progressive depuis bcrypt), compression Sharp server-side WebP, upload multipart R2 (>= 10 Mo) — 2026-03-29*

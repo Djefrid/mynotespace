@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "mcp__exa__web_search_exa",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

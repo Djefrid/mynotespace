@@ -17,6 +17,9 @@ const nextConfig = {
   poweredByHeader: false,
 
   experimental: {
+    // Packages Node natifs (binaires .node) — ne pas bundler, require() au runtime
+    serverComponentsExternalPackages: ['@node-rs/argon2', 'bcryptjs'],
+
     // Restreint les Server Actions au domaine de production uniquement (anti-CSRF)
     serverActions: {
       allowedOrigins: [

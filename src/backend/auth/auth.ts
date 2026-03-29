@@ -4,12 +4,12 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import type { DefaultSession } from 'next-auth';
 import { prisma } from '@/src/backend/db/prisma';
 import { authConfig } from './auth.config';
 import { provisionPersonalWorkspace } from '@/src/backend/services/user-bootstrap.service';
+import { verifyPassword, hashPassword } from '@/src/backend/lib/password';
 
 // ── Validation des credentials (protection operator injection Prisma) ─────────
 const loginSchema = z.object({
@@ -56,8 +56,15 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
+        const { valid, needsRehash } = await verifyPassword(password, user.passwordHash);
         if (!valid) return null;
+
+        // Migration progressive bcrypt → Argon2id : re-hash silencieux au login
+        if (needsRehash) {
+          hashPassword(password)
+            .then(newHash => prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } }))
+            .catch(() => {}); // fire-and-forget, ne bloque pas la connexion
+        }
 
         return { id: user.id, email: user.email, name: user.name ?? undefined };
       },
