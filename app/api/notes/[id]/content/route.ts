@@ -1,5 +1,6 @@
 import { requireRole } from '@/src/backend/auth/session';
 import { can } from '@/src/backend/policies/permissions';
+import { checkRateLimit, rateLimitResponse } from '@/src/backend/lib/rate-limit';
 import { saveNoteContent } from '@/src/backend/services/notes-pg.service';
 import { saveContentSchema } from '@/src/backend/validators/note.schemas';
 import { auth } from '@/src/backend/auth/auth';
@@ -24,6 +25,9 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!can(role, 'notes:update')) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const rl = await checkRateLimit('autosave', workspaceId);
+  if (!rl.success) return rateLimitResponse(rl.reset);
 
   try {
     const { id }   = await params;

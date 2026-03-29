@@ -43,7 +43,20 @@ export default function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SWRConfig value={{ provider: () => new Map() }}>
+    <SWRConfig value={{
+      provider:             () => new Map(),
+      revalidateOnFocus:    true,
+      revalidateOnReconnect: true,
+      refreshWhenHidden:    false,
+      refreshWhenOffline:   false,
+      dedupingInterval:     2_000,
+      onError: (error: unknown) => {
+        // Log global SWR sans exposer d'info sensible à l'utilisateur
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('[SWR]', error);
+        }
+      },
+    }}>
       <SessionProvider>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
           {children}

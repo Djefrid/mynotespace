@@ -16,6 +16,9 @@ export async function GET(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const limit = await checkRateLimit('list', workspaceId);
+  if (!limit.success) return rateLimitResponse(limit.reset);
+
   try {
     const { searchParams } = new URL(req.url);
 

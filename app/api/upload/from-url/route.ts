@@ -28,6 +28,27 @@ const ALLOWED_MIME = new Set([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
 ]);
 
+/**
+ * Valide le type réel du fichier via les magic bytes (signature binaire).
+ * Plus fiable que le Content-Type déclaré par le serveur source.
+ * SVG est traité séparément car c'est du XML texte (pas de magic bytes).
+ */
+async function detectMimeFromBuffer(buf: Buffer, declaredMime: string): Promise<string | null> {
+  // SVG : pas de magic bytes, vérifier que c'est du XML valide contenant <svg
+  if (declaredMime === 'image/svg+xml') {
+    const text = buf.slice(0, 512).toString('utf8');
+    return text.includes('<svg') ? 'image/svg+xml' : null;
+  }
+  try {
+    const { fileTypeFromBuffer } = await import('file-type');
+    const result = await fileTypeFromBuffer(buf);
+    return result?.mime ?? null;
+  } catch {
+    // fail-open si file-type indisponible
+    return declaredMime;
+  }
+}
+
 // POST : OWNER, ADMIN, MEMBER — interdit aux VIEWER
 export async function POST(req: Request) {
   // ── Auth + rôle ───────────────────────────────────────────────────────────────
@@ -106,6 +127,14 @@ export async function POST(req: Request) {
     if (imageBuffer.byteLength > MAX_BYTES) {
       return Response.json({ error: 'Image trop grande (max 10 Mo)' }, { status: 413 });
     }
+
+    // Validation magic bytes : vérifie la vraie signature binaire du fichier
+    const detectedMime = await detectMimeFromBuffer(imageBuffer, mimeType);
+    if (!detectedMime || !ALLOWED_MIME.has(detectedMime)) {
+      return Response.json({ error: 'Type de fichier non autorisé' }, { status: 415 });
+    }
+    // Utiliser le MIME détecté (plus fiable que le Content-Type du serveur)
+    mimeType = detectedMime;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[from-url] fetch échoué:', url, msg);

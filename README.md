@@ -66,12 +66,16 @@
   - **Suppression automatique des images orphelines** — image retirée du contenu = supprimée de R2 (Inngest background job)
 - **Fichiers joints** via Cloudflare R2
 
-### Profil & Sécurité
+### Réglages in-app (modal)
+- **Modal tabbée** — s'ouvre sur la même page, 7 sections : Compte, Sécurité, Apparence, Espace de travail, Membres, Données, Danger
 - Modifier le nom sans re-login (JWT update)
 - Changer le mot de passe (bcrypt, rate-limited) avec **toggle visibilité**
 - Statistiques du workspace (notes, dossiers, tags, fichiers, stockage)
+- Gestion des membres (rôles, suppression) — OWNER uniquement
+- Configuration durée de session + déconnexion forcée de tous les membres
 - Export JSON de toutes les données
 - Suppression de compte avec confirmation (cascade complète)
+- Accès depuis l'avatar en haut à droite ou via la Command Palette
 
 ### PWA
 - Installable sur iOS, Android, Chrome desktop
@@ -83,8 +87,9 @@
 - **CSP nonce-based** par requête dans `middleware.ts`
 - **`import 'server-only'`** sur tous les modules backend — empêche les imports accidentels côté client
 - **Rate limiting** brute-force sur login (10 req/15min par IP via Upstash Redis)
-- **Rate limiting** sur changement de mot de passe + suppression de compte (5 req/15min)
-- **Rate limiting** sur re-upload d'images externes (60 req/min)
+- **Rate limiting** sur 8 routes distinctes — auth (5/15min), create (30/min), autosave (180/min), list (120/min), search (60/min), presign (20/min), from-url (60/min), read (120/min)
+- **Headers 429 standard** : `Retry-After` + `X-RateLimit-Remaining` sur toutes les réponses rate-limited
+- **Validation magic bytes** sur `/api/upload/from-url` — vérifie la vraie signature binaire du fichier (pas le Content-Type déclaré)
 - **Zod** sur tous les inputs API (prévention operator injection Prisma)
 - **X-Frame-Options: DENY** + frame-ancestors CSP
 - **DOMPurify** sur import DOCX (XSS stored)
@@ -92,7 +97,7 @@
 - **Validation URL XSS** sur les liens TipTap — `normalizeUrl()` bloque `javascript:`, `data:`, `vbscript:`
 - **Server Actions** restreintes au domaine de production (`allowedOrigins`)
 - `poweredByHeader: false` — supprime le header `X-Powered-By: Next.js`
-- **Fix signOut prod** : `redirect: false` + `router.push('/login')` partout — contourne la validation `callbackUrl` d'Auth.js ; `redirect` callback défensif dans `auth.ts` ; `NEXTAUTH_URL` retiré de Vercel
+- **Fix signOut prod** : `redirect: false` + `router.push('/login')` partout
 - Toutes les déconnexions (idle timeout, sidebar, profil) redirigent vers `/login`
 - Cascade delete : workspace → notes/dossiers/tags/fichiers → user
 - **Modales de confirmation** sur toutes les actions irréversibles
@@ -175,8 +180,7 @@ mynotespace/
 │   ├── manifest.ts                   — PWA manifest
 │   ├── (app)/
 │   │   ├── layout.tsx                — layout authentifié
-│   │   ├── notes/page.tsx            — éditeur principal
-│   │   └── profile/page.tsx          — profil, sécurité, stats, données
+│   │   └── notes/page.tsx            — éditeur principal
 │   ├── (public)/
 │   │   ├── login/page.tsx            — connexion
 │   │   └── page.tsx                  — landing
@@ -236,11 +240,14 @@ mynotespace/
 │   │   │   │   ├── NoteListColumn.tsx — liste + modale vider corbeille
 │   │   │   │   ├── NoteEditorColumn.tsx
 │   │   │   │   └── NoteCard.tsx
-│   │   │   └── folders/
-│   │   │       ├── FolderTreeItem.tsx
-│   │   │       └── SmartFolderModal.tsx
+│   │   │   ├── folders/
+│   │   │   │   ├── FolderTreeItem.tsx
+│   │   │   │   └── SmartFolderModal.tsx
+│   │   │   └── settings/
+│   │   │       └── SettingsModal.tsx — modal réglages (remplace /profile)
 │   │   ├── hooks/
-│   │   │   ├── data/                 — useNotes, useNotesApi, useAdminNotes, useSearch...
+│   │   │   ├── data/                 — useNotes, useNotesApi, useAdminNotes, useSearch,
+│   │   │   │                           useProfileStats, useWorkspaceMembers, useWorkspaceSession
 │   │   │   ├── editor/               — useNoteEditor, useAutosave, useImageFile...
 │   │   │   └── ui/                   — useNoteSelection
 │   │   ├── services/
@@ -415,10 +422,10 @@ Tests unitaires dans `tests/unit/` :
 Tests d'intégration dans `tests/integration/` :
 - `notes/notes-crud.test.ts` — GET & POST /api/notes (auth, pagination, rate limit, Zod)
 - `upload/presign.test.ts` — POST /api/upload/presign (auth, MIME, taille, R2)
-- `upload/from-url.test.ts` — POST /api/upload/from-url (SSRF, auth, rate limit, MIME)
+- `upload/from-url.test.ts` — POST /api/upload/from-url (SSRF, auth, rate limit, MIME, magic bytes)
 - `auth/account.test.ts` — DELETE /api/auth/account (auth, confirmation, cascade)
 
-**113 tests passent** — `npm run build` sans erreur.
+**140 tests passent** — `npm run build` sans erreur.
 
 ---
 
@@ -443,16 +450,22 @@ Au collage de contenu contenant des images externes (ex : notes copiées depuis 
 
 | Route | Limite | Fenêtre |
 |-------|--------|---------|
+| list (notes, membres) | 120 | 1 min |
+| autosave | 180 | 1 min |
+| read | 120 | 1 min |
 | search | 60 | 1 min |
-| presign | 20 | 1 min |
 | from-url | 60 | 1 min |
 | create | 30 | 1 min |
+| presign | 20 | 1 min |
 | auth | 5 | 15 min |
 
 ### Thème clair / sombre
 - `next-themes` avec `attribute="class"` — classe `dark` sur `<html>`
 - Tous les composants utilisent les classes `dark:` Tailwind
 - `globals.css` : `.tiptap-editor` (light) + `.dark .tiptap-editor` (dark) — couleurs, headings, code, tableaux, liens, placeholder
+- **Palette dark (depuis 2026-03-29)** — 5 niveaux dérivés de `#334155` :
+  - `#334155` — fond principal · `#2d3a4e` — panneaux · `#3d4e65` — cartes · `#2a3648` — inputs · `#455670` — hover
+- **Scrollbar Notion-style** — overlay opacity (45%→75%→95%), 20px desktop, cachée sur mobile
 
 ### Auth.js v5 — JWT sans re-login
 - `useSession().update({ name })` côté client
@@ -512,3 +525,4 @@ SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` →
 *Toggle mot de passe, historique des versions, suppression R2 orphelins, isolation workspace — 2026-03-24*
 *Fix images disparaissant (sync multi-appareil écrasait avec plainText), autosave JSON complet après insertion image/fichier/Excalidraw/import — 2026-03-25*
 *Restauration état complète au rechargement (dossier + note) — atomic setter pattern localStorage — 2026-03-25*
+*Modal Réglages in-app (remplace /profile), palette dark #334155, scrollbar Notion-style, SWR auto-refresh global, rate limiting étendu, validation magic bytes uploads, optimisations Prisma — 2026-03-29*

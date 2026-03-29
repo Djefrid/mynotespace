@@ -3,7 +3,7 @@ import 'server-only';
 import { Ratelimit } from '@upstash/ratelimit';
 import { getRedis } from '@/src/backend/integrations/redis/client';
 
-export type RateLimitRoute = 'search' | 'presign' | 'create' | 'auth' | 'from-url';
+export type RateLimitRoute = 'search' | 'presign' | 'create' | 'auth' | 'from-url' | 'list' | 'autosave' | 'read';
 
 export interface RateLimitResult {
   success:   boolean;
@@ -17,6 +17,9 @@ const CONFIGS: Record<RateLimitRoute, { limit: number; window: string }> = {
   'from-url':{ limit: 60,  window: '1 m' }, // coller une note peut contenir 20-50 images
   create:    { limit: 30,  window: '1 m' },
   auth:      { limit: 5,   window: '15 m' },
+  list:      { limit: 120, window: '1 m' }, // lecture de listes (notes, membres)
+  autosave:  { limit: 180, window: '1 m' }, // autosave fréquent pendant la frappe
+  read:      { limit: 120, window: '1 m' }, // lecture d'une ressource individuelle
 };
 
 /**

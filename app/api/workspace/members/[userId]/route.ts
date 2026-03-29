@@ -1,8 +1,13 @@
 import { requireRole } from '@/src/backend/auth/session';
 import { can } from '@/src/backend/policies/permissions';
 import { prisma } from '@/src/backend/db/prisma';
-import { MemberRole } from '@prisma/client';
+import { MemberRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
+
+/** Détecte l'erreur Prisma P2025 "record not found" — évite un findUnique avant chaque update/delete */
+function isPrismaNotFound(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025';
+}
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -44,18 +49,13 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   try {
-    const member = await prisma.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId: targetId } },
-    });
-    if (!member) return Response.json({ error: 'Membre introuvable.' }, { status: 404 });
-
     await prisma.workspaceMember.update({
       where: { workspaceId_userId: { workspaceId, userId: targetId } },
-      data: { role: parsed.data.role },
+      data:  { role: parsed.data.role },
     });
-
     return Response.json({ ok: true });
-  } catch (err) {
+  } catch (err: unknown) {
+    if (isPrismaNotFound(err)) return Response.json({ error: 'Membre introuvable.' }, { status: 404 });
     console.error('[PATCH /api/workspace/members/[userId]]', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -84,17 +84,12 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   try {
-    const member = await prisma.workspaceMember.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId: targetId } },
-    });
-    if (!member) return Response.json({ error: 'Membre introuvable.' }, { status: 404 });
-
     await prisma.workspaceMember.delete({
       where: { workspaceId_userId: { workspaceId, userId: targetId } },
     });
-
     return new Response(null, { status: 204 });
-  } catch (err) {
+  } catch (err: unknown) {
+    if (isPrismaNotFound(err)) return Response.json({ error: 'Membre introuvable.' }, { status: 404 });
     console.error('[DELETE /api/workspace/members/[userId]]', err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }

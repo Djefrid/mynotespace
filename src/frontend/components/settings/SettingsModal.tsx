@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useProfileStats }      from '@/src/frontend/hooks/data/useProfileStats';
+import { useWorkspaceMembers }  from '@/src/frontend/hooks/data/useWorkspaceMembers';
+import { useWorkspaceSession }  from '@/src/frontend/hooks/data/useWorkspaceSession';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -497,25 +500,24 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const [stats, setStats]               = useState<ProfileStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [showDelete, setShowDelete]     = useState(false);
-  const [showLogout, setShowLogout]     = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-
-  const [members, setMembers]               = useState<WorkspaceMember[]>([]);
-  const [membersLoading, setMembersLoading] = useState(true);
-  const [removingId, setRemovingId]         = useState<string | null>(null);
-  const [confirmRemove, setConfirmRemove]   = useState<WorkspaceMember | null>(null);
-  const [changingRole, setChangingRole]     = useState<string | null>(null);
-
-  const [sessionDays, setSessionDays]         = useState(30);
-  const [savingSession, setSavingSession]     = useState(false);
-  const [sessionFeedback, setSessionFeedback] = useState<FeedbackState>(null);
-
   const currentUserId = (session?.user as { id?: string })?.id ?? '';
   const currentRole   = (session?.user as { workspaceRole?: string })?.workspaceRole ?? 'VIEWER';
   const isOwner       = currentRole === 'OWNER';
+
+  // ── SWR — données auto-rafraîchies ────────────────────────────────────────
+  const { stats, statsLoading, mutateStats }                          = useProfileStats();
+  const { members, membersLoading, mutateMembers }                    = useWorkspaceMembers();
+  const { sessionConfig, mutateSessionConfig }                        = useWorkspaceSession(isOwner);
+
+  const [showDelete, setShowDelete]         = useState(false);
+  const [showLogout, setShowLogout]         = useState(false);
+  const [exportLoading, setExportLoading]   = useState(false);
+  const [removingId, setRemovingId]         = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove]   = useState<WorkspaceMember | null>(null);
+  const [changingRole, setChangingRole]     = useState<string | null>(null);
+  const [sessionDays, setSessionDays]       = useState(sessionConfig?.sessionMaxAgeDays ?? 30);
+  const [savingSession, setSavingSession]   = useState(false);
+  const [sessionFeedback, setSessionFeedback] = useState<FeedbackState>(null);
 
   const [editingName, setEditingName]   = useState(false);
   const [name, setName]                 = useState('');
@@ -541,25 +543,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', handler);
   }, [onClose, showDelete, showLogout, confirmRemove]);
 
+  // Sync sessionDays dès que SWR reçoit la config
   useEffect(() => {
-    fetch('/api/profile/stats')
-      .then(r => r.json()).then(j => setStats(j.data ?? null)).catch(() => {})
-      .finally(() => setStatsLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/workspace/members')
-      .then(r => r.json()).then(j => setMembers(j.data ?? [])).catch(() => {})
-      .finally(() => setMembersLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!isOwner) return;
-    fetch('/api/workspace/session')
-      .then(r => r.json())
-      .then(j => { if (j.data?.sessionMaxAgeDays) setSessionDays(j.data.sessionMaxAgeDays); })
-      .catch(() => {});
-  }, [isOwner]);
+    if (sessionConfig?.sessionMaxAgeDays) setSessionDays(sessionConfig.sessionMaxAgeDays);
+  }, [sessionConfig?.sessionMaxAgeDays]);
 
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault();
@@ -620,6 +607,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
       });
       if (!res.ok) { setSessionFeedback({ type: 'error', message: PROFILE_SECURITY.errorGeneric }); return; }
       setSessionFeedback({ type: 'success', message: PROFILE_SECURITY.sessionDurationSuccess });
+      mutateSessionConfig();
     } catch { setSessionFeedback({ type: 'error', message: PROFILE_SECURITY.errorNetwork }); }
     finally { setSavingSession(false); }
   }
@@ -632,7 +620,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ role: newRole }),
       });
       if (!res.ok) return;
-      setMembers(prev => prev.map(m => m.userId === targetId ? { ...m, role: newRole } : m));
+      mutateMembers(
+        (prev) => prev ? { ...prev, data: prev.data.map(m => m.userId === targetId ? { ...m, role: newRole } : m) } : prev,
+        { revalidate: false },
+      );
     } catch { /* silencieux */ }
     finally { setChangingRole(null); }
   }
@@ -641,7 +632,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     setRemovingId(targetId);
     try {
       await fetch(`/api/workspace/members/${targetId}`, { method: 'DELETE' });
-      setMembers(prev => prev.filter(m => m.userId !== targetId));
+      mutateMembers(
+        (prev) => prev ? { ...prev, data: prev.data.filter(m => m.userId !== targetId) } : prev,
+        { revalidate: false },
+      );
     } catch { /* silencieux */ }
     finally { setRemovingId(null); setConfirmRemove(null); }
   }

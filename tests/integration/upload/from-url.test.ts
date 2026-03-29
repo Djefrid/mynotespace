@@ -9,9 +9,16 @@ import { makePost } from '../helpers/request';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockRequireWorkspaceId = vi.fn();
+const mockRequireRole        = vi.fn();
 
 vi.mock('@/src/backend/auth/session', () => ({
   requireWorkspaceId: () => mockRequireWorkspaceId(),
+  requireRole:        () => mockRequireRole(),
+}));
+
+// Mock file-type pour éviter la détection de magic bytes sur des buffers de test
+vi.mock('file-type', () => ({
+  fileTypeFromBuffer: vi.fn().mockResolvedValue({ mime: 'image/png', ext: 'png' }),
 }));
 
 vi.mock('@/src/backend/db/prisma', () => ({
@@ -40,10 +47,12 @@ vi.mock('@/src/backend/lib/rate-limit', () => ({
 
 import { prisma } from '@/src/backend/db/prisma';
 import { checkRateLimit } from '@/src/backend/lib/rate-limit';
+import { fileTypeFromBuffer } from 'file-type';
 import { POST } from '@/app/api/upload/from-url/route';
 
-const mockPrisma        = prisma as { note: { findFirst: ReturnType<typeof vi.fn> } };
-const mockCheckRateLimit = checkRateLimit as ReturnType<typeof vi.fn>;
+const mockPrisma             = prisma as { note: { findFirst: ReturnType<typeof vi.fn> } };
+const mockCheckRateLimit     = checkRateLimit as ReturnType<typeof vi.fn>;
+const mockFileTypeFromBuffer = fileTypeFromBuffer as ReturnType<typeof vi.fn>;
 
 /** Crée une fausse réponse fetch d'image. */
 function makeFakeImageFetch(opts: {
@@ -81,8 +90,10 @@ describe('POST /api/upload/from-url', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireWorkspaceId.mockResolvedValue('ws-123');
+    mockRequireRole.mockResolvedValue({ userId: 'user-123', workspaceId: 'ws-123', role: 'OWNER' });
     mockPrisma.note.findFirst.mockResolvedValue({ id: 'note-abc' });
     mockCheckRateLimit.mockResolvedValue({ success: true });
+    mockFileTypeFromBuffer.mockResolvedValue({ mime: 'image/png', ext: 'png' });
     vi.stubGlobal('fetch', makeFakeImageFetch());
   });
 
@@ -91,7 +102,7 @@ describe('POST /api/upload/from-url', () => {
   });
 
   it('401 — non authentifié', async () => {
-    mockRequireWorkspaceId.mockRejectedValue(new Error('Unauthorized'));
+    mockRequireRole.mockRejectedValue(new Error('Unauthorized'));
 
     const res = await POST(makePost('http://localhost/api/upload/from-url', {
       noteId: 'note-abc',
@@ -183,6 +194,8 @@ describe('POST /api/upload/from-url', () => {
 
   it('415 — type MIME non autorisé', async () => {
     vi.stubGlobal('fetch', makeFakeImageFetch({ contentType: 'application/pdf' }));
+    // Magic bytes détectent aussi un type non autorisé
+    mockFileTypeFromBuffer.mockResolvedValue({ mime: 'application/pdf', ext: 'pdf' });
 
     const res = await POST(makePost('http://localhost/api/upload/from-url', {
       noteId: 'note-abc',

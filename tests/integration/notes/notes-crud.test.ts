@@ -9,9 +9,11 @@ import { makeGet, makePost } from '../helpers/request';
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockRequireWorkspaceId = vi.fn();
+const mockRequireRole        = vi.fn();
 
 vi.mock('@/src/backend/auth/session', () => ({
   requireWorkspaceId: () => mockRequireWorkspaceId(),
+  requireRole:        () => mockRequireRole(),
 }));
 
 vi.mock('@/src/backend/services/notes-pg.service', () => ({
@@ -87,12 +89,13 @@ describe('POST /api/notes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireWorkspaceId.mockResolvedValue('ws-123');
+    mockRequireRole.mockResolvedValue({ userId: 'user-123', workspaceId: 'ws-123', role: 'OWNER' });
     mockCreateNote.mockResolvedValue({ id: 'note-123', title: 'Test' });
     mockCheckRateLimit.mockResolvedValue({ success: true });
   });
 
   it('401 — non authentifié', async () => {
-    mockRequireWorkspaceId.mockRejectedValue(new Error('Unauthorized'));
+    mockRequireRole.mockRejectedValue(new Error('Unauthorized'));
 
     const res = await POST(makePost('http://localhost/api/notes', { title: 'Ma note' }));
 

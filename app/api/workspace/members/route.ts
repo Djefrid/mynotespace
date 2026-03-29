@@ -1,4 +1,5 @@
 import { requireRole } from '@/src/backend/auth/session';
+import { checkRateLimit, rateLimitResponse } from '@/src/backend/lib/rate-limit';
 import { prisma } from '@/src/backend/db/prisma';
 
 // ─── GET /api/workspace/members ───────────────────────────────────────────────
@@ -12,6 +13,9 @@ export async function GET() {
   } catch {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const rl = await checkRateLimit('list', workspaceId);
+  if (!rl.success) return rateLimitResponse(rl.reset);
 
   try {
     const members = await prisma.workspaceMember.findMany({
