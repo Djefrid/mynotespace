@@ -44,7 +44,7 @@ import {
   Quote, Minus, Code2, Link as LinkIcon,
   Table as TableIcon, Highlighter,
   Subscript as SubIcon, Superscript as SupIcon,
-  Undo2, Redo2, FileUp, Maximize2, Minimize2, Download, FileText, Pencil,
+  Undo2, Redo2, FileUp, Maximize2, Minimize2, Download, FileText,
   FileDown, FilePlus, BookOpen,
   Eraser, IndentIncrease, IndentDecrease, CaseSensitive, Sigma, SearchCode,
   ChevronDown, Replace, Image as ImageIcon, Paintbrush,
@@ -119,8 +119,6 @@ interface EditorToolbarProps {
   onExportPdf:        () => void;
   /** Ouvre la modal de bloc de code (choix langage) */
   onCodeBlockClick:   () => void;
-  /** Ouvre la modal de dessin Excalidraw */
-  onDrawClick:        () => void;
   /** Ouvre le sélecteur d'import DOCX */
   onImportDocxClick:  () => void;
   /** Exporte la note en DOCX */
@@ -139,7 +137,7 @@ interface EditorToolbarProps {
 
 export default function EditorToolbar({
   editor, onImageClick, onFileClick, uploadProgress, focusMode, onFocusToggle,
-  onExportMd, onExportPdf, onCodeBlockClick, onDrawClick,
+  onExportMd, onExportPdf, onCodeBlockClick,
   onImportDocxClick, onExportDocxClick, onImportPdfClick,
   formatPainterMode, onFormatPainterClick, onFormatPainterDoubleClick,
 }: EditorToolbarProps) {
@@ -643,9 +641,6 @@ export default function EditorToolbar({
           {TB(false, 'Insérer une image',  onImageClick, <ImageIcon size={14} />)}
           {TB(false, 'Joindre un fichier', onFileClick,  <FileUp size={14} />)}
           <SEP />
-
-          {/* Dessin Excalidraw */}
-          {TB(false, 'Dessin (Excalidraw)', onDrawClick, <Pencil size={14} />)}
 
           {/* Équation LaTeX */}
           {TB(false, 'Équation LaTeX (cliquer puis éditer)', () => {

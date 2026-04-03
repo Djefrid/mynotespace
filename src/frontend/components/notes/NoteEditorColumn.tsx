@@ -36,14 +36,14 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import type { Editor } from '@tiptap/core';
 import type { RefObject } from 'react';
 import {
   Plus, Pin, Trash2, StickyNote, FolderOpen, ArrowLeft,
-  X, RotateCcw, Code2, Hash, History, SearchX, MousePointerClick,
+  X, RotateCcw, Code2, Hash, History, SearchX, MousePointerClick, ChevronsDown,
 } from 'lucide-react';
 import { NoteRevisionsModal } from '@/src/frontend/components/editor/NoteRevisionsModal';
 import { daysUntilPurge } from '@/lib/notes-utils';
@@ -269,6 +269,25 @@ export default function NoteEditorColumn({
   searchQuery = '',
 }: NoteEditorColumnProps) {
   const [showRevisions, setShowRevisions] = useState(false);
+
+  // ── Bouton « aller en bas » ──────────────────────────────────────────────
+  const focusModeScrollRef = useRef<HTMLDivElement>(null);
+  const normalScrollRef    = useRef<HTMLDivElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = focusMode ? focusModeScrollRef.current : normalScrollRef.current;
+    if (!el) return;
+    setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 100);
+  }, [focusMode]);
+
+  const scrollToBottom = useCallback(() => {
+    const el = focusMode ? focusModeScrollRef.current : normalScrollRef.current;
+    el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [focusMode]);
+
+  // Re-vérifier quand la note change (nouveau contenu chargé) ou le mode change
+  useEffect(() => { checkScroll(); }, [selectedNote?.id, focusMode, checkScroll]);
 
   return (
     /* ══ EDITOR ═══════════════════════════════════════════════════════════ */
@@ -530,7 +549,6 @@ export default function NoteEditorColumn({
                 onExportMd={onExportMarkdown}
                 onExportPdf={onExportPDF}
                 onCodeBlockClick={onCodeBlockClick}
-                onDrawClick={() => setExcalidrawModal({ open: true })}
                 onImportDocxClick={() => docxInputRef.current?.click()}
                 onExportDocxClick={onExportDocx}
                 onImportPdfClick={() => pdfInputRef.current?.click()}
@@ -545,6 +563,8 @@ export default function NoteEditorColumn({
              *               Page centrée à 1080px max, clic dans les marges → focus éditeur.
              *  hors focus : divs transparentes (flex-1 flex flex-col min-h-0). */}
             <div
+              ref={focusModeScrollRef}
+              onScroll={checkScroll}
               className={focusMode ? 'flex-1 min-h-0 overflow-y-auto' : 'flex-1 flex flex-col min-h-0'}
               onClick={focusMode ? () => editor?.commands.focus('end') : undefined}
             >
@@ -812,7 +832,11 @@ export default function NoteEditorColumn({
 
                 {/* ── Zone d'édition TipTap ────────────────────────────────── */}
                 {/* En focusMode : le scroll est géré par le scroll-wrapper parent → pas d'overflow-y ici */}
-                <div className={`${focusMode ? 'relative px-6 py-2' : 'relative flex-1 px-6 py-2 overflow-y-auto min-h-0 editor-scrollarea'} ${formatPainterMode !== 'off' ? '[&_.ProseMirror]:!cursor-crosshair' : ''}`}>
+                <div
+                  ref={normalScrollRef}
+                  onScroll={checkScroll}
+                  className={`${focusMode ? 'relative px-6 py-2' : 'relative flex-1 px-6 py-2 overflow-y-auto min-h-0 editor-scrollarea'} ${formatPainterMode !== 'off' ? '[&_.ProseMirror]:!cursor-crosshair' : ''}`}
+                >
                   {noteContentLoading && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white dark:bg-dark-710">
                       <div className="w-6 h-6 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
@@ -917,6 +941,18 @@ export default function NoteEditorColumn({
 
               </div>{/* fin page-centered (max-w-[1080px]) */}
             </div>{/* fin scroll-wrapper */}
+
+            {/* ── Bouton scroll vers le bas ──────────────────────────────────── */}
+            {showScrollDown && (
+              <button
+                type="button"
+                onClick={scrollToBottom}
+                title="Aller en bas"
+                className="absolute bottom-6 right-6 z-30 flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-dark-650 border border-gray-200 dark:border-dark-600 shadow-md text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                <ChevronsDown size={16} />
+              </button>
+            )}
           </div>
 
           {/* ── Modal historique des versions ──────────────────────────────── */}

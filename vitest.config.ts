@@ -16,10 +16,10 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
+    /** Chaque fichier tourne dans son propre process — évite la contamination entre jsdom et node */
+    pool: 'forks',
     /** Environnement jsdom par défaut — les tests d'intégration (// @vitest-environment node) l'écrasent */
     environment: 'jsdom',
-    /** Fichiers tests/integration/** tournent en Node (pas de DOM) */
-    environmentMatchGlobs: [['tests/integration/**', 'node']],
     /** Importe automatiquement @testing-library/jest-dom dans chaque test */
     setupFiles: ['./vitest.setup.ts'],
     /** Inclut les fichiers .test.ts et .test.tsx */
