@@ -23,6 +23,7 @@
 - [Scripts](#scripts)
 - [Tests](#tests)
 - [Points techniques](#points-techniques)
+- [Licence](#licence)
 
 ---
 
@@ -557,6 +558,12 @@ Au rechargement manuel (F5), l'app restaure exactement : dossier actif en sideba
 
 ### Background Sync — implémentation réelle
 SW reçoit `{ type: 'REGISTER_SYNC' }` → `reg.sync.register('sync-notes')` → connexion restaurée → SW envoie `{ type: 'BACKGROUND_SYNC_READY' }` → NotesEditor re-tente l'autosave.
+
+---
+
+## Licence
+
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus d’informations.
 
 ---
 
